@@ -1,0 +1,16 @@
+{
+  "attribute.duality.orbchargereduction": "Orb Charge Reduction",
+  "attribute.duality.orbing_proficiency": "Orbing Proficiency",
+  "entity.duality.ability_projectile": "Ability Projectile",
+  "gui.duality.character_selector.label_choose_starting_race": "Choose Starting Race",
+  "gui.duality.character_selector.label_codex": "Codex",
+  "gui.duality.character_selector.label_codex_description": "Codex Description",
+  "gui.duality.character_selector.label_screentitle": "ScreenTitle",
+  "effect.duality.orbing_effect": "Orbing Effect",
+  "attribute.duality.blood_max": "Blood Max",
+  "attribute.duality.blood_quality": "Blood Quality",
+  "entity.duality.lightning_visual": "Visual Projectile",
+  "item.duality.lightning_visual_spawn_egg": "Visual Projectile Spawn Egg",
+  "entity.duality.stagnant_visual": "SVE",
+  "item.duality.stagnant_visual_spawn_egg": "SVE Spawn Egg"
+}

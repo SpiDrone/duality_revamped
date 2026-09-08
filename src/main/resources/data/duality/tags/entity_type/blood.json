@@ -1,0 +1,21 @@
+{
+  "replace": false,
+  "values": [
+    {
+      "id": "#duality:blood_toxic",
+      "required": false
+    },
+    {
+      "id": "#duality:blood_strong",
+      "required": false
+    },
+    {
+      "id": "#duality:blood_medium",
+      "required": false
+    },
+    {
+      "id": "#duality:blood_weak",
+      "required": false
+    }
+  ]
+}

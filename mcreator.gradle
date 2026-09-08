@@ -1,0 +1,8 @@
+repositories {
+  maven { url 'https://api.modrinth.com/maven' }
+}
+dependencies {
+  implementation 'maven.modrinth:oi1rGz12:BjxG3fgX'
+}
+
+

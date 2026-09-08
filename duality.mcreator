@@ -1,0 +1,877 @@
+{
+  "mod_elements": [
+    {
+      "name": "DualityDatabaseManager",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "duality_database_manager",
+      "metadata": {
+        "files": [
+          "src/main/java/net/spidrotech/duality/DualityDatabaseManager.java"
+        ]
+      },
+      "path": "~/NewCharacter"
+    },
+    {
+      "name": "PlayerJoins",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "player_joins",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          }
+        ],
+        "files": [
+          "src/main/java/net/spidrotech/duality/procedures/PlayerJoinsProcedure.java"
+        ]
+      },
+      "path": "~/NewCharacter"
+    },
+    {
+      "name": "Notes",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "notes",
+      "metadata": {
+        "files": [
+          "src/main/java/net/spidrotech/duality/Notes.java"
+        ]
+      },
+      "path": "~/Notes"
+    },
+    {
+      "name": "Orbs",
+      "type": "particle",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "orbs",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/duality/particles/orbs.json",
+          "src/main/java/net/spidrotech/duality/client/particle/OrbsParticle.java"
+        ]
+      },
+      "path": "~/Powers/Orbing"
+    },
+    {
+      "name": "PlayerTickTesting",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "player_tick_testing",
+      "metadata": {
+        "dependencies": [],
+        "files": [
+          "src/main/java/net/spidrotech/duality/procedures/PlayerTickTestingProcedure.java"
+        ]
+      }
+    },
+    {
+      "name": "Ability",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ability",
+      "metadata": {
+        "files": [
+          "src/main/java/net/spidrotech/duality/Ability.java"
+        ]
+      },
+      "path": "~/Ability Manager"
+    },
+    {
+      "name": "AbilityType",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ability_type",
+      "metadata": {
+        "files": [
+          "src/main/java/net/spidrotech/duality/AbilityType.java"
+        ]
+      },
+      "path": "~/Ability Manager"
+    },
+    {
+      "name": "AbilityValue",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ability_value",
+      "metadata": {
+        "files": [
+          "src/main/java/net/spidrotech/duality/AbilityValue.java"
+        ]
+      },
+      "path": "~/Ability Manager"
+    },
+    {
+      "name": "AbilityCondition",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ability_condition",
+      "metadata": {
+        "files": [
+          "src/main/java/net/spidrotech/duality/AbilityCondition.java"
+        ]
+      },
+      "path": "~/Ability Manager"
+    },
+    {
+      "name": "AbilityContext",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ability_context",
+      "metadata": {
+        "files": [
+          "src/main/java/net/spidrotech/duality/AbilityContext.java"
+        ]
+      },
+      "path": "~/Ability Manager"
+    },
+    {
+      "name": "AbilityInstance",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ability_instance",
+      "metadata": {
+        "files": [
+          "src/main/java/net/spidrotech/duality/AbilityInstance.java"
+        ]
+      },
+      "path": "~/Ability Manager"
+    },
+    {
+      "name": "AbilityManager",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ability_manager",
+      "metadata": {
+        "files": [
+          "src/main/java/net/spidrotech/duality/AbilityManager.java"
+        ]
+      },
+      "path": "~/Ability Manager"
+    },
+    {
+      "name": "AbilityBuilder",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ability_builder",
+      "metadata": {
+        "files": [
+          "src/main/java/net/spidrotech/duality/AbilityBuilder.java"
+        ]
+      },
+      "path": "~/Ability Manager"
+    },
+    {
+      "name": "AbilityEvents",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ability_events",
+      "metadata": {
+        "files": [
+          "src/main/java/net/spidrotech/duality/AbilityEvents.java"
+        ]
+      },
+      "path": "~/Ability Manager"
+    },
+    {
+      "name": "ModAttachments",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "mod_attachments",
+      "metadata": {
+        "files": [
+          "src/main/java/net/spidrotech/duality/ModAttachments.java"
+        ]
+      },
+      "path": "~/Ability Manager"
+    },
+    {
+      "name": "OrbAbility",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "orb_ability",
+      "metadata": {
+        "files": [
+          "src/main/java/net/spidrotech/duality/OrbAbility.java"
+        ]
+      },
+      "path": "~/Powers/Orbing"
+    },
+    {
+      "name": "ORBCHARGEREDUCTION",
+      "type": "attribute",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "orbchargereduction",
+      "metadata": {
+        "files": []
+      },
+      "path": "~/Powers/Orbing"
+    },
+    {
+      "name": "OrbingProficiency",
+      "type": "attribute",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "orbing_proficiency",
+      "metadata": {
+        "files": []
+      },
+      "path": "~/Powers/Orbing"
+    },
+    {
+      "name": "ParticlesOrbing",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "particles_orbing",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "x",
+            "type": "number"
+          },
+          {
+            "name": "y",
+            "type": "number"
+          },
+          {
+            "name": "z",
+            "type": "number"
+          },
+          {
+            "name": "world",
+            "type": "world"
+          }
+        ],
+        "files": [
+          "src/main/java/net/spidrotech/duality/procedures/ParticlesOrbingProcedure.java"
+        ]
+      },
+      "path": "~/Powers/Orbing"
+    },
+    {
+      "name": "AbilityProjectile",
+      "type": "livingentity",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ability_projectile",
+      "metadata": {
+        "files": [
+          "src/main/java/net/spidrotech/duality/entity/AbilityProjectileEntity.java",
+          "src/main/java/net/spidrotech/duality/client/renderer/AbilityProjectileRenderer.java"
+        ]
+      },
+      "path": "~/ClaudeProjectile"
+    },
+    {
+      "name": "FireballTestCommand",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "fireball_test_command",
+      "metadata": {
+        "files": [
+          "src/main/java/net/spidrotech/duality/FireballTestCommand.java"
+        ]
+      },
+      "path": "~/ClaudeProjectile"
+    },
+    {
+      "name": "DualityProjectiles",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "duality_projectiles",
+      "metadata": {
+        "files": [
+          "src/main/java/net/spidrotech/duality/DualityProjectiles.java"
+        ]
+      },
+      "path": "~/ClaudeProjectile"
+    },
+    {
+      "name": "ParticlePattern",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "particle_pattern",
+      "metadata": {
+        "files": [
+          "src/main/java/net/spidrotech/duality/ParticlePattern.java"
+        ]
+      },
+      "path": "~/ClaudeProjectile"
+    },
+    {
+      "name": "ParticleEmitter",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "particle_emitter",
+      "metadata": {
+        "files": [
+          "src/main/java/net/spidrotech/duality/ParticleEmitter.java"
+        ]
+      },
+      "path": "~/ClaudeProjectile"
+    },
+    {
+      "name": "CharacterSelector",
+      "type": "gui",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "character_selector",
+      "metadata": {
+        "files": [
+          "src/main/java/net/spidrotech/duality/client/gui/CharacterSelectorScreen.java",
+          "src/main/java/net/spidrotech/duality/world/inventory/CharacterSelectorMenu.java"
+        ]
+      },
+      "path": "~/NewCharacter"
+    },
+    {
+      "name": "OrbingEffect",
+      "type": "potioneffect",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "orbing_effect",
+      "metadata": {
+        "files": [
+          "src/main/java/net/spidrotech/duality/potion/OrbingEffectMobEffect.java"
+        ]
+      },
+      "path": "~/Powers/Orbing"
+    },
+    {
+      "name": "TestText",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "test_text",
+      "metadata": {
+        "dependencies": [],
+        "files": [
+          "src/main/java/net/spidrotech/duality/procedures/TestTextProcedure.java"
+        ]
+      }
+    },
+    {
+      "name": "BloodMax",
+      "type": "attribute",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "blood_max",
+      "metadata": {
+        "files": []
+      },
+      "path": "~/Demons/Vampire"
+    },
+    {
+      "name": "DrinkBlood",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "drink_blood",
+      "metadata": {
+        "dependencies": [],
+        "files": [
+          "src/main/java/net/spidrotech/duality/procedures/DrinkBloodProcedure.java"
+        ]
+      },
+      "path": "~/Demons/Vampire"
+    },
+    {
+      "name": "BloodQuality",
+      "type": "attribute",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "blood_quality",
+      "metadata": {
+        "files": []
+      },
+      "path": "~/Demons/Vampire"
+    },
+    {
+      "name": "AssignBloodQuality",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "assign_blood_quality",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          }
+        ],
+        "files": [
+          "src/main/java/net/spidrotech/duality/procedures/AssignBloodQualityProcedure.java"
+        ]
+      },
+      "path": "~/Demons/Vampire"
+    },
+    {
+      "name": "EntitySpawned",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "entity_spawned",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          },
+          {
+            "name": "world",
+            "type": "world"
+          }
+        ],
+        "files": [
+          "src/main/java/net/spidrotech/duality/procedures/EntitySpawnedProcedure.java"
+        ]
+      }
+    },
+    {
+      "name": "SuaNotes",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "sua_notes",
+      "metadata": {
+        "files": [
+          "src/main/java/net/spidrotech/duality/SuaNotes.java"
+        ]
+      }
+    },
+    {
+      "name": "RadialAbilityNetwork",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "radial_ability_network",
+      "metadata": {
+        "files": [
+          "src/main/java/net/spidrotech/duality/RadialAbilityNetwork.java"
+        ]
+      },
+      "path": "~/Managers"
+    },
+    {
+      "name": "RadialAbilitySelector",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "radial_ability_selector",
+      "metadata": {
+        "files": [
+          "src/main/java/net/spidrotech/duality/RadialAbilitySelector.java"
+        ]
+      },
+      "path": "~/-Data Drive-"
+    },
+    {
+      "name": "LightningTestCommand",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "lightning_test_command",
+      "metadata": {
+        "files": [
+          "src/main/java/net/spidrotech/duality/LightningTestCommand.java"
+        ]
+      },
+      "path": "~/Lightning"
+    },
+    {
+      "name": "LightningVisual",
+      "type": "livingentity",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "lightning_visual",
+      "metadata": {
+        "files": [
+          "src/main/java/net/spidrotech/duality/entity/LightningVisualEntity.java",
+          "src/main/java/net/spidrotech/duality/client/renderer/LightningVisualRenderer.java",
+          "src/main/resources/assets/duality/models/item/lightning_visual_spawn_egg.json"
+        ]
+      },
+      "path": "~/Lightning"
+    },
+    {
+      "name": "LightningVisualBase",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "lightning_visual_base",
+      "metadata": {
+        "files": [
+          "src/main/java/net/spidrotech/duality/LightningVisualBase.java"
+        ]
+      },
+      "path": "~/Lightning"
+    },
+    {
+      "name": "ProjectileVisualRegistry",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "projectile_visual_registry",
+      "metadata": {
+        "files": [
+          "src/main/java/net/spidrotech/duality/ProjectileVisualRegistry.java"
+        ]
+      },
+      "path": "~/REGISTRIES"
+    },
+    {
+      "name": "DualityProjectileModels",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "duality_projectile_models",
+      "metadata": {
+        "files": [
+          "src/main/java/net/spidrotech/duality/DualityProjectileModels.java"
+        ]
+      },
+      "path": "~/-Data Drive-"
+    },
+    {
+      "name": "ProjectileHitContext",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "projectile_hit_context",
+      "metadata": {
+        "files": [
+          "src/main/java/net/spidrotech/duality/ProjectileHitContext.java"
+        ]
+      },
+      "path": "~/ClaudeProjectile"
+    },
+    {
+      "name": "DualityAbilities",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "duality_abilities",
+      "metadata": {
+        "files": [
+          "src/main/java/net/spidrotech/duality/DualityAbilities.java"
+        ]
+      }
+    },
+    {
+      "name": "AbilityUse",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ability_use",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          }
+        ],
+        "files": [
+          "src/main/java/net/spidrotech/duality/procedures/AbilityUseProcedure.java"
+        ]
+      }
+    },
+    {
+      "name": "AbilitySublet",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ability_sublet",
+      "metadata": {
+        "files": [
+          "src/main/java/net/spidrotech/duality/AbilitySublet.java"
+        ]
+      }
+    },
+    {
+      "name": "CharacterWaypoint",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "character_waypoint",
+      "metadata": {
+        "files": [
+          "src/main/java/net/spidrotech/duality/CharacterWaypoint.java"
+        ]
+      },
+      "path": "~/Teleportation"
+    },
+    {
+      "name": "DimensionStackConfig",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "dimension_stack_config",
+      "metadata": {
+        "files": [
+          "src/main/java/net/spidrotech/duality/DimensionStackConfig.java"
+        ]
+      },
+      "path": "~/Teleportation"
+    },
+    {
+      "name": "TeleportGlowStyle",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "teleport_glow_style",
+      "metadata": {
+        "files": [
+          "src/main/java/net/spidrotech/duality/TeleportGlowStyle.java"
+        ]
+      }
+    },
+    {
+      "name": "TeleportDirectionUtil",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "teleport_direction_util",
+      "metadata": {
+        "files": [
+          "src/main/java/net/spidrotech/duality/TeleportDirectionUtil.java"
+        ]
+      }
+    },
+    {
+      "name": "WaypointNetwork",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "waypoint_network",
+      "metadata": {
+        "files": [
+          "src/main/java/net/spidrotech/duality/WaypointNetwork.java"
+        ]
+      }
+    },
+    {
+      "name": "Deez",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "deez",
+      "metadata": {
+        "dependencies": [],
+        "files": [
+          "src/main/java/net/spidrotech/duality/procedures/DeezProcedure.java"
+        ]
+      }
+    },
+    {
+      "name": "AbilityCalculations",
+      "type": "code",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ability_calculations",
+      "metadata": {
+        "files": [
+          "src/main/java/net/spidrotech/duality/AbilityCalculations.java"
+        ]
+      }
+    },
+    {
+      "name": "StagnantVisual",
+      "type": "livingentity",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "stagnant_visual",
+      "metadata": {
+        "files": [
+          "src/main/java/net/spidrotech/duality/client/renderer/StagnantVisualRenderer.java",
+          "src/main/java/net/spidrotech/duality/entity/StagnantVisualEntity.java",
+          "src/main/resources/assets/duality/models/item/stagnant_visual_spawn_egg.json",
+          "src/main/resources/data/duality/neoforge/biome_modifier/stagnant_visual_biome_modifier.json"
+        ]
+      }
+    }
+  ],
+  "variable_elements": [
+    {
+      "name": "blood",
+      "type": "number",
+      "scope": "player_persistent",
+      "value": "0"
+    },
+    {
+      "name": "testInt",
+      "type": "number",
+      "scope": "map",
+      "value": "0"
+    },
+    {
+      "name": "selected_ability",
+      "type": "string",
+      "scope": "player_persistent",
+      "value": "\"\""
+    }
+  ],
+  "sound_elements": [],
+  "tag_elements": {
+    "ENTITIES:duality:blood": [
+      "#duality:blood_weak",
+      "#duality:blood_medium",
+      "#duality:blood_strong",
+      "#duality:blood_toxic"
+    ],
+    "ENTITIES:duality:blood_weak": [
+      "EntityVillager",
+      "EntityPillager",
+      "EntityWitch",
+      "EntityIllusionIllager",
+      "EntityZombie",
+      "EntityZombieVillager"
+    ],
+    "ENTITIES:duality:blood_toxic": [
+      "EntityZombie",
+      "EntityZombieVillager"
+    ]
+  },
+  "tab_element_order": {},
+  "language_map": {
+    "en_us": {
+      "attribute.duality.orbchargereduction": "Orb Charge Reduction",
+      "attribute.duality.orbing_proficiency": "Orbing Proficiency",
+      "entity.duality.ability_projectile": "Ability Projectile",
+      "gui.duality.character_selector.label_choose_starting_race": "Choose Starting Race",
+      "gui.duality.character_selector.label_codex": "Codex",
+      "gui.duality.character_selector.label_codex_description": "Codex Description",
+      "gui.duality.character_selector.label_screentitle": "ScreenTitle",
+      "effect.duality.orbing_effect": "Orbing Effect",
+      "attribute.duality.blood_max": "Blood Max",
+      "attribute.duality.blood_quality": "Blood Quality",
+      "entity.duality.lightning_visual": "Visual Projectile",
+      "item.duality.lightning_visual_spawn_egg": "Visual Projectile Spawn Egg",
+      "entity.duality.stagnant_visual": "SVE",
+      "item.duality.stagnant_visual_spawn_egg": "SVE Spawn Egg"
+    }
+  },
+  "metadata": {
+    "files": [
+      "src/main/java/net/spidrotech/duality/init/DualityModAttributes.java",
+      "src/main/java/net/spidrotech/duality/init/DualityModMenus.java",
+      "src/main/java/net/spidrotech/duality/network/MenuStateUpdateMessage.java",
+      "src/main/java/net/spidrotech/duality/init/DualityModScreens.java",
+      "src/main/java/net/spidrotech/duality/init/DualityModParticleTypes.java",
+      "src/main/java/net/spidrotech/duality/init/DualityModParticles.java",
+      "src/main/java/net/spidrotech/duality/init/DualityModMobEffects.java",
+      "src/main/java/net/spidrotech/duality/init/DualityModItems.java",
+      "src/main/java/net/spidrotech/duality/init/DualityModEntities.java",
+      "src/main/java/net/spidrotech/duality/init/DualityModEntityRenderers.java",
+      "src/main/java/net/spidrotech/duality/network/DualityModVariables.java",
+      "src/main/resources/META-INF/accesstransformer.cfg",
+      "src/main/resources/META-INF/neoforge.mods.toml",
+      "src/main/java/net/spidrotech/duality/init/DualityModTabs.java",
+      "src/main/resources/duality.mixins.json",
+      "src/main/java/net/spidrotech/duality/DualityMod.java",
+      "src/main/resources/pack.mcmeta",
+      "src/main/java/net/spidrotech/duality/init/DualityModModels.java"
+    ]
+  },
+  "foldersRoot": {
+    "name": "~",
+    "children": [
+      {
+        "name": "Managers",
+        "children": []
+      },
+      {
+        "name": "Notes",
+        "children": []
+      },
+      {
+        "name": "Ability Manager",
+        "children": []
+      },
+      {
+        "name": "Powers",
+        "children": [
+          {
+            "name": "Orbing",
+            "children": []
+          }
+        ]
+      },
+      {
+        "name": "NewCharacter",
+        "children": []
+      },
+      {
+        "name": "ClaudeProjectile",
+        "children": []
+      },
+      {
+        "name": "Demons",
+        "children": [
+          {
+            "name": "Vampire",
+            "children": []
+          }
+        ]
+      },
+      {
+        "name": "Lightning",
+        "children": []
+      },
+      {
+        "name": "-Data Drive-",
+        "children": []
+      },
+      {
+        "name": "REGISTRIES",
+        "children": []
+      },
+      {
+        "name": "Teleportation",
+        "children": []
+      }
+    ]
+  },
+  "workspaceSettings": {
+    "modid": "duality",
+    "modName": "Duality",
+    "version": "1.0.0",
+    "author": "MCreator",
+    "websiteURL": "https://mcreator.net",
+    "license": "Not specified",
+    "serverSideOnly": false,
+    "requiredMods": [],
+    "dependencies": [],
+    "dependants": [],
+    "mcreatorDependencies": [
+      "spis_ui_api"
+    ],
+    "currentGenerator": "neoforge-1.21.1",
+    "credits": "Created using mod maker MCreator - https://mcreator.net/about",
+    "modElementsPackage": "net.spidrotech.duality"
+  },
+  "mcreatorVersion": 202500345720
+}

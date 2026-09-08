@@ -1,0 +1,188 @@
+{
+  "_fv": 79,
+  "_type": "gui",
+  "definition": {
+    "type": 0,
+    "width": 176,
+    "height": 166,
+    "inventoryOffsetX": 0,
+    "inventoryOffsetY": 0,
+    "renderBgLayer": true,
+    "doesPauseGame": false,
+    "components": [
+      {
+        "type": "image",
+        "data": {
+          "image": "cc_background_1.png",
+          "use1Xscale": true,
+          "x": 57,
+          "y": 11,
+          "locked": true
+        }
+      },
+      {
+        "type": "image",
+        "data": {
+          "image": "cc_background_codex.png",
+          "use1Xscale": true,
+          "x": 252,
+          "y": 45,
+          "locked": true
+        }
+      },
+      {
+        "type": "label",
+        "data": {
+          "hasShadow": false,
+          "sua_max_width": 0,
+          "sua_reveal_speed": 0.0,
+          "sua_rainbow_speed": 0.0,
+          "sua_wave_amplitude": 0.0,
+          "sua_wave_speed": 0.0,
+          "sua_bounce_amplitude": 0.0,
+          "sua_bounce_ms": 0,
+          "sua_outline_enabled": false,
+          "sua_outline_width": 0,
+          "sua_scale_x": 0.0,
+          "sua_scale_y": 0.0,
+          "sua_pulse_speed": 0.0,
+          "name": "label_screentitle",
+          "text": {
+            "fixedValue": "ScreenTitle"
+          },
+          "color": {
+            "value": -6710887,
+            "falpha": 0.0
+          },
+          "x": 67,
+          "y": 21,
+          "locked": false
+        }
+      },
+      {
+        "type": "image",
+        "data": {
+          "image": "cc_background_circles_empty.png",
+          "use1Xscale": true,
+          "x": 297,
+          "y": 19,
+          "locked": false
+        }
+      },
+      {
+        "type": "image",
+        "data": {
+          "image": "cc_background_circles_full.png",
+          "use1Xscale": true,
+          "x": 297,
+          "y": 19,
+          "locked": false
+        }
+      },
+      {
+        "type": "label",
+        "data": {
+          "hasShadow": false,
+          "sua_max_width": 0,
+          "sua_reveal_speed": 0.0,
+          "sua_rainbow_speed": 0.0,
+          "sua_wave_amplitude": 0.0,
+          "sua_wave_speed": 0.0,
+          "sua_bounce_amplitude": 0.0,
+          "sua_bounce_ms": 0,
+          "sua_outline_enabled": false,
+          "sua_outline_width": 0,
+          "sua_scale_x": 0.0,
+          "sua_scale_y": 0.0,
+          "sua_pulse_speed": 0.0,
+          "name": "label_codex",
+          "text": {
+            "fixedValue": "Codex"
+          },
+          "color": {
+            "value": -12829636,
+            "falpha": 0.0
+          },
+          "x": 257,
+          "y": 48,
+          "locked": false
+        }
+      },
+      {
+        "type": "label",
+        "data": {
+          "hasShadow": false,
+          "sua_max_width": 0,
+          "sua_reveal_speed": 0.0,
+          "sua_rainbow_speed": 0.0,
+          "sua_wave_amplitude": 0.0,
+          "sua_wave_speed": 0.0,
+          "sua_bounce_amplitude": 0.0,
+          "sua_bounce_ms": 0,
+          "sua_outline_enabled": false,
+          "sua_outline_width": 0,
+          "sua_scale_x": 0.0,
+          "sua_scale_y": 0.0,
+          "sua_pulse_speed": 0.0,
+          "name": "label_codex_description",
+          "text": {
+            "fixedValue": "Codex Description"
+          },
+          "color": {
+            "value": -12829636,
+            "falpha": 0.0
+          },
+          "x": 257,
+          "y": 63,
+          "locked": false
+        }
+      },
+      {
+        "type": "image",
+        "data": {
+          "image": "cc_foreground_button_0.png",
+          "use1Xscale": true,
+          "x": 65,
+          "y": 59,
+          "locked": false
+        }
+      },
+      {
+        "type": "label",
+        "data": {
+          "hasShadow": false,
+          "sua_max_width": 0,
+          "sua_reveal_speed": 0.0,
+          "sua_rainbow_speed": 0.0,
+          "sua_wave_amplitude": 0.0,
+          "sua_wave_speed": 0.0,
+          "sua_bounce_amplitude": 0.0,
+          "sua_bounce_ms": 0,
+          "sua_outline_enabled": false,
+          "sua_outline_width": 0,
+          "sua_scale_x": 0.0,
+          "sua_scale_y": 0.0,
+          "sua_pulse_speed": 0.0,
+          "name": "label_choose_starting_race",
+          "text": {
+            "fixedValue": "Choose Starting Race"
+          },
+          "color": {
+            "value": -6710887,
+            "falpha": 0.0
+          },
+          "x": 65,
+          "y": 40,
+          "locked": false
+        }
+      }
+    ],
+    "gridSettings": {
+      "sx": 18,
+      "sy": 18,
+      "ox": 11,
+      "oy": 15,
+      "snapOnGrid": false
+    }
+  }
+}

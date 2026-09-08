@@ -1,0 +1,8 @@
+{
+  "_fv": 79,
+  "_type": "procedure",
+  "definition": {
+    "procedurexml": "<xml xmlns=\"https://developers.google.com/blockly/xml\"><block type=\"java_code\" x=\"149\" y=\"-60\"><field name=\"CODE\">Player _player = (Player) entity;</field></block><block type=\"event_trigger\" deletable=\"false\" x=\"40\" y=\"40\"><field name=\"trigger\">player_log_in</field><next><block type=\"text_print\"><value name=\"TEXT\"><block type=\"text_join\"><mutation items=\"2\"></mutation><value name=\"ADD0\"><block type=\"entity_from_deps\"></block></value><value name=\"ADD1\"><block type=\"text\"><field name=\"TEXT\">PlayerJoinEvent.Run</field></block></value></block></value><next><block type=\"controls_if\"><value name=\"IF0\"><block type=\"java_code_get\"><field name=\"CODE\">DualityDatabaseManager.shouldStartCreateCharacter((net.minecraft.world.entity.player.Player) entity)</field></block></value><statement name=\"DO0\"><block type=\"text_print\"><value name=\"TEXT\"><block type=\"text_join\"><mutation items=\"2\"></mutation><value name=\"ADD0\"><block type=\"entity_from_deps\"></block></value><value name=\"ADD1\"><block type=\"text\"><field name=\"TEXT\">PlayerJoinEvent.Success</field></block></value></block></value><next><block type=\"java_code\"><field name=\"CODE\">DualityDatabaseManager.startCreateCharacter((net.minecraft.world.entity.player.Player) entity);</field></block></next></block></statement></block></next></block></next></block></xml>",
+    "skipDependencyNullCheck": false
+  }
+}

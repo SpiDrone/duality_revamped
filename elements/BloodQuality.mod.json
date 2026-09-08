@@ -1,0 +1,14 @@
+{
+  "_fv": 79,
+  "_type": "attribute",
+  "definition": {
+    "name": "Blood Quality",
+    "minValue": -100.0,
+    "maxValue": 100.0,
+    "defaultValue": 25.0,
+    "sentiment": "POSITIVE",
+    "addToAllEntities": true,
+    "addToPlayers": true,
+    "entities": []
+  }
+}
