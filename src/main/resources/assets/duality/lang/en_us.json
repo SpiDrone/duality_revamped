@@ -12,5 +12,6 @@
   "entity.duality.lightning_visual": "Visual Projectile",
   "item.duality.lightning_visual_spawn_egg": "Visual Projectile Spawn Egg",
   "entity.duality.stagnant_visual": "SVE",
-  "item.duality.stagnant_visual_spawn_egg": "SVE Spawn Egg"
+  "item.duality.stagnant_visual_spawn_egg": "SVE Spawn Egg",
+  "key.duality.radial_keybind": "Radial Keybind"
 }

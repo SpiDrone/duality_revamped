@@ -1,0 +1,56 @@
+{
+  "_fv": 79,
+  "_type": "overlay",
+  "definition": {
+    "priority": "NORMAL",
+    "components": [
+      {
+        "type": "radial_menu",
+        "data": {
+          "name": "radial_abilities_radial",
+          "radius": 60,
+          "iconSize": 21,
+          "popOutRadius": 0,
+          "borderWidth": 1,
+          "borderColor": {
+            "value": -16777216,
+            "falpha": 0.0
+          },
+          "internalBorderWidth": 5,
+          "internalBorderColor": {
+            "value": -8781824,
+            "falpha": 0.0
+          },
+          "borderEffectType": "solid",
+          "borderColor2": {
+            "value": -12566464,
+            "falpha": 0.0
+          },
+          "internalBorderEffectType": "solid",
+          "internalBorderColor2": {
+            "value": -12582912,
+            "falpha": 0.0
+          },
+          "sua_image_mode": false,
+          "centerRadius": 22,
+          "buttons": [],
+          "width": 120,
+          "height": 120,
+          "anchorPoint": "CENTER",
+          "x": 153,
+          "y": 60,
+          "locked": false
+        }
+      }
+    ],
+    "baseTexture": "",
+    "overlayTarget": "Ingame",
+    "gridSettings": {
+      "sx": 18,
+      "sy": 18,
+      "ox": 11,
+      "oy": 15,
+      "snapOnGrid": false
+    }
+  }
+}

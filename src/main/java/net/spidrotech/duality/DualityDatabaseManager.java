@@ -1,12 +1,17 @@
 package net.spidrotech.duality;
 
+import net.spidrotech.duality.skin.SkinLoadoutCodec;
+import net.spidrotech.duality.skin.SkinLoadout;
+
 import net.minecraft.world.level.storage.LevelResource;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.MinecraftServer;
 
 import java.util.UUID;
+import java.util.Set;
 import java.util.List;
+import java.util.LinkedHashSet;
 import java.util.ArrayList;
 
 import java.io.IOException;
@@ -107,6 +112,15 @@ public class DualityDatabaseManager {
 		saveJson(charFile, charJson);
 	}
 
+	/** The active character's id, or "" if none/unset. Central so skin code doesn't reimplement
+	 *  the profile lookup. */
+	public static String getActiveCharacterId(Player player) {
+		JsonObject profile = getPlayerProfile(player);
+		if (profile == null || !profile.has("active_character_id"))
+			return "";
+		return profile.get("active_character_id").getAsString();
+	}
+
 	public static String createNewCharacter(Player player, String charName, String startingSpecies) {
 		File dataDir = getDataDirectory(player);
 		if (dataDir == null)
@@ -150,6 +164,16 @@ public class DualityDatabaseManager {
 		deathMeta.addProperty("timestamp", 0);
 		deathMeta.addProperty("death_cause", "n/a");
 		charJson.add("death_metadata", deathMeta);
+		// Char-creator appearance for this character - a fresh character starts on the default
+		// base body with no parts and no cosmetic unlocks. This is the section the skin system
+		// (SkinManager / SkinUnlocks, via SkinLoadoutCodec) reads and writes; keeping it on the
+		// CHARACTER sheet rather than the player profile is what makes appearance swap when the
+		// player swaps characters, exactly like waypoints and stats already do.
+		JsonObject charCreator = new JsonObject();
+		charCreator.addProperty("base", "skins_skin");
+		charCreator.add("parts", new JsonArray());
+		charCreator.add("unlocks", new JsonArray());
+		charJson.add(SkinLoadoutCodec.SECTION, charCreator);
 		saveJson(charFile, charJson);
 		JsonObject playerProfile = getPlayerProfile(player);
 		if (playerProfile != null) {
@@ -187,6 +211,46 @@ public class DualityDatabaseManager {
 		}
 	}
 
+	/**
+	 * Switches which character is active. Returns false (changing nothing) if the target id
+	 * isn't in this player's own alive list - so a mistyped or someone-else's id can't be set
+	 * active, and a dead character can't be resurrected by reactivation. On success the caller
+	 * is responsible for re-syncing anything that keys off the active character (the skin
+	 * system does this in SkinManager#onActiveCharacterChanged).
+	 */
+	public static boolean setActiveCharacter(Player player, String characterId) {
+		JsonObject profile = getPlayerProfile(player);
+		if (profile == null || characterId == null || characterId.isEmpty())
+			return false;
+		JsonObject history = profile.getAsJsonObject("character_history");
+		JsonArray aliveList = history.getAsJsonArray("alive");
+		boolean owns = false;
+		for (int i = 0; i < aliveList.size(); i++) {
+			if (aliveList.get(i).getAsString().equals(characterId)) {
+				owns = true;
+				break;
+			}
+		}
+		if (!owns)
+			return false;
+		profile.addProperty("active_character_id", characterId);
+		savePlayerProfile(player, profile);
+		return true;
+	}
+
+	/** This player's alive character ids, in order - for a "switch character" picker/command. */
+	public static List<String> getAliveCharacterIds(Player player) {
+		JsonObject profile = getPlayerProfile(player);
+		List<String> ids = new ArrayList<>();
+		if (profile == null)
+			return ids;
+		JsonArray aliveList = profile.getAsJsonObject("character_history").getAsJsonArray("alive");
+		for (int i = 0; i < aliveList.size(); i++) {
+			ids.add(aliveList.get(i).getAsString());
+		}
+		return ids;
+	}
+
 	public static void handleCanonDeath(Player player, String deathCause) {
 		JsonObject playerProfile = getPlayerProfile(player);
 		if (playerProfile == null)
@@ -218,6 +282,60 @@ public class DualityDatabaseManager {
 			playerProfile.addProperty("active_character_id", "");
 			savePlayerProfile(player, playerProfile);
 		}
+	}
+
+	// ================================================================== char-creator / skin
+	/** The active character's saved appearance, or EMPTY if there's no active character or it has
+	 *  no char_creator section yet (older sheet from before this feature - handled gracefully by
+	 *  the codec rather than needing a migration pass). */
+	public static SkinLoadout getSkinLoadout(Player player, String characterId) {
+		JsonObject charSheet = getCharacterSheet(player, characterId);
+		if (charSheet == null)
+			return SkinLoadout.EMPTY;
+		JsonObject section = charSheet.has(SkinLoadoutCodec.SECTION) ? charSheet.getAsJsonObject(SkinLoadoutCodec.SECTION) : null;
+		return SkinLoadoutCodec.fromSection(section);
+	}
+
+	public static void setSkinLoadout(Player player, String characterId, SkinLoadout loadout) {
+		JsonObject charSheet = getCharacterSheet(player, characterId);
+		if (charSheet == null)
+			return;
+		JsonObject section = charSheet.has(SkinLoadoutCodec.SECTION) ? charSheet.getAsJsonObject(SkinLoadoutCodec.SECTION) : new JsonObject();
+		SkinLoadoutCodec.writeInto(section, loadout); // leaves the "unlocks" array intact
+		charSheet.add(SkinLoadoutCodec.SECTION, section);
+		saveCharacterSheet(player, characterId, charSheet);
+	}
+
+	/** Cosmetic unlock ids earned by this character. Stored inside the char_creator section next
+	 *  to the loadout so appearance-related data stays in one place; distinct from the gameplay
+	 *  "persistent_unlocks" array. */
+	public static Set<String> getSkinUnlocks(Player player, String characterId) {
+		JsonObject charSheet = getCharacterSheet(player, characterId);
+		Set<String> unlocks = new LinkedHashSet<>();
+		if (charSheet == null || !charSheet.has(SkinLoadoutCodec.SECTION))
+			return unlocks;
+		JsonObject section = charSheet.getAsJsonObject(SkinLoadoutCodec.SECTION);
+		if (!section.has("unlocks"))
+			return unlocks;
+		JsonArray array = section.getAsJsonArray("unlocks");
+		for (int i = 0; i < array.size(); i++) {
+			unlocks.add(array.get(i).getAsString());
+		}
+		return unlocks;
+	}
+
+	public static void setSkinUnlocks(Player player, String characterId, Set<String> unlockIds) {
+		JsonObject charSheet = getCharacterSheet(player, characterId);
+		if (charSheet == null)
+			return;
+		JsonObject section = charSheet.has(SkinLoadoutCodec.SECTION) ? charSheet.getAsJsonObject(SkinLoadoutCodec.SECTION) : new JsonObject();
+		JsonArray array = new JsonArray();
+		for (String id : unlockIds) {
+			array.add(id);
+		}
+		section.add("unlocks", array);
+		charSheet.add(SkinLoadoutCodec.SECTION, section);
+		saveCharacterSheet(player, characterId, charSheet);
 	}
 
 	// ================================================================== waypoints

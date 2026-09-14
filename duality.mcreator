@@ -368,7 +368,16 @@
       "locked_code": false,
       "registry_name": "test_text",
       "metadata": {
-        "dependencies": [],
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          },
+          {
+            "name": "text",
+            "type": "string"
+          }
+        ],
         "files": [
           "src/main/java/net/spidrotech/duality/procedures/TestTextProcedure.java"
         ]
@@ -674,19 +683,6 @@
       }
     },
     {
-      "name": "Deez",
-      "type": "procedure",
-      "compiles": true,
-      "locked_code": false,
-      "registry_name": "deez",
-      "metadata": {
-        "dependencies": [],
-        "files": [
-          "src/main/java/net/spidrotech/duality/procedures/DeezProcedure.java"
-        ]
-      }
-    },
-    {
       "name": "AbilityCalculations",
       "type": "code",
       "compiles": true,
@@ -712,6 +708,58 @@
           "src/main/resources/data/duality/neoforge/biome_modifier/stagnant_visual_biome_modifier.json"
         ]
       }
+    },
+    {
+      "name": "AbstractClientPlayer",
+      "type": "mixin",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "abstract_client_player",
+      "metadata": {
+        "files": [
+          "src/main/java/net/spidrotech/duality/mixin/AbstractClientPlayerMixin.java"
+        ]
+      }
+    },
+    {
+      "name": "Underworld",
+      "type": "dimension",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "underworld",
+      "metadata": {
+        "files": [
+          "src/main/java/net/spidrotech/duality/world/dimension/UnderworldDimension.java",
+          "src/main/resources/data/duality/dimension/underworld.json",
+          "src/main/resources/data/duality/dimension_type/underworld.json"
+        ]
+      }
+    },
+    {
+      "name": "AbilitiesRadial",
+      "type": "overlay",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "abilities_radial",
+      "metadata": {
+        "files": [
+          "src/main/java/net/spidrotech/duality/client/screens/AbilitiesRadialOverlay.java"
+        ]
+      },
+      "path": "~/Radial Menu"
+    },
+    {
+      "name": "RadialKeybind",
+      "type": "keybind",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "radial_keybind",
+      "metadata": {
+        "files": [
+          "src/main/java/net/spidrotech/duality/network/RadialKeybindMessage.java"
+        ]
+      },
+      "path": "~/Radial Menu"
     }
   ],
   "variable_elements": [
@@ -753,6 +801,9 @@
     "ENTITIES:duality:blood_toxic": [
       "EntityZombie",
       "EntityZombieVillager"
+    ],
+    "BLOCKS:minecraft:overworld_carver_replaceables": [
+      "~Blocks.DEEPSLATE_IRON_ORE"
     ]
   },
   "tab_element_order": {},
@@ -771,7 +822,8 @@
       "entity.duality.lightning_visual": "Visual Projectile",
       "item.duality.lightning_visual_spawn_egg": "Visual Projectile Spawn Egg",
       "entity.duality.stagnant_visual": "SVE",
-      "item.duality.stagnant_visual_spawn_egg": "SVE Spawn Egg"
+      "item.duality.stagnant_visual_spawn_egg": "SVE Spawn Egg",
+      "key.duality.radial_keybind": "Radial Keybind"
     }
   },
   "metadata": {
@@ -780,6 +832,7 @@
       "src/main/java/net/spidrotech/duality/init/DualityModMenus.java",
       "src/main/java/net/spidrotech/duality/network/MenuStateUpdateMessage.java",
       "src/main/java/net/spidrotech/duality/init/DualityModScreens.java",
+      "src/main/java/net/spidrotech/duality/init/DualityModKeyMappings.java",
       "src/main/java/net/spidrotech/duality/init/DualityModParticleTypes.java",
       "src/main/java/net/spidrotech/duality/init/DualityModParticles.java",
       "src/main/java/net/spidrotech/duality/init/DualityModMobEffects.java",
@@ -851,6 +904,10 @@
       },
       {
         "name": "Teleportation",
+        "children": []
+      },
+      {
+        "name": "Radial Menu",
         "children": []
       }
     ]

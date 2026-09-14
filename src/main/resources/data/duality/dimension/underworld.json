@@ -1,0 +1,36 @@
+{
+  "type": "duality:underworld",
+  "generator": {
+    "type": "minecraft:noise",
+    "settings": "duality:underworld",
+    "biome_source": {
+      "type": "minecraft:multi_noise",
+      "biomes": [
+        {
+          "biome": "duality:underworld_wastes",
+          "parameters": {
+            "temperature": [-1.0, 0.15],
+            "humidity": 0.0,
+            "continentalness": 0.0,
+            "erosion": 0.0,
+            "weirdness": 0.0,
+            "depth": 0.0,
+            "offset": 0.0
+          }
+        },
+        {
+          "biome": "duality:underworld_dominion",
+          "parameters": {
+            "temperature": [0.15, 1.0],
+            "humidity": 0.0,
+            "continentalness": 0.0,
+            "erosion": 0.0,
+            "weirdness": 0.0,
+            "depth": 0.0,
+            "offset": 0.0
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "type": "duality:cavern_jigsaw",
+  "biomes": [
+    "duality:underworld_wastes",
+    "duality:underworld_dominion"
+  ],
+  "step": "underground_structures",
+  "spawn_overrides": {},
+  "terrain_adaptation": "none",
+  "start_pool": "duality:demon_stronghold/start",
+  "size": 3,
+  "start_height": {
+    "absolute": 28
+  },
+  "max_distance_from_center": 80,
+  "door_jigsaw": "duality:demon_cavern_door",
+  "placement_attempts": 8,
+  "door_clearance": 3
+}

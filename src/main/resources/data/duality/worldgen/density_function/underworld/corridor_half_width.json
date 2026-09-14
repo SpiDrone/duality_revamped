@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:add",
+  "argument1": 0.125,
+  "argument2": {
+    "type": "minecraft:mul",
+    "argument1": -0.04,
+    "argument2": "duality:underworld/region"
+  }
+}
