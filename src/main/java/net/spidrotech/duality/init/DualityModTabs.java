@@ -23,6 +23,7 @@ public class DualityModTabs {
 		if (tabData.getTabKey() == CreativeModeTabs.SPAWN_EGGS) {
 			tabData.accept(DualityModItems.LIGHTNING_VISUAL_SPAWN_EGG.get());
 			tabData.accept(DualityModItems.STAGNANT_VISUAL_SPAWN_EGG.get());
+			tabData.accept(DualityModItems.SPIDER_QUEEN_SPAWN_EGG.get());
 		}
 	}
 }

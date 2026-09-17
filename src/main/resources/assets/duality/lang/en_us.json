@@ -15,5 +15,7 @@
   "item.duality.stagnant_visual_spawn_egg": "SVE Spawn Egg",
   "key.duality.radial_menu": "Abilities Radial",
   "ket.categories.duality": "Duality",
-  "attribute.duality.vampire_rank": "Vampire Rank"
+  "attribute.duality.vampire_rank": "Vampire Rank",
+  "entity.duality.spider_queen": "Spider Queen",
+  "item.duality.spider_queen_spawn_egg": "Spider Queen Spawn Egg"
 }

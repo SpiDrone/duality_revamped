@@ -234,3 +234,111 @@ hand under that prefix will be wiped — rename it or add it to the script.
   fixed start height around y31, `terrain_adaptation: "none"`,
   `structure_void` for archways. With ~27-block solid masses between
   corridors there's real room to carve lairs back into the rock.
+
+# Demonic spider — behavior tuning
+
+Every number below is a named constant, not a magic literal. The three marked
+**measure in game** cannot be resolved by reading code; they need one play
+session each.
+
+## Chase speed — **measure in game**
+
+`SpiderQueenEntity.CHASE_SPEED` (x the 0.3 MOVEMENT_SPEED attribute).
+
+The brief is "slightly slower than the player", i.e. a sprinting player can
+just barely open a gap. `1.0` is vanilla-spider chase pace and is the starting
+point. Sprint one away down a flat corridor: if it falls behind quickly, raise
+toward `1.15`; if it closes on a sprint, drop toward `0.9`. Change the
+multiplier, not the attribute — the attribute also feeds the wander goal, and
+raising it makes the idle spider skitter.
+
+## Pathing around obstacles
+
+How it works: the pathfinder only walks. Climbing comes from a fallback in
+`DemonSpiderNavigation` that steers the spider straight at the target once a
+path runs out, and walking into a wall is what starts a climb. That fallback is
+now refused when it can't help (directly under the target with no wall, or a
+ceiling overhead), which is what stopped the endless jumping in place.
+
+| constant | default | what it does |
+|---|---|---|
+| `DemonSpiderNavigation.SEARCH_MULTIPLIER` | 4 | node budget x vanilla; how big a walking detour it can find |
+| `DemonSpiderChaseGoal.STUCK_TICKS` | 40 (2s) | time without getting closer before it looks for another way |
+| `DemonSpiderChaseGoal.DETOUR_RADIUS` | 10 | how far around the target it samples standing spots |
+| `DemonSpiderChaseGoal.CLIMB_SUPPRESS_TICKS` | 100 (5s) | climbing is off this long after a failed approach |
+| `SpiderQueenEntity.TARGET_MEMORY_TICKS` | 300 (15s) | how long it hunts a target it can't see |
+
+If it misses obvious routes (stairs a short walk away), raise
+`SEARCH_MULTIPLIER` before anything else. If it gives up on routes that need a
+longer walk, raise `DETOUR_RADIUS`. If a blocked spider wanders between spots
+too eagerly, raise `STUCK_TICKS`.
+
+## Jump
+
+| constant | default | what it does |
+|---|---|---|
+| `JUMP_WINDUP_TICKS` | 10 (0.5s) | crouch before launch; matches `jump_start` length |
+| `LAND_ANIM_LEAD_TICKS` | 8 (0.4s) | how early `jump_land` starts before touchdown |
+| `LEAP_COOLDOWN_TICKS` | 70 (3.5s) | spacing between leaps |
+| `DemonSpiderLeapGoal.MIN_LEAP_DISTANCE` | 4.0 | closer than this, spit instead |
+| `DemonSpiderLeapGoal.MAX_LEAP_DISTANCE` | 12.0 | past this the arc goes floaty |
+| `DemonSpiderLeapGoal.LEAP_UP_THRESHOLD` | 1.5 | height gap that justifies a jump alone |
+
+Keep `JUMP_WINDUP_TICKS` at 10 unless you re-export `jump_start` at a different
+length — the wind-up is meant to end exactly on the launch, and a mismatch
+either truncates the crouch or leaves the spider frozen after it finishes.
+
+`LAND_ANIM_LEAD_TICKS` is the "lands on its feet" knob. `jump_land` is 0.6s
+(12 ticks), so at 8 the spider is reaching its legs out on contact and settles
+~4 ticks after. Raise it if it still looks like it lands flat; lower it if the
+legs extend so early they hang in the air.
+
+The arc itself is solved in `SpiderQueenEntity.launchLeapAt` — flight time
+scales with horizontal distance, vertical impulse is derived from it. The one
+fudge factor is `dragCompensation`, which scales the horizontal impulse back up
+to cover MC's ~0.98/tick drag. If long leaps consistently fall short, raise the
+`0.5` exponent multiplier; if they overshoot, lower it.
+
+## Climb rotation — **measure in game**
+
+`SpiderQueenRenderer.CLIMB_PITCH_DEGREES` (90), `CLIMB_WALL_INSET` (0.3),
+`CLIMB_LIFT` (0.5).
+
+-90 was tested in game and hung the spider upside down; +90 is the corrected
+sign (belly on the wall, head up), derived from the axis math but not yet seen
+in game.
+
+The two offsets are still eyeballed. Pitching about the feet leaves the belly
+half a hitbox off the wall and the long abdomen dipping into the floor.
+`CLIMB_WALL_INSET` pulls it onto the wall — raise it if there's a visible gap,
+lower it if legs sink into the blocks. `CLIMB_LIFT` raises it up the wall —
+raise it if the abdomen clips the floor as it starts to climb.
+
+The rotation is render-only and never touches the entity's real `yRot`, so
+nudging these cannot break pathfinding. The lean speed is the `0.15` in
+`tickClimbLean` — that is how fast it tips onto the wall.
+
+## Spit — placeholder
+
+`SpiderQueenEntity.performSpit` is a stub that only plays a sound. The timing
+around it is finished: `DemonSpiderSpitGoal` holds the spider still, drives the
+`attack` animation and calls `performSpit` on `RELEASE_TICK` (7), the frame the
+animation throws the head forward. Drop a real projectile spawn into that
+method and the attack is done — the likely home is this mod's existing
+`ProjectileRegistry` / `AbilityProjectileBase` stack rather than a new entity.
+
+`MIN_RANGE` 3.0 / `MAX_RANGE` 16.0 / `COOLDOWN_TICKS` 50 shape when it fires.
+Note `MAX_RANGE` is capped in practice by the 16.0 `FOLLOW_RANGE` attribute.
+
+## Animation wiring
+
+`Modeldemonic_spider` is a Blockbench export that MCreator regenerates on every
+build, and it extends `EntityModel`, which can't run keyframe animations — so
+don't edit it, any change is silently reverted. The renderer instead uses
+`creatures/DemonSpiderModel`, which bakes the same layer and owns all the
+animation logic. It sits outside `client/model/` because MCreator deletes
+files in that folder that aren't in its model list.
+
+If the spider stops animating, check `SpiderQueenRenderer` still constructs a
+`DemonSpiderModel` — regenerating the Spider Queen *element* (not the model)
+resets the renderer back to the Blockbench class.

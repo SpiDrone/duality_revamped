@@ -1005,6 +1005,20 @@
         ]
       },
       "path": "~/Radial Menu"
+    },
+    {
+      "name": "SpiderQueen",
+      "type": "livingentity",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "spider_queen",
+      "metadata": {
+        "files": [
+          "src/main/java/net/spidrotech/duality/client/renderer/SpiderQueenRenderer.java",
+          "src/main/java/net/spidrotech/duality/entity/SpiderQueenEntity.java",
+          "src/main/resources/assets/duality/models/item/spider_queen_spawn_egg.json"
+        ]
+      }
     }
   ],
   "variable_elements": [
@@ -1076,7 +1090,9 @@
       "item.duality.stagnant_visual_spawn_egg": "SVE Spawn Egg",
       "key.duality.radial_menu": "Abilities Radial",
       "ket.categories.duality": "Duality",
-      "attribute.duality.vampire_rank": "Vampire Rank"
+      "attribute.duality.vampire_rank": "Vampire Rank",
+      "entity.duality.spider_queen": "Spider Queen",
+      "item.duality.spider_queen_spawn_egg": "Spider Queen Spawn Egg"
     }
   },
   "metadata": {

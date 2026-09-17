@@ -4,6 +4,7 @@
 package net.spidrotech.duality.init;
 
 import net.spidrotech.duality.entity.StagnantVisualEntity;
+import net.spidrotech.duality.entity.SpiderQueenEntity;
 import net.spidrotech.duality.entity.LightningVisualEntity;
 import net.spidrotech.duality.entity.AbilityProjectileEntity;
 import net.spidrotech.duality.DualityMod;
@@ -33,6 +34,10 @@ public class DualityModEntities {
 			EntityType.Builder.<StagnantVisualEntity>of(StagnantVisualEntity::new, MobCategory.MONSTER).setShouldReceiveVelocityUpdates(true).setTrackingRange(64).setUpdateInterval(3)
 
 					.sized(0.1f, 0.1f));
+	public static final DeferredHolder<EntityType<?>, EntityType<SpiderQueenEntity>> SPIDER_QUEEN = register("spider_queen",
+			EntityType.Builder.<SpiderQueenEntity>of(SpiderQueenEntity::new, MobCategory.MONSTER).setShouldReceiveVelocityUpdates(true).setTrackingRange(64).setUpdateInterval(3)
+
+					.sized(0.6f, 1.8f));
 
 	// Start of user code block custom entities
 	// End of user code block custom entities
@@ -45,6 +50,7 @@ public class DualityModEntities {
 		AbilityProjectileEntity.init(event);
 		LightningVisualEntity.init(event);
 		StagnantVisualEntity.init(event);
+		SpiderQueenEntity.init(event);
 	}
 
 	@SubscribeEvent
@@ -52,5 +58,6 @@ public class DualityModEntities {
 		event.put(ABILITY_PROJECTILE.get(), AbilityProjectileEntity.createAttributes().build());
 		event.put(LIGHTNING_VISUAL.get(), LightningVisualEntity.createAttributes().build());
 		event.put(STAGNANT_VISUAL.get(), StagnantVisualEntity.createAttributes().build());
+		event.put(SPIDER_QUEEN.get(), SpiderQueenEntity.createAttributes().build());
 	}
 }

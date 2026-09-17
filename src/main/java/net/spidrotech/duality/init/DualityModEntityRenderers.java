@@ -4,6 +4,7 @@
 package net.spidrotech.duality.init;
 
 import net.spidrotech.duality.client.renderer.StagnantVisualRenderer;
+import net.spidrotech.duality.client.renderer.SpiderQueenRenderer;
 import net.spidrotech.duality.client.renderer.LightningVisualRenderer;
 import net.spidrotech.duality.client.renderer.AbilityProjectileRenderer;
 
@@ -19,5 +20,6 @@ public class DualityModEntityRenderers {
 		event.registerEntityRenderer(DualityModEntities.ABILITY_PROJECTILE.get(), AbilityProjectileRenderer::new);
 		event.registerEntityRenderer(DualityModEntities.LIGHTNING_VISUAL.get(), LightningVisualRenderer::new);
 		event.registerEntityRenderer(DualityModEntities.STAGNANT_VISUAL.get(), StagnantVisualRenderer::new);
+		event.registerEntityRenderer(DualityModEntities.SPIDER_QUEEN.get(), SpiderQueenRenderer::new);
 	}
 }

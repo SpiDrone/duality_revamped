@@ -15,9 +15,11 @@ public class DualityModItems {
 	public static final DeferredRegister.Items REGISTRY = DeferredRegister.createItems(DualityMod.MODID);
 	public static final DeferredItem<Item> LIGHTNING_VISUAL_SPAWN_EGG;
 	public static final DeferredItem<Item> STAGNANT_VISUAL_SPAWN_EGG;
+	public static final DeferredItem<Item> SPIDER_QUEEN_SPAWN_EGG;
 	static {
 		LIGHTNING_VISUAL_SPAWN_EGG = REGISTRY.register("lightning_visual_spawn_egg", () -> new DeferredSpawnEggItem(DualityModEntities.LIGHTNING_VISUAL, -1, -1, new Item.Properties()));
 		STAGNANT_VISUAL_SPAWN_EGG = REGISTRY.register("stagnant_visual_spawn_egg", () -> new DeferredSpawnEggItem(DualityModEntities.STAGNANT_VISUAL, -1, -1, new Item.Properties()));
+		SPIDER_QUEEN_SPAWN_EGG = REGISTRY.register("spider_queen_spawn_egg", () -> new DeferredSpawnEggItem(DualityModEntities.SPIDER_QUEEN, -1, -1, new Item.Properties()));
 	}
 	// Start of user code block custom items
 	// End of user code block custom items
