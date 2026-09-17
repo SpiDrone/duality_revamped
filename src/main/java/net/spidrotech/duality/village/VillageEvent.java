@@ -23,6 +23,10 @@ public enum VillageEvent {
 	BLOOD_CURSE("Blood Curse", ThreatType.MAGICAL, 32.0, 18.0, true, true, 4, null, TargetFilter.NON_EVIL),
 	/** Not anyone's fault. Bad for the village, only mildly bad for the world. */
 	PLAGUE("Plague", ThreatType.SOCIAL, 26.0, 5.0, true, true, 5, null, TargetFilter.ANY),
+	/** Something goes into the soil. The fields yield a fraction of normal until it breaks, and no
+	 *  amount of reassigning people fixes that - a blighted village eats its stores and then eats
+	 *  itself. The one hunger a player can actually be asked to do something about. */
+	BLIGHT("Blight", ThreatType.MAGICAL, 24.0, 12.0, true, true, 4, null, TargetFilter.ANY),
 	/** Someone offers the elders a deal. If the village is desperate enough to take it, it gets
 	 *  stronger and the world gets worse - the one hostile event where losing makes a village
 	 *  harder to raid next time. */

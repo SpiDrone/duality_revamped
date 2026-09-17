@@ -27,15 +27,16 @@ public final class VillageSimulator {
 	private static final double MORALE_BASELINE = 0.75;
 	private static final double MORALE_RECOVERY_PER_DAY = 0.02;
 
-	/** What one simulated day produced. */
-	public record DayReport(long day, List<VillageEventResult> events, List<String> fateNotes) {
+	/** What one simulated day produced: resolved events, plus everything the economy, the fates and
+	 *  expansion had to say about it. */
+	public record DayReport(long day, List<VillageEventResult> events, List<String> notes) {
 		public DayReport {
 			events = List.copyOf(events);
-			fateNotes = List.copyOf(fateNotes);
+			notes = List.copyOf(notes);
 		}
 
 		public boolean isEmpty() {
-			return events.isEmpty() && fateNotes.isEmpty();
+			return events.isEmpty() && notes.isEmpty();
 		}
 	}
 
@@ -50,6 +51,9 @@ public final class VillageSimulator {
 	public static List<DayReport> catchUp(VillageStore store, VillageWorldBridge bridge, long currentDay, Random random) {
 		WorldDualityState world = store.world();
 		List<DayReport> reports = new ArrayList<>();
+		// Defense and food balance are read off the roster, so rebuild them before the first day is
+		// resolved against numbers left over from whatever was last written to disk.
+		VillageEconomy.recomputeAll(store);
 		long from = world.lastSimulatedDay();
 		if (from <= 0) {
 			// First run on an existing save: start the clock here rather than simulating from day 0.
@@ -81,9 +85,10 @@ public final class VillageSimulator {
 		return reports;
 	}
 
-	/** One day for every village, plus everyone's fate clock. */
+	/** One day for every village: work, food, whatever happened, and everyone's fate clock. */
 	public static DayReport simulateDay(VillageStore store, VillageWorldBridge bridge, long day, Random random) {
 		List<VillageEventResult> events = new ArrayList<>();
+		List<String> notes = new ArrayList<>();
 		for (VillageRecord village : new ArrayList<>(store.villages())) {
 			if (village.lastSimulatedDay() >= day)
 				continue;
@@ -93,6 +98,9 @@ public final class VillageSimulator {
 				continue;
 			}
 			drift(village, random);
+			// The day's work happens before the day's trouble, so a raid is resolved against a
+			// village that has already eaten, built and reshuffled its jobs.
+			notes.addAll(VillageEconomy.tickDay(store, bridge, village, day, random));
 			VillageEvent rolled = random.nextDouble() < EVENT_CHANCE_PER_DAY ? rollEvent(store, village, random) : null;
 			if (rolled != null) {
 				VillageEventResult result = VillageEvents.run(store, bridge, village, rolled, day, random);
@@ -101,8 +109,12 @@ public final class VillageSimulator {
 			} else {
 				store.save(village);
 			}
+			// Only a village that got through the day in good order sends anyone out to start
+			// another one.
+			VillageExpansion.tryFound(store, bridge, village, day, random, notes);
 		}
-		return new DayReport(day, events, resolveFates(store, bridge, day, random));
+		notes.addAll(resolveFates(store, bridge, day, random));
+		return new DayReport(day, events, notes);
 	}
 
 	/** Passive day-to-day change: nothing dramatic, but it's what makes a neglected village slide
@@ -113,10 +125,10 @@ public final class VillageSimulator {
 			village.setMorale(Math.min(MORALE_BASELINE, village.morale() + MORALE_RECOVERY_PER_DAY));
 		else
 			village.setMorale(Math.max(MORALE_BASELINE, village.morale() - MORALE_RECOVERY_PER_DAY * 0.5));
+		// General trade, on top of whatever the named tradespeople bring in. Population growth is
+		// not here - that belongs to the food ledger in VillageEconomy, because a village grows
+		// when it has something to feed the extra mouth with and not before.
 		village.setProsperity(village.prosperity() + village.population() * 0.05 * village.morale());
-		// A comfortable village grows. A frightened or hungry one doesn't.
-		if (village.prosperity() > 50 && village.morale() > 0.6 && random.nextInt(100) < 12)
-			village.addPopulation(1);
 		// A village can't keep more people under arms than it can feed - but it gives them up one
 		// at a time, so an unsustainable militia decays instead of vanishing between one day and
 		// the next.

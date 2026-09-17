@@ -1,8 +1,10 @@
 # Duality villages — living settlements
 
-Not vanilla villages. These are settlements the mod owns and keeps in files, so they can carry on
-existing while nobody is looking at them. A player who leaves for three weeks comes back to a
-village that spent three weeks being somewhere: raided, warded, grown, burned, or emptied.
+Not vanilla villages, and not villages full of vanilla villagers. These are settlements the mod
+owns, populated by duality NPCs, kept in files so they carry on existing while nobody is looking at
+them. A player who leaves for three weeks comes back to a village that spent three weeks being
+somewhere: raided, warded, grown, starved, burned, emptied — or gone, having sent its people out to
+found somewhere else.
 
 The blocks on the ground are a rendering of the file. The file is the truth.
 
@@ -23,8 +25,9 @@ villages sit next to the rest of the save's bookkeeping rather than in a second 
 Villages.run("Ashmere", VillageEvent.VAMPIRE_RAID);   // fire an event, get a result back
 Villages.run("Ashmere", "vampire_raid");              // same, from a string
 
-Villages.create("Ashmere", VillageFaction.HUMAN, level, pos);
-Villages.enroll(village, entity, "HERBALIST");        // give an existing mob a record
+Villages.found("Ashmere", VillageFaction.HUMAN, level, pos, 4);  // village + starting roster
+Villages.create("Ashmere", VillageFaction.HUMAN, level, pos);    // just the village
+Villages.enroll(village, entity, NpcJob.HERBALIST);   // give an existing mob a record and a job
 Villages.villageAt(level, pos);                       // what village is this
 Villages.store().world().dualityScore();              // where the world stands
 ```
@@ -89,6 +92,79 @@ Boons:
 Add an event: a constant in `VillageEvent` and a case in `VillageEvents.applyOutcome`. Give it a
 non-zero `randomWeight` to let the background simulation roll it.
 
+## Who lives there, and what they eat
+
+A village is a set of people who eat. Everyone consumes **one food a day**, named or not. Unnamed
+population is subsistence — it feeds itself exactly and no more. Named NPCs are the whole
+difference, and what they're worth is their `NpcJob`:
+
+| job | food/day (net) | garrison | wards/day | build |
+|---|---|---|---|---|
+| `FARMER` | **+2** | 0.5 | — | — |
+| `HUNTER` | +1.5 | 1.5 | — | — |
+| `SHEPHERD` | +1 | 0.5 | — | — |
+| `LABORER` | 0 | 0.5 | — | 0.4 |
+| `THRALL` (evil settlements only) | +0.5 | 0.5 | — | 0.3 |
+| `GUARD` | **−1** | **4.0** | — | — |
+| `SMITH` | −1 | 1.5 | — | 0.2 |
+| `MASON` | −1 | 0.5 | — | 1.0 |
+| `MERCHANT` | −1 | 0.5 | — | — |
+| `HERBALIST` | −0.5 | 0.5 | 0.05 | — |
+| `WITCH` | −1 | 1.0 | **0.25** | — |
+| `ELDER` / `CHILD` | −1 | — | — | — |
+
+That table is the tension. **Guards don't grow food.** A village that puts everyone on the watch
+starves; a village of nothing but farmers gets carried off one at a time. And a resident witch
+renews wards faster than the 0.12/day decay, so a village with one never loses its protection while
+nobody is looking — which is exactly why raiders come for her first.
+
+Surplus goes in the granary (`foodStores`, capped by population and buildings). A full granary buys
+population growth and the occasional birth. An empty one costs morale, prosperity and then people,
+and the ones who don't grow food starve first — children and elders, then guards, then the farmers
+last of all.
+
+The village manages itself, slowly. `VillageEconomy.neededJob` ranks what's missing by how fast the
+lack kills you — food, then the watch, then wards, then trades — and **at most one person changes
+trade per day**, hunger getting first claim. So a village reacts over a week, not overnight.
+
+This is what makes an abduction expensive twice over. Losing the smith costs some prosperity. Losing
+two farmers tips the food balance negative, and a month later the village that survived the raid is
+starving because of it.
+
+### Blight
+
+Reassigning people fixes a badly-staffed village, so on its own the economy can never really starve
+one. `BLIGHT` is what can: while `blightDays` is running, the fields yield 40% of normal, and no
+amount of shuffling gets that back. Stores drain, people die, and the village keeps its guards
+because putting them in a dead field would be pointless.
+
+It's the one hunger a player can be asked to do something about — carry food in, lift the curse, or
+find a whitelighter, who clears it on the way out. Sixty simulated days from the harness:
+
+    [Farmstead] Blight -> OVERRUN (duality -12.0)
+    Nothing will grow at Farmstead. The granary is empty and the fields are dead.
+    day  3: Farmstead has eaten through its stores. They are going hungry.
+    day  5: Someone starved at Farmstead.
+    day  9: Someone starved at Farmstead.
+    day 19: Someone starved at Farmstead.
+    day 21: The blight on Farmstead's fields has broken. They can grow food again.
+    came out of it with pop 6 (from 10)
+
+## New settlements
+
+Nothing places villages — there's no worldgen hook. The map gains settlements one of two ways:
+`/village create` (or `Villages.found`), and villages founding their own.
+
+A village that is fed, full and well off sends people out: population ≥ 18, prosperity ≥ 55, food
+banked, a mason or laborer to build with, and a 6% roll per day. `VillageExpansion` sites the
+daughter 420–900 blocks out, no closer than 380 to anything existing, asks the bridge to snap it to
+real ground (and never generates terrain to do it), then moves 5–8 population and one or two named
+residents across — never the parent's last food producer.
+
+It cuts both ways. A clan hold that keeps winning spreads too, and a faction spreading moves the
+duality score with it. Left alone long enough, a corner of the map fills with vampire holds seeding
+more vampire holds.
+
 ## The abduction chain
 
 This is the part that makes quests out of arithmetic.
@@ -146,12 +222,13 @@ All op (permission 2). `/village event` and `/village simulate` are how you test
 otherwise takes twenty in-game days to play out.
 
     /village list | here | info <village> | log <village> [count]
-    /village create <name> <faction>          where you're standing
+    /village create <name> <faction> [n]      where you're standing, with n named residents
     /village delete <village>
     /village event <village> <event>          fire one now, read the result
     /village simulate [days]                  run the background simulation forward
-    /village set <village> <stat> <value>     militia|fortification|wards|morale|prosperity|population|radius
-    /village npc add [role]                   enroll the nearest mob as a resident
+    /village set <village> <stat> <value>     militia|fortification|wards|morale|prosperity|population|radius|food
+    /village npc add [job]                    enroll the nearest mob as a resident
+    /village npc job <npc> <job>              reassign them — watch the food balance move
     /village npc list <village>
     /village npc info <npc>                   status, fate, where they are, how long they have
     /village npc rescue <npc>
@@ -159,13 +236,15 @@ otherwise takes twenty in-game days to play out.
 
 A five-minute loop to see the whole thing work:
 
-    /village create Ashmere HUMAN
-    /village npc add FARMER                   (a few times, pointing at villagers)
-    /tp ~500 ~ ~ ; /village create Blackmere VAMPIRE_CLAN
+    /village create Ashmere HUMAN 5           founds it with five named residents and jobs
+    /village info Ashmere                     food balance, garrison, who does what
+    /village npc job <a farmer> GUARD         now watch the food balance go negative
+    /tp ~500 ~ ~ ; /village create Blackmere VAMPIRE_CLAN 4
     /village event Ashmere VAMPIRE_RAID
     /village npc list Blackmere               someone of Ashmere's is in there now
     /village simulate 8
     /village npc info <their id>              and now they're something else
+    /village event Ashmere BLIGHT             and now the survivors are hungry
 
 ## Tuning
 
@@ -176,6 +255,9 @@ Every number lives in one of four places:
 | per-faction starting stats, defense formula | `VillageRecord` (`create`, `defenseAgainst`) |
 | per-event threat, duality weight, roll odds | the `VillageEvent` table |
 | outcome bands, variance, duality direction | `VillageEvents` (`resolveHostile`, `dualityDelta`) |
+| what each job is worth per day | the `NpcJob` table |
+| food rates, blight yield, job churn, build cost | `VillageEconomy` constants |
+| when and where villages found new ones | `VillageExpansion` constants |
 | day-to-day drift, event frequency, catch-up cap | `VillageSimulator` constants |
 
 Check a change without launching the game:
@@ -186,14 +268,38 @@ The whole village core depends on nothing but Java and Gson — `VillageWorldBri
 that touches entities, and `VillageWorldBridge.NOOP` is a complete implementation of it. The harness
 runs raids, round-trips the json, prints the defense curve, and plays out sixty days.
 
+## The NPC entities
+
+These are duality settlements with duality NPCs in them, so `VillageNpcTypes` is the single place
+that answers "what does this record look like in the world", and it asks for the mod's own entities
+first, every time. It tries ids most specific first:
+
+    duality:npc_vampire_guard     species + job
+    duality:npc_guard             job
+    duality:npc_vampire           species
+    duality:npc_witch_coven       faction
+    duality:npc                   the general duality villager
+    minecraft:villager            stand-in, until one of the above exists
+
+**None of those duality entities are registered yet**, so today everything resolves to the last row
+and the log says so once. Register any subset and it's picked up immediately: records store a
+species and a job rather than an entity id, so there's no migration to do.
+
+The exception is `/village npc add`, which pins whatever entity you pointed at onto the record — a
+vanilla villager enrolled that way stays a vanilla villager. That's the "villagers might also live
+there" case, and it's deliberately the only way to get one.
+
 ## Not built yet
 
-- **Worldgen placement.** Villages are registered by hand (`/village create`). Nothing places them.
+- **The duality NPC entities themselves.** See above — the resolution layer is in place and waiting.
+- **Worldgen placement.** Villages are founded by command or by other villages, never by the map
+  generator.
 - **A corpse entity.** `NpcRecord.corpseLocation` is recorded and `placeCorpse` logs it; there's no
   body to find in the world yet. The seam is `ServerVillageBridge.placeCorpse`.
-- **A custom NPC entity.** `enroll` adopts whatever's standing there (vanilla villagers work), and
-  the record stores the entity type, so swapping in a real NPC entity later needs no migration.
+- **NPC behaviour in the world.** A farmer farms in the ledger, not in the fields — there's no AI
+  goal, no crop block, no pathing to a workstation. The economy is bookkeeping, and the entity
+  standing there doesn't know about it yet.
 - **Surfacing it to the player.** A raid announces itself to anyone within ~96 blocks and otherwise
   goes in the log. There's no quest UI, no rumour system, no "ask around about who went missing".
 - **Player-driven reinforcement.** `/village set` moves the numbers; there's no in-game way to build
-  a wall or pay for a ward yet.
+  a wall, pay for a ward, or hand a hungry village a stack of bread.

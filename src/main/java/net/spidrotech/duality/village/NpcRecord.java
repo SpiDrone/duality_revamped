@@ -19,7 +19,10 @@ import java.util.UUID;
 public class NpcRecord {
 	private final String npcId;
 	private String name;
-	private String role = "VILLAGER";
+	private NpcJob job = NpcJob.IDLE;
+	/** Which of the duality species this NPC is - "Human", "Vampire", "Witch", "Thrall". Together
+	 *  with the job and the village's faction this picks which entity they spawn as; see
+	 *  {@link VillageNpcTypes}. */
 	private String species = "Human";
 	private String homeVillageId = "";
 	private String currentVillageId = "";
@@ -27,8 +30,10 @@ public class NpcRecord {
 	private NpcFate fate = NpcFate.NONE;
 	/** In-game day the fate resolves on; ignored unless the fate resolves on a timer. */
 	private long fateDay = 0;
-	/** Registry id of the entity this record renders as, e.g. "minecraft:villager". */
-	private String entityType = "minecraft:villager";
+	/** Registry id of the entity this record renders as. Empty means "work it out from my species
+	 *  and job when I'm next spawned", which is the normal case - see {@link VillageNpcTypes}. It's
+	 *  only pinned to a specific id when an existing entity was enrolled. */
+	private String entityType = "";
 	/** UUID of the live entity while one exists, or empty once despawned. */
 	private String entityUuid = "";
 	private boolean inWorld = false;
@@ -63,12 +68,17 @@ public class NpcRecord {
 		this.name = name;
 	}
 
-	public String role() {
-		return role;
+	public NpcJob job() {
+		return job;
 	}
 
-	public void setRole(String role) {
-		this.role = role;
+	public void setJob(NpcJob job) {
+		this.job = job == null ? NpcJob.IDLE : job;
+	}
+
+	/** Lower-case display form for narrative text: "farmer", "witch". */
+	public String jobLabel() {
+		return job.displayName().toLowerCase();
 	}
 
 	public String species() {
@@ -189,7 +199,7 @@ public class NpcRecord {
 		JsonObject json = new JsonObject();
 		json.addProperty("npc_id", npcId);
 		json.addProperty("name", name);
-		json.addProperty("role", role);
+		json.addProperty("job", job.name());
 		json.addProperty("species", species);
 		json.addProperty("home_village", homeVillageId);
 		json.addProperty("current_village", currentVillageId);
@@ -212,8 +222,10 @@ public class NpcRecord {
 
 	public static NpcRecord fromJson(JsonObject json) {
 		NpcRecord npc = new NpcRecord(json.get("npc_id").getAsString(), json.has("name") ? json.get("name").getAsString() : "Unnamed");
-		if (json.has("role"))
-			npc.role = json.get("role").getAsString();
+		if (json.has("job"))
+			npc.job = NpcJob.parse(json.get("job").getAsString());
+		else if (json.has("role"))
+			npc.job = NpcJob.parse(json.get("role").getAsString());
 		if (json.has("species"))
 			npc.species = json.get("species").getAsString();
 		if (json.has("home_village"))

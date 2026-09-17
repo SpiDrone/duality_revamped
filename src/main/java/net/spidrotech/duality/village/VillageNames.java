@@ -13,7 +13,6 @@ public final class VillageNames {
 			"Ostler", "Winnow", "Garrow", "Stell"};
 	private static final String[] PLACE_PREFIX = {"Ash", "Black", "Grey", "Still", "Thorn", "Cold", "Fair", "Glass", "Red", "Hollow", "Bright", "Dun"};
 	private static final String[] PLACE_SUFFIX = {"mere", "ford", "hollow", "reach", "fell", "wick", "barrow", "gate", "crest", "vale", "rest", "march"};
-	private static final String[] ROLES = {"FARMER", "SMITH", "HERBALIST", "HUNTER", "WEAVER", "MASON", "SHEPHERD", "BREWER", "SCRIBE", "MILLER"};
 
 	private VillageNames() {
 	}
@@ -24,9 +23,5 @@ public final class VillageNames {
 
 	public static String place(Random random) {
 		return PLACE_PREFIX[random.nextInt(PLACE_PREFIX.length)] + PLACE_SUFFIX[random.nextInt(PLACE_SUFFIX.length)];
-	}
-
-	public static String role(Random random) {
-		return ROLES[random.nextInt(ROLES.length)];
 	}
 }

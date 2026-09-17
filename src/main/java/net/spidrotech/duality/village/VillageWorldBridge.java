@@ -29,6 +29,18 @@ public interface VillageWorldBridge {
 	 *  something to find. */
 	void placeCorpse(NpcRecord npc, VillageRecord village);
 
+	/**
+	 * Vets a proposed site for a new settlement and snaps it to the ground.
+	 *
+	 * <p>Called by {@link VillageExpansion} when a village wants to found another. Returning the
+	 * proposal unchanged is always valid, and is what happens when the chunks are cold - the
+	 * simulation must never generate terrain to answer this, because it runs on a timer for parts
+	 * of the world nobody is anywhere near.
+	 *
+	 * @return the site to use, or null to reject it and let the caller try elsewhere
+	 */
+	WorldPoint resolveSite(WorldPoint proposal);
+
 	/** Tell anyone who ought to hear about it - a player standing in the village, the server log.
 	 *  Events that happen while nobody is watching still call this; it's the bridge's business
 	 *  whether that means anything. */
@@ -47,6 +59,11 @@ public interface VillageWorldBridge {
 
 		@Override
 		public void placeCorpse(NpcRecord npc, VillageRecord village) {
+		}
+
+		@Override
+		public WorldPoint resolveSite(WorldPoint proposal) {
+			return proposal;
 		}
 
 		@Override

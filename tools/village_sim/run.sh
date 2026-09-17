@@ -25,6 +25,7 @@ javac -nowarn -cp "$GSON" -d "$OUT" \
 	src/main/java/net/spidrotech/duality/village/VillageFaction.java \
 	src/main/java/net/spidrotech/duality/village/NpcStatus.java \
 	src/main/java/net/spidrotech/duality/village/NpcFate.java \
+	src/main/java/net/spidrotech/duality/village/NpcJob.java \
 	src/main/java/net/spidrotech/duality/village/WorldPoint.java \
 	src/main/java/net/spidrotech/duality/village/NpcRecord.java \
 	src/main/java/net/spidrotech/duality/village/ThreatType.java \
@@ -36,6 +37,8 @@ javac -nowarn -cp "$GSON" -d "$OUT" \
 	src/main/java/net/spidrotech/duality/village/VillageStore.java \
 	src/main/java/net/spidrotech/duality/village/VillageWorldBridge.java \
 	src/main/java/net/spidrotech/duality/village/VillageNames.java \
+	src/main/java/net/spidrotech/duality/village/VillageEconomy.java \
+	src/main/java/net/spidrotech/duality/village/VillageExpansion.java \
 	src/main/java/net/spidrotech/duality/village/VillageEvents.java \
 	src/main/java/net/spidrotech/duality/village/VillageSimulator.java
 

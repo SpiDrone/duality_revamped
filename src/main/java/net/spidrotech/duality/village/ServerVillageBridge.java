@@ -15,6 +15,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.levelgen.Heightmap;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -58,9 +59,13 @@ public class ServerVillageBridge implements VillageWorldBridge {
 		// chunk does.
 		if (!level.hasChunkAt(pos))
 			return false;
-		Optional<EntityType<?>> type = EntityType.byString(npc.entityType());
+		// Duality settlements are meant to be full of duality NPCs; VillageNpcTypes picks the most
+		// specific one the mod has registered for this species and job, and only falls back to a
+		// vanilla villager while none exist.
+		String entityId = VillageNpcTypes.resolve(npc, village);
+		Optional<EntityType<?>> type = EntityType.byString(entityId);
 		if (type.isEmpty()) {
-			DualityMod.LOGGER.warn("[duality] village NPC {} has unknown entity type {}", npc.npcId(), npc.entityType());
+			DualityMod.LOGGER.warn("[duality] village NPC {} resolved to unknown entity type {}", npc.npcId(), entityId);
 			return false;
 		}
 		Entity entity = type.get().spawn(level, pos.above(), MobSpawnType.EVENT);
@@ -85,6 +90,24 @@ public class ServerVillageBridge implements VillageWorldBridge {
 		if (npc.corpseLocation() == null && village != null)
 			npc.setCorpseLocation(village.center());
 		DualityMod.LOGGER.info("[duality] {} died at {}", npc.name(), npc.corpseLocation());
+	}
+
+	@Override
+	public WorldPoint resolveSite(WorldPoint proposal) {
+		ServerLevel level = levelOf(proposal);
+		if (level == null)
+			return null;
+		BlockPos pos = blockPos(proposal);
+		// Only snap to the real surface where the terrain already exists. Asking for a heightmap in
+		// an ungenerated chunk would generate it, and this runs for parts of the world nobody has
+		// ever been to - so out there the proposal stands and the settlement sits at the parent's
+		// elevation until someone goes and looks.
+		if (!level.hasChunkAt(pos))
+			return proposal;
+		BlockPos surface = level.getHeightmapPos(Heightmap.Types.WORLD_SURFACE, pos);
+		if (level.getFluidState(surface.below()).isSource())
+			return null;
+		return new WorldPoint(proposal.dimension(), surface.getX(), surface.getY(), surface.getZ());
 	}
 
 	@Override

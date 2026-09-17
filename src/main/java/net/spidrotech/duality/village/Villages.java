@@ -24,8 +24,8 @@ import java.util.Random;
  *
  * <pre>
  *   Villages.run("Ashmere", VillageEvent.VAMPIRE_RAID);          // fire an event now
- *   Villages.create("Ashmere", VillageFaction.HUMAN, level, pos); // register a village
- *   Villages.enroll(village, entity, "HERBALIST");                // give a mob a record
+ *   Villages.found("Ashmere", VillageFaction.HUMAN, level, pos, 4); // village + starting roster // register a village
+ *   Villages.enroll(village, entity, NpcJob.HERBALIST);           // give a mob a record and a job
  *   Villages.store().world().dualityScore();                      // read the world's standing
  * </pre>
  */
@@ -45,10 +45,11 @@ public final class Villages {
 		File dualityDir = new File(startingServer.getWorldPath(LevelResource.ROOT).toFile(), "duality_data");
 		store = new VillageStore(dualityDir).load();
 		bridge = new ServerVillageBridge(startingServer);
+		VillageEconomy.recomputeAll(store);
 		List<VillageSimulator.DayReport> backlog = VillageSimulator.catchUp(store, bridge, currentDay(), RANDOM);
 		int events = 0;
 		for (VillageSimulator.DayReport report : backlog) {
-			events += report.events().size() + report.fateNotes().size();
+			events += report.events().size() + report.notes().size();
 		}
 		DualityMod.LOGGER.info("[duality] villages loaded: {} settlements, {} named npcs, {} days caught up ({} things happened), world duality {}",
 				store.villages().size(), store.npcs().size(), backlog.size(), events, String.format("%.1f", store.world().dualityScore()));
@@ -173,26 +174,60 @@ public final class Villages {
 	}
 
 	/**
-	 * Gives an existing entity a record and makes it a resident. This is how a village gets people
-	 * before there's a custom NPC entity to spawn: point at whatever's standing there and enroll
-	 * it, and from that moment it can be abducted, turned, killed or rescued like anyone else.
+	 * Gives an existing entity a record and makes it a resident. From that moment it has a job, eats,
+	 * and can be abducted, turned, starved, killed or rescued like anyone else.
+	 *
+	 * <p>The entity's own type is pinned onto the record, so enrolling a vanilla villager means you
+	 * keep a vanilla villager. Residents the simulation creates itself have no pinned type and
+	 * resolve through {@link VillageNpcTypes} instead, which asks for the mod's own NPCs first.
+	 *
+	 * @param job the job to give them, or null to let the village's needs decide
 	 */
-	public static NpcRecord enroll(VillageRecord village, Entity entity, String role) {
+	public static NpcRecord enroll(VillageRecord village, Entity entity, NpcJob job) {
 		if (!isReady() || village == null || entity == null)
 			return null;
 		String name = entity.hasCustomName() ? entity.getCustomName().getString() : VillageNames.person(RANDOM);
 		NpcRecord npc = NpcRecord.create(name, village.villageId());
-		npc.setRole(role != null && !role.isEmpty() ? role : VillageNames.role(RANDOM));
+		npc.setSpecies(VillageEconomy.speciesFor(village));
+		npc.setJob(job != null ? job : VillageEconomy.neededJob(store, village, RANDOM));
 		npc.setEntityType(EntityType.getKey(entity.getType()).toString());
 		npc.setEntityUuid(entity.getUUID().toString());
 		npc.setInWorld(true);
-		npc.addLogEntry(currentDay(), "Enrolled as a resident of " + village.name() + ".");
+		npc.addLogEntry(currentDay(), "Enrolled as a " + npc.jobLabel() + " of " + village.name() + ".");
 		store.add(npc);
 		village.residents().add(npc.npcId());
 		if (village.population() < village.residents().size())
 			village.setPopulation(village.residents().size());
 		store.save(village);
+		VillageEconomy.recompute(store, village);
+		store.save(village);
 		return npc;
+	}
+
+	/**
+	 * Registers a village and gives it a starting roster: a few named residents with the jobs a new
+	 * settlement needs. This is what {@code /village create} uses, and what a settlement founded by
+	 * the simulation is modelled on - a village with no named residents has no economy to speak of,
+	 * because unnamed population only ever feeds itself.
+	 */
+	public static VillageRecord found(String name, VillageFaction faction, ServerLevel level, BlockPos pos, int namedResidents) {
+		VillageRecord village = create(name, faction, level, pos);
+		if (village == null)
+			return null;
+		for (int i = 0; i < namedResidents; i++) {
+			NpcRecord npc = NpcRecord.create(VillageNames.person(RANDOM), village.villageId());
+			npc.setSpecies(VillageEconomy.speciesFor(village));
+			npc.setJob(VillageEconomy.neededJob(store, village, RANDOM));
+			npc.addLogEntry(currentDay(), "A founding resident of " + village.name() + ".");
+			store.add(npc);
+			village.residents().add(npc.npcId());
+			VillageEconomy.recompute(store, village);
+		}
+		if (village.population() < village.residents().size())
+			village.setPopulation(village.residents().size());
+		VillageEconomy.recompute(store, village);
+		store.save(village);
+		return village;
 	}
 
 	// ----------------------------------------------------------------------------------- lookup

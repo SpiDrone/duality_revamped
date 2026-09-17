@@ -80,6 +80,21 @@ public class VillageRecord {
 	private double morale = 0.75;
 	/** 0-100. Feeds population growth and building, and cushions SOCIAL threats. */
 	private double prosperity = 25.0;
+	/** Days of food in the granary. Runs out and people start dying - see {@link VillageEconomy}. */
+	private double foodStores = 0.0;
+	/** Accumulated mason/laborer work toward the next building. */
+	private double buildProgress = 0.0;
+	/** Days of ruined harvests left to run. While this is positive the fields yield a fraction of
+	 *  normal - see {@link VillageEconomy#BLIGHT_YIELD}. It's the one thing that can starve a
+	 *  village no matter how sensibly it assigns its people, which is what makes it worth a quest
+	 *  to lift rather than a number to wait out. */
+	private int blightDays = 0;
+
+	// Derived from the resident roster once per day by VillageEconomy#recompute, and persisted only
+	// so the json is readable. Never edit these directly - change who lives here and what they do.
+	private double garrison = 0.0;
+	private double foodProduction = 0.0;
+	private double foodUpkeep = 0.0;
 
 	private final List<Building> buildings = new ArrayList<>();
 	/** Named NPCs who live here. */
@@ -143,6 +158,9 @@ public class VillageRecord {
 				village.prosperity = 15;
 			}
 		}
+		// Everyone starts with a fortnight or so in the granary. Long enough to get organised,
+		// short enough that a village which never appoints a farmer will notice.
+		village.foodStores = village.population * 1.5;
 		return village;
 	}
 
@@ -246,6 +264,71 @@ public class VillageRecord {
 		this.prosperity = clamp(prosperity, 0, 100);
 	}
 
+	public double foodStores() {
+		return foodStores;
+	}
+
+	public void setFoodStores(double foodStores) {
+		this.foodStores = clamp(foodStores, 0, foodCapacity());
+	}
+
+	/** How much food this village can hold before the rest spoils. Bigger settlements with more
+	 *  buildings keep deeper granaries, so growth buys resilience as well as numbers. */
+	public double foodCapacity() {
+		return 30.0 + population * 4.0 + buildings.size() * 10.0;
+	}
+
+	/** Food produced minus food eaten, per day. Negative means the granary is draining. */
+	public double foodBalance() {
+		return foodProduction - foodUpkeep;
+	}
+
+	/** Days of food left at the current rate, or -1 when the village is not running a deficit. */
+	public double daysOfFoodLeft() {
+		double balance = foodBalance();
+		return balance >= 0 ? -1 : foodStores / -balance;
+	}
+
+	public int blightDays() {
+		return blightDays;
+	}
+
+	public void setBlightDays(int blightDays) {
+		this.blightDays = Math.max(0, blightDays);
+	}
+
+	public boolean isBlighted() {
+		return blightDays > 0;
+	}
+
+	public double buildProgress() {
+		return buildProgress;
+	}
+
+	public void setBuildProgress(double buildProgress) {
+		this.buildProgress = Math.max(0, buildProgress);
+	}
+
+	/** Standing defense contributed by named residents' jobs - guards, mostly. Recomputed daily. */
+	public double garrison() {
+		return garrison;
+	}
+
+	public double foodProduction() {
+		return foodProduction;
+	}
+
+	public double foodUpkeep() {
+		return foodUpkeep;
+	}
+
+	/** Called by {@link VillageEconomy#recompute}; not for general use. */
+	void setDerived(double garrison, double foodProduction, double foodUpkeep) {
+		this.garrison = Math.max(0, garrison);
+		this.foodProduction = Math.max(0, foodProduction);
+		this.foodUpkeep = Math.max(0, foodUpkeep);
+	}
+
 	public List<Building> buildings() {
 		return buildings;
 	}
@@ -311,9 +394,13 @@ public class VillageRecord {
 	 */
 	public double defenseAgainst(ThreatType threat) {
 		double raw = switch (threat) {
-			case PHYSICAL -> militia * 3.0 + fortification * 4.0 + wards * 1.0 + population * 0.25;
-			case MAGICAL -> wards * 6.0 + militia * 0.5 + fortification * 0.5 + population * 0.1;
-			case SOCIAL -> prosperity * 0.4 + morale * 25.0 + population * 0.5 + wards * 1.5;
+			// Garrison is the professional watch - named residents doing the job. The militia term
+			// is the untrained levy behind them. A village with real guards is a different problem
+			// to a village with a lot of frightened farmers holding spears.
+			case PHYSICAL -> garrison + militia * 3.0 + fortification * 4.0 + wards * 1.0 + population * 0.25;
+			case MAGICAL -> wards * 6.0 + garrison * 0.15 + militia * 0.5 + fortification * 0.5 + population * 0.1;
+			// Full stores are what stop a village taking a bad offer, and empty ones are why it does.
+			case SOCIAL -> prosperity * 0.4 + morale * 25.0 + population * 0.5 + wards * 1.5 + Math.min(20.0, foodStores * 0.3);
 			case NONE -> 0.0;
 		};
 		double bias = switch (threat) {
@@ -342,7 +429,15 @@ public class VillageRecord {
 		stats.addProperty("wards", wards);
 		stats.addProperty("morale", morale);
 		stats.addProperty("prosperity", prosperity);
+		stats.addProperty("food_stores", foodStores);
+		stats.addProperty("build_progress", buildProgress);
+		stats.addProperty("blight_days", blightDays);
 		json.add("stats", stats);
+		JsonObject derived = new JsonObject();
+		derived.addProperty("garrison", garrison);
+		derived.addProperty("food_production", foodProduction);
+		derived.addProperty("food_upkeep", foodUpkeep);
+		json.add("derived", derived);
 		JsonArray buildingArray = new JsonArray();
 		for (Building building : buildings) {
 			buildingArray.add(building.toJson());
@@ -387,7 +482,15 @@ public class VillageRecord {
 				village.morale = stats.get("morale").getAsDouble();
 			if (stats.has("prosperity"))
 				village.prosperity = stats.get("prosperity").getAsDouble();
+			if (stats.has("food_stores"))
+				village.foodStores = stats.get("food_stores").getAsDouble();
+			if (stats.has("build_progress"))
+				village.buildProgress = stats.get("build_progress").getAsDouble();
+			if (stats.has("blight_days"))
+				village.blightDays = stats.get("blight_days").getAsInt();
 		}
+		// The "derived" block is informational; VillageEconomy#recompute rebuilds it from the roster
+		// on load, so a hand-edited value there is overwritten rather than trusted.
 		if (json.has("buildings")) {
 			JsonArray buildingArray = json.getAsJsonArray("buildings");
 			for (int i = 0; i < buildingArray.size(); i++) {

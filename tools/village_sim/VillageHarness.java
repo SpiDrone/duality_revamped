@@ -25,10 +25,11 @@ public class VillageHarness {
 		store.add(hold);
 		for (int i = 0; i < 5; i++) {
 			NpcRecord npc = NpcRecord.create(VillageNames.person(random), ashmere.villageId());
-			npc.setRole(VillageNames.role(random));
+			npc.setJob(i < 3 ? NpcJob.FARMER : NpcJob.LABORER);
 			store.add(npc);
 			ashmere.residents().add(npc.npcId());
 		}
+		VillageEconomy.recompute(store, ashmere);
 		store.save(ashmere);
 
 		System.out.println("== 1. files land where they should ==");
@@ -91,8 +92,8 @@ public class VillageHarness {
 				eventCount++;
 				System.out.println("     day " + report.day() + " " + result.summary());
 			}
-			for (String note : report.fateNotes()) {
-				System.out.println("     day " + report.day() + " FATE: " + note);
+			for (String note : report.notes()) {
+				System.out.println("     day " + report.day() + "      " + note);
 			}
 		}
 		check("the backlog was capped at " + VillageSimulator.MAX_CATCHUP_DAYS + " days", reports.size() <= VillageSimulator.MAX_CATCHUP_DAYS);
@@ -155,14 +156,114 @@ public class VillageHarness {
 		check("world clock landed on today", fresh.world().lastSimulatedDay() == 500);
 		deleteRecursively(dir2);
 
+		System.out.println("== 11. jobs feed the village, or don't ==");
+		VillageStore econ = new VillageStore(Files.createTempDirectory("econ").toFile()).load();
+		VillageRecord farm = VillageRecord.create("Farmstead", VillageFaction.HUMAN, WorldPoint.ORIGIN, 1);
+		farm.setPopulation(10);
+		econ.add(farm);
+		List<NpcRecord> crew = new ArrayList<>();
+		for (int i = 0; i < 5; i++) {
+			NpcRecord npc = NpcRecord.create("Worker " + i, farm.villageId());
+			npc.setJob(NpcJob.FARMER);
+			econ.add(npc);
+			farm.residents().add(npc.npcId());
+			crew.add(npc);
+		}
+		VillageEconomy.recompute(econ, farm);
+		System.out.printf("     5 farmers, pop 10: %+.1f food a day%n", farm.foodBalance());
+		check("five farmers feed ten people", farm.foodBalance() > 0);
+
+		for (NpcRecord npc : crew) {
+			npc.setJob(NpcJob.GUARD);
+		}
+		VillageEconomy.recompute(econ, farm);
+		System.out.printf("     5 guards,  pop 10: %+.1f food a day, garrison %.0f%n", farm.foodBalance(), farm.garrison());
+		check("a village of guards starves", farm.foodBalance() < 0);
+		check("but it is well defended", farm.garrison() > 15);
+
+		System.out.println("== 12. a blight is the one hunger you can't reassign your way out of ==");
+		for (NpcRecord npc : crew) {
+			npc.setJob(NpcJob.FARMER);
+		}
+		VillageEconomy.recompute(econ, farm);
+		farm.setFoodStores(20);
+		System.out.printf("     5 farmers, pop 10, healthy fields: %+.1f food a day%n", farm.foodBalance());
+		check("a properly staffed village feeds itself", farm.foodBalance() > 0);
+
+		VillageEventResult blight = VillageEvents.run(econ, VillageWorldBridge.NOOP, farm, VillageEvent.BLIGHT, 2, new Random(4));
+		while (!farm.isBlighted()) {
+			blight = VillageEvents.run(econ, VillageWorldBridge.NOOP, farm, VillageEvent.BLIGHT, 2, random);
+		}
+		blight.fullReport().forEach(line -> System.out.println("     " + line));
+		VillageEconomy.recompute(econ, farm);
+		System.out.printf("     blighted for %d days: %+.1f food a day, %.0f days of stores%n", farm.blightDays(), farm.foodBalance(), farm.daysOfFoodLeft());
+		check("the fields stop feeding anyone", farm.foodBalance() < 0);
+
+		int startingPopulation = farm.population();
+		boolean wentHungry = false;
+		boolean starved = false;
+		boolean lifted = false;
+		for (long day = 3; day <= 60; day++) {
+			for (String note : VillageEconomy.tickDay(econ, VillageWorldBridge.NOOP, farm, day, random)) {
+				System.out.println("     day " + day + ": " + note);
+				starved |= note.contains("starved");
+				lifted |= note.contains("blight on");
+			}
+			wentHungry |= farm.flags().contains("HUNGRY");
+		}
+		check("the granary ran dry", wentHungry);
+		check("and then it cost lives", starved);
+		check("population actually fell", farm.population() < startingPopulation);
+		check("the blight broke eventually", lifted && !farm.isBlighted());
+		System.out.printf("     came out of it with pop %d, %d farmers%n", farm.population(), VillageEconomy.countJob(econ, farm, NpcJob.FARMER));
+
+		System.out.println("== 13. guards are worth more on the wall than farmers ==");
+		System.out.printf("     %-28s %d%n", "4 farmers, no militia", repelCount(0, 0, 0.0, NpcJob.FARMER, 4));
+		System.out.printf("     %-28s %d%n", "4 guards,  no militia", repelCount(0, 0, 0.0, NpcJob.GUARD, 4));
+		check("guards repel raids farmers don't", repelCount(0, 0, 0.0, NpcJob.GUARD, 4) > repelCount(0, 0, 0.0, NpcJob.FARMER, 4));
+
+		System.out.println("== 14. a thriving village founds another ==");
+		VillageStore world2 = new VillageStore(Files.createTempDirectory("expand").toFile()).load();
+		VillageRecord seed = VillageRecord.create("Seedholm", VillageFaction.HUMAN, new WorldPoint("minecraft:overworld", 0, 64, 0), 1);
+		seed.setPopulation(30);
+		seed.setProsperity(90);
+		seed.setFoodStores(300);
+		world2.add(seed);
+		for (int i = 0; i < 8; i++) {
+			NpcRecord npc = NpcRecord.create(VillageNames.person(random), seed.villageId());
+			npc.setJob(i < 5 ? NpcJob.FARMER : i < 7 ? NpcJob.MASON : NpcJob.LABORER);
+			world2.add(npc);
+			seed.residents().add(npc.npcId());
+		}
+		VillageEconomy.recompute(world2, seed);
+		check("a fed, rich, well-staffed village is ready to expand", VillageExpansion.canExpand(world2, seed));
+		VillageRecord daughter = null;
+		for (long day = 2; day <= 200 && daughter == null; day++) {
+			daughter = VillageExpansion.tryFound(world2, VillageWorldBridge.NOOP, seed, day, random, new ArrayList<>());
+		}
+		check("it founded a daughter settlement", daughter != null);
+		if (daughter != null) {
+			double distance = Math.sqrt(daughter.center().horizontalDistanceSqr(seed.center()));
+			System.out.printf("     %s founded %s, %.0f blocks out, pop %d%n", seed.name(), daughter.name(), distance, daughter.population());
+			check("far enough out to be its own place", distance >= VillageExpansion.MIN_DISTANCE);
+			check("the parent paid for it in people", seed.population() < 30);
+			check("they remember where they came from", daughter.relationTo(seed.villageId()) > 50);
+			check("it left with somebody who can work", !world2.residentsOf(daughter).isEmpty());
+			check("the parent kept a food producer", seed.foodBalance() > 0);
+		}
+
 		System.out.println();
 		System.out.println(failures == 0 ? "ALL CHECKS PASSED" : failures + " CHECK(S) FAILED");
 		System.out.println("data written to " + dir);
 		System.exit(failures == 0 ? 0 : 1);
 	}
 
-	/** How many of 400 identical raids a village with these defenses turns back. */
 	static int repelCount(int militia, int fortification, double wards) {
+		return repelCount(militia, fortification, wards, null, 0);
+	}
+
+	/** How many of 400 identical raids a village with these defenses turns back. */
+	static int repelCount(int militia, int fortification, double wards, NpcJob job, int staff) {
 		int repelled = 0;
 		for (int seed = 0; seed < 400; seed++) {
 			try {
@@ -176,6 +277,13 @@ public class VillageHarness {
 				VillageRecord clan = VillageRecord.create("Clan", VillageFaction.VAMPIRE_CLAN, new WorldPoint("minecraft:overworld", 300, 64, 0), 1);
 				store.add(village);
 				store.add(clan);
+				for (int i = 0; i < staff; i++) {
+					NpcRecord npc = NpcRecord.create("Staff " + i, village.villageId());
+					npc.setJob(job);
+					store.add(npc);
+					village.residents().add(npc.npcId());
+				}
+				VillageEconomy.recompute(store, village);
 				VillageEventResult result = VillageEvents.run(store, VillageWorldBridge.NOOP, village, VillageEvent.VAMPIRE_RAID, 2, new Random(seed));
 				if (!result.outcome().aggressorSucceeded())
 					repelled++;

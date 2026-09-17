@@ -32,12 +32,13 @@ import java.util.List;
  *   /village here                        what village you're standing in
  *   /village info &lt;village&gt;              defenses, roster, captives, recent history
  *   /village log &lt;village&gt; [count]       what has happened there
- *   /village create &lt;name&gt; &lt;faction&gt;     register one where you're standing
+ *   /village create &lt;name&gt; &lt;faction&gt; [n]  register one where you're standing, with n named residents
  *   /village delete &lt;village&gt;
  *   /village event &lt;village&gt; &lt;event&gt;     fire an event now and read the result
  *   /village simulate [days]             run the background simulation forward
- *   /village set &lt;village&gt; &lt;stat&gt; &lt;n&gt;    militia|fortification|wards|morale|prosperity|population|radius
- *   /village npc add [role]              enroll the nearest mob as a resident
+ *   /village set &lt;village&gt; &lt;stat&gt; &lt;n&gt;    militia|fortification|wards|morale|prosperity|population|radius|food
+ *   /village npc add [job]               enroll the nearest mob as a resident
+ *   /village npc job &lt;npc&gt; &lt;job&gt;         reassign them - watch the food balance move
  *   /village npc list &lt;village&gt;
  *   /village npc info &lt;npc&gt;              status, fate, where they are and how long they have
  *   /village npc rescue &lt;npc&gt;            free a captive
@@ -72,8 +73,16 @@ public final class VillageCommand {
 		return SharedSuggestionProvider.suggest(ids, builder);
 	};
 
+	private static final SuggestionProvider<CommandSourceStack> JOBS = (ctx, builder) -> {
+		List<String> ids = new ArrayList<>();
+		for (NpcJob job : NpcJob.values()) {
+			ids.add(job.name());
+		}
+		return SharedSuggestionProvider.suggest(ids, builder);
+	};
+
 	private static final SuggestionProvider<CommandSourceStack> STATS = (ctx, builder) -> SharedSuggestionProvider
-			.suggest(List.of("militia", "fortification", "wards", "morale", "prosperity", "population", "radius"), builder);
+			.suggest(List.of("militia", "fortification", "wards", "morale", "prosperity", "population", "radius", "food"), builder);
 
 	private static final SuggestionProvider<CommandSourceStack> NPC_IDS = (ctx, builder) -> {
 		List<String> ids = new ArrayList<>();
@@ -98,7 +107,9 @@ public final class VillageCommand {
 						.executes(ctx -> log(ctx, 8)) //
 						.then(Commands.argument("count", IntegerArgumentType.integer(1, 60)).executes(ctx -> log(ctx, IntegerArgumentType.getInteger(ctx, "count")))))) //
 				.then(Commands.literal("create").then(Commands.argument("name", StringArgumentType.string()) //
-						.then(Commands.argument("faction", StringArgumentType.word()).suggests(FACTIONS).executes(VillageCommand::create)))) //
+						.then(Commands.argument("faction", StringArgumentType.word()).suggests(FACTIONS).executes(ctx -> create(ctx, 4)) //
+								.then(Commands.argument("residents", IntegerArgumentType.integer(0, 24))
+										.executes(ctx -> create(ctx, IntegerArgumentType.getInteger(ctx, "residents"))))))) //
 				.then(Commands.literal("delete").then(Commands.argument("village", StringArgumentType.string()).suggests(VILLAGE_NAMES).executes(VillageCommand::delete))) //
 				.then(Commands.literal("event").then(Commands.argument("village", StringArgumentType.string()).suggests(VILLAGE_NAMES) //
 						.then(Commands.argument("event", StringArgumentType.word()).suggests(EVENT_IDS).executes(VillageCommand::event)))) //
@@ -113,7 +124,9 @@ public final class VillageCommand {
 								.then(Commands.argument("role", StringArgumentType.word()).executes(ctx -> npcAdd(ctx, StringArgumentType.getString(ctx, "role"))))) //
 						.then(Commands.literal("list").then(Commands.argument("village", StringArgumentType.string()).suggests(VILLAGE_NAMES).executes(VillageCommand::npcList))) //
 						.then(Commands.literal("info").then(Commands.argument("npc", StringArgumentType.string()).suggests(NPC_IDS).executes(VillageCommand::npcInfo))) //
-						.then(Commands.literal("rescue").then(Commands.argument("npc", StringArgumentType.string()).suggests(NPC_IDS).executes(VillageCommand::npcRescue)))) //
+						.then(Commands.literal("rescue").then(Commands.argument("npc", StringArgumentType.string()).suggests(NPC_IDS).executes(VillageCommand::npcRescue))) //
+						.then(Commands.literal("job").then(Commands.argument("npc", StringArgumentType.string()).suggests(NPC_IDS) //
+								.then(Commands.argument("job", StringArgumentType.word()).suggests(JOBS).executes(VillageCommand::npcJob))))) //
 				.then(Commands.literal("world").executes(VillageCommand::world) //
 						.then(Commands.literal("duality").then(Commands.argument("value", DoubleArgumentType.doubleArg(-WorldDualityState.LIMIT, WorldDualityState.LIMIT))
 								.executes(ctx -> setDuality(ctx, DoubleArgumentType.getDouble(ctx, "value"), false)))) //
@@ -290,7 +303,7 @@ public final class VillageCommand {
 				}
 				reported++;
 			}
-			for (String note : report.fateNotes()) {
+			for (String note : report.notes()) {
 				reply(ctx, "§7day " + report.day() + " §c" + note);
 				reported++;
 			}
@@ -314,6 +327,7 @@ public final class VillageCommand {
 			case "prosperity" -> village.setProsperity(value);
 			case "population" -> village.setPopulation((int) value);
 			case "radius" -> village.setRadius((int) value);
+			case "food", "food_stores" -> village.setFoodStores(value);
 			default -> {
 				reply(ctx, "§cUnknown stat \"" + stat + "\".");
 				return 0;
@@ -338,7 +352,7 @@ public final class VillageCommand {
 	}
 
 	// ----------------------------------------------------------------------------------- npcs
-	private static int npcAdd(CommandContext<CommandSourceStack> ctx, String role) {
+	private static int npcAdd(CommandContext<CommandSourceStack> ctx, String jobId) {
 		if (notReady(ctx))
 			return 0;
 		if (!(ctx.getSource().getEntity() instanceof ServerPlayer player)) {
@@ -394,6 +408,30 @@ public final class VillageCommand {
 		reply(ctx, "  §7entity §f" + npc.entityType() + (npc.inWorld() ? " §a(in world)" : " §8(not spawned)"));
 		for (String line : npc.log()) {
 			reply(ctx, "  §8" + line);
+		}
+		return 1;
+	}
+
+	private static int npcJob(CommandContext<CommandSourceStack> ctx) {
+		if (notReady(ctx))
+			return 0;
+		NpcRecord npc = Villages.findNpc(StringArgumentType.getString(ctx, "npc"));
+		if (npc == null) {
+			reply(ctx, "\u00a7cNo such NPC.");
+			return 0;
+		}
+		NpcJob job = NpcJob.parse(StringArgumentType.getString(ctx, "job"));
+		npc.setJob(job);
+		npc.addLogEntry(Villages.currentDay(), "Put to work as a " + npc.jobLabel() + ".");
+		Villages.store().save(npc);
+		VillageRecord village = Villages.store().village(npc.currentVillageId());
+		if (village != null) {
+			VillageEconomy.recompute(Villages.store(), village);
+			Villages.store().save(village);
+			reply(ctx, "\u00a7a" + npc.name() + " is a " + npc.jobLabel() + " now. " + village.name() + String.format(" food balance %+.1f a day.",
+					village.foodBalance()));
+		} else {
+			reply(ctx, "\u00a7a" + npc.name() + " is a " + npc.jobLabel() + " now.");
 		}
 		return 1;
 	}

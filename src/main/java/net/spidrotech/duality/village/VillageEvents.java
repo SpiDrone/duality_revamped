@@ -53,6 +53,9 @@ public final class VillageEvents {
 		if (village.isAbandoned() && event.hostile())
 			return VillageEventResult.fizzled(village, event, day, village.name() + " is already empty; there is nothing left to attack.");
 
+		// Defense is partly the people standing in it, so make sure the roster's contribution is
+		// current before anything gets weighed against it.
+		VillageEconomy.recompute(store, village);
 		VillageRecord aggressor = findAggressor(store, village, event);
 		VillageEventOutcome outcome = event.hostile() ? resolveHostile(store, village, event, aggressor, random) : VillageEventOutcome.BOON;
 
@@ -155,6 +158,7 @@ public final class VillageEvents {
 			case BANDIT_SHAKEDOWN -> banditShakedown(village, outcome, random, narrative, from);
 			case BLOOD_CURSE -> bloodCurse(store, bridge, village, outcome, day, random, narrative, affected);
 			case PLAGUE -> plague(store, bridge, village, outcome, day, random, narrative, affected);
+			case BLIGHT -> blight(village, outcome, random, narrative);
 			case DARK_PACT -> darkPact(village, aggressor, outcome, narrative, from);
 			case COVEN_PROTECTION -> covenProtection(store, village, random, narrative);
 			case WHITELIGHTER_VISIT -> whitelighterVisit(village, narrative);
@@ -234,6 +238,7 @@ public final class VillageEvents {
 				village.setProsperity(village.prosperity() - 20);
 				burnBuilding(village, narrative);
 				burnBuilding(village, narrative);
+				village.setFoodStores(0);
 				killNamedResident(store, bridge, village, day, random, "burned in a demon attack", narrative, affected);
 				narrative.add(village.name() + " burned. " + (before - village.population()) + " dead, the wards broken, most of it still standing only because it was stone.");
 			}
@@ -257,13 +262,15 @@ public final class VillageEvents {
 			case PARTIAL -> {
 				village.setProsperity(village.prosperity() - 10);
 				village.setMorale(village.morale() - 0.05);
+				village.setFoodStores(village.foodStores() * 0.7);
 				narrative.add(source + " took the winter stores and half the coin.");
 			}
 			case OVERRUN -> {
 				village.setProsperity(village.prosperity() - 20);
 				village.setMorale(village.morale() - 0.10);
+				village.setFoodStores(village.foodStores() * 0.4);
 				killAnonymous(village, random.nextInt(2));
-				narrative.add(source + " emptied " + village.name() + " of everything worth carrying.");
+				narrative.add(source + " emptied " + village.name() + " of everything worth carrying, the granary included.");
 			}
 			default -> {
 			}
@@ -291,6 +298,7 @@ public final class VillageEvents {
 				village.setWards(0);
 				village.setMorale(village.morale() - 0.20);
 				village.flags().add("CURSED");
+				village.setBlightDays(village.blightDays() + 6 + random.nextInt(6));
 				killAnonymous(village, 2 + random.nextInt(2));
 				killNamedResident(store, bridge, village, day, random, "died of a blood curse", narrative, affected);
 				narrative.add("The curse settled into " + village.name() + " itself. It will have to be lifted, not waited out.");
@@ -323,6 +331,34 @@ public final class VillageEvents {
 				village.setMorale(village.morale() - 0.20);
 				killNamedResident(store, bridge, village, day, random, "died of plague", narrative, affected);
 				narrative.add("Plague. " + (before - village.population()) + " dead, and the living are burning the houses of the dead.");
+			}
+			default -> {
+			}
+		}
+	}
+
+	private static void blight(VillageRecord village, VillageEventOutcome outcome, Random random, List<String> narrative) {
+		switch (outcome) {
+			case REPELLED -> {
+				village.setWards(village.wards() - 0.5);
+				narrative.add("Something was worked against " + village.name() + "'s fields and didn't take.");
+			}
+			case COSTLY -> {
+				village.setBlightDays(village.blightDays() + 3 + random.nextInt(3));
+				narrative.add("A corner of " + village.name() + "'s fields has gone black. It was caught early.");
+			}
+			case PARTIAL -> {
+				village.setBlightDays(village.blightDays() + 8 + random.nextInt(5));
+				village.setFoodStores(village.foodStores() * 0.6);
+				village.setMorale(village.morale() - 0.08);
+				narrative.add(village.name() + "'s crop is blighted. What's in the granary is what they have.");
+			}
+			case OVERRUN -> {
+				village.setBlightDays(village.blightDays() + 16 + random.nextInt(9));
+				village.setFoodStores(0);
+				village.setMorale(village.morale() - 0.18);
+				village.flags().add("BLIGHTED");
+				narrative.add("Nothing will grow at " + village.name() + ". The granary is empty and the fields are dead.");
 			}
 			default -> {
 			}
@@ -390,6 +426,11 @@ public final class VillageEvents {
 		village.setWards(village.wards() + 1);
 		village.setProsperity(village.prosperity() + 3);
 		narrative.add("A whitelighter came through " + village.name() + ". The sick got up and walked, and people have been sleeping better since.");
+		if (village.isBlighted()) {
+			village.setBlightDays(0);
+			village.flags().remove("BLIGHTED");
+			narrative.add("They put their hands in the soil on the way out. " + village.name() + "'s fields are clean.");
+		}
 	}
 
 	private static void settlersArrive(VillageStore store, VillageRecord village, long day, Random random, List<String> narrative, List<String> affected) {
@@ -397,23 +438,29 @@ public final class VillageEvents {
 		village.addPopulation(arrivals);
 		if (random.nextInt(3) == 0)
 			village.setMilitia(village.militia() + 1);
+		village.setFoodStores(village.foodStores() + arrivals * 2.0);
 		NpcRecord newcomer = null;
 		if (random.nextBoolean()) {
 			newcomer = NpcRecord.create(VillageNames.person(random), village.villageId());
-			newcomer.setRole(VillageNames.role(random));
-			newcomer.addLogEntry(day, "Arrived in " + village.name() + ".");
+			newcomer.setSpecies(VillageEconomy.speciesFor(village));
+			// Newcomers take whatever the village is short of, so a raided village fills up with
+			// guards and a hungry one with farmers.
+			newcomer.setJob(VillageEconomy.neededJob(store, village, random));
+			newcomer.addLogEntry(day, "Arrived in " + village.name() + " as a " + newcomer.jobLabel() + ".");
 			store.add(newcomer);
 			village.residents().add(newcomer.npcId());
 			affected.add(newcomer.npcId());
 		}
-		narrative.add(arrivals + " new faces in " + village.name() + (newcomer != null ? ", among them " + newcomer.name() + ", " + newcomer.role().toLowerCase() + "." : "."));
+		narrative.add(arrivals + " new faces in " + village.name() + (newcomer != null ? ", among them " + newcomer.name() + ", " + newcomer.jobLabel() + "." : "."));
 	}
 
 	private static void construction(VillageRecord village, long day, Random random, List<String> narrative) {
-		String[] types = {"HOUSE", "BARN", "WELL", "SHRINE", "WORKSHOP", "PALISADE"};
+		String[] types = {"HOUSE", "BARN", "GRANARY", "WELL", "SHRINE", "WORKSHOP", "PALISADE"};
 		String type = types[random.nextInt(types.length)];
 		village.buildings().add(new VillageRecord.Building(type, day));
 		village.setProsperity(village.prosperity() + 4);
+		if (type.equals("GRANARY") || type.equals("BARN"))
+			village.setFoodStores(village.foodStores() + 12);
 		if (type.equals("PALISADE") || random.nextInt(3) == 0) {
 			village.setFortification(village.fortification() + 1);
 			narrative.add(village.name() + " has finished a " + type.toLowerCase() + ". The place is harder to walk into than it was.");
@@ -425,9 +472,11 @@ public final class VillageEvents {
 	private static void goodHarvest(VillageRecord village, Random random, List<String> narrative) {
 		village.setProsperity(village.prosperity() + 8);
 		village.setMorale(village.morale() + 0.06);
+		double before = village.foodStores();
+		village.setFoodStores(before + village.population() * 3.0);
 		if (random.nextInt(3) == 0)
 			village.addPopulation(1);
-		narrative.add("A good year in " + village.name() + ". The stores are full.");
+		narrative.add(String.format("A good year in %s. %.0f more days of food in the granary.", village.name(), village.foodStores() - before));
 	}
 
 	private static void militiaDrill(VillageRecord village, List<String> narrative) {
@@ -464,7 +513,7 @@ public final class VillageEvents {
 		village.residents().remove(victim.npcId());
 		village.addPopulation(-1);
 		affected.add(victim.npcId());
-		narrative.add(victim.name() + ", " + victim.role().toLowerCase() + ", " + cause + ".");
+		narrative.add(victim.name() + ", " + victim.jobLabel() + ", " + cause + ".");
 		return victim;
 	}
 
@@ -486,8 +535,9 @@ public final class VillageEvents {
 				narrative.add("Someone was dragged out of " + village.name() + " by " + source + ". Nobody knew their name well enough to say who.");
 			return null;
 		}
-		// Raiders take whoever is easiest to take.
-		candidates.sort(Comparator.comparingDouble(NpcRecord::combatValue));
+		// Raiders take whoever is easiest to take, which means the guards are the last to go - and
+		// a village whose guards are all that's left is a village that has already lost its farmers.
+		candidates.sort(Comparator.comparingDouble(npc -> npc.combatValue() + npc.job().garrison()));
 		NpcRecord victim = candidates.get(random.nextInt(Math.max(1, (candidates.size() + 1) / 2)));
 
 		village.residents().remove(victim.npcId());
@@ -518,7 +568,7 @@ public final class VillageEvents {
 		store.save(captor);
 		affected.add(victim.npcId());
 
-		narrative.add(victim.name() + ", " + victim.role().toLowerCase() + ", was carried out of " + village.name() + " toward " + captor.name() + "."
+		narrative.add(victim.name() + ", " + victim.jobLabel() + ", was carried out of " + village.name() + " toward " + captor.name() + "."
 				+ (fate.resolvesOnTimer() ? " Whatever they mean to do, they mean to do it by day " + victim.fateDay() + "." : ""));
 		return victim;
 	}
