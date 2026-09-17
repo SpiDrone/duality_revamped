@@ -47,8 +47,6 @@ public class DualityMod {
 		DualityModParticleTypes.REGISTRY.register(modEventBus);
 		DualityModAttributes.REGISTRY.register(modEventBus);
 		// Start of user code block mod init
-		net.spidrotech.duality.world.structure.DualityStructureTypes.REGISTRY.register(modEventBus);
-		ModAttachments.ATTACHMENT_TYPES.register(modEventBus);
 		// End of user code block mod init
 	}
 
