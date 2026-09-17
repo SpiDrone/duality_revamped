@@ -76,6 +76,7 @@ public class DualityModVariables {
 		PlayerVariables clone = new PlayerVariables();
 		clone.blood = original.blood;
 		clone.selected_ability = original.selected_ability;
+		clone.EquippedAbilities = original.EquippedAbilities;
 		if (!event.isWasDeath()) {
 		}
 		event.getEntity().setData(PLAYER_VARIABLES, clone);
@@ -233,12 +234,14 @@ public class DualityModVariables {
 		boolean _syncDirty = false;
 		public double blood = 0;
 		public String selected_ability = "\"\"";
+		public String EquippedAbilities = "\"\"";
 
 		@Override
 		public CompoundTag serializeNBT(HolderLookup.Provider lookupProvider) {
 			CompoundTag nbt = new CompoundTag();
 			nbt.putDouble("blood", blood);
 			nbt.putString("selected_ability", selected_ability);
+			nbt.putString("EquippedAbilities", EquippedAbilities);
 			return nbt;
 		}
 
@@ -246,6 +249,7 @@ public class DualityModVariables {
 		public void deserializeNBT(HolderLookup.Provider lookupProvider, CompoundTag nbt) {
 			blood = nbt.getDouble("blood");
 			selected_ability = nbt.getString("selected_ability");
+			EquippedAbilities = nbt.getString("EquippedAbilities");
 		}
 
 		public void markSyncDirty() {

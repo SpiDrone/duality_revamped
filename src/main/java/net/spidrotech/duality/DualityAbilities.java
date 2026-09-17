@@ -5,6 +5,16 @@ import org.slf4j.Logger;
 import net.spidrotech.duality.init.DualityModEntities;
 import net.spidrotech.duality.entity.LightningVisualEntity;
 import net.spidrotech.duality.abilities.teleportation.OrbAbility;
+import net.spidrotech.duality.abilities.vampire.VampireAbilities;
+import net.spidrotech.duality.abilities.shapeshift.ShapeshiftAbility;
+import net.spidrotech.duality.abilities.demon.AntiGravityAbility;
+import net.spidrotech.duality.abilities.demon.LevitateAbility;
+import net.spidrotech.duality.abilities.demon.FlightAbility;
+import net.spidrotech.duality.abilities.demon.VanishAbility;
+import net.spidrotech.duality.abilities.demon.BlinkAbility;
+import net.spidrotech.duality.abilities.demon.ScreechAbility;
+import net.spidrotech.duality.abilities.demon.ShimmerAbility;
+import net.spidrotech.duality.abilities.demon.FlameAbility;
 
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -32,8 +42,8 @@ import com.mojang.logging.LogUtils;
 @EventBusSubscriber(modid = "duality")
 public final class DualityAbilities {
 	private static final Logger LOGGER = LogUtils.getLogger();
-	public static final ResourceLocation LIGHTNING_STRIKE = ResourceLocation.fromNamespaceAndPath("duality", "lightning_hands");
-	public static final ResourceLocation D_LIGHTNING_STRIKE = ResourceLocation.fromNamespaceAndPath("duality", "demonic_lightning_hands");
+	public static final ResourceLocation LIGHTNING_STRIKE = ResourceLocation.fromNamespaceAndPath("duality", "lightning_hands_normal");
+	public static final ResourceLocation D_LIGHTNING_STRIKE = ResourceLocation.fromNamespaceAndPath("duality", "lightning_hands_demonic");
 
 	private DualityAbilities() {
 	}
@@ -46,8 +56,38 @@ public final class DualityAbilities {
 	private static void registerAll() {
 		elemental();
 		angelic();
-		// demonic();
+		shapeshifting();
+		demonGeneric();
+		demonic();
 		// wiccan();
+	}
+
+	// ================================================================== demon (generic)
+	// Powers any demon type can have, not tied to a specific archetype (vampire, brute, etc) -
+	// see VampireAbilities#registerAll for the vampire-specific roster. None of these carry a
+	// rank/type cast condition yet since demon archetypes as a system don't exist - add one here
+	// once they do, the same way vampire abilities gate on VampireRank.
+	private static void demonGeneric() {
+		AbilityManager.get().register(BlinkAbility.build());
+		AbilityManager.get().register(VanishAbility.build());
+		AbilityManager.get().register(LevitateAbility.build());
+		AbilityManager.get().register(AntiGravityAbility.build());
+		AbilityManager.get().register(FlightAbility.build());
+		AbilityManager.get().register(ScreechAbility.build());
+		AbilityManager.get().register(new ShimmerAbility());
+		AbilityManager.get().register(FlameAbility.build());
+	}
+
+	// ================================================================== shapeshifting
+	// The one shared ability every form goes through; the forms themselves are registered by each
+	// class that owns them (e.g. VampireForms in demonic()).
+	private static void shapeshifting() {
+		AbilityManager.get().register(ShapeshiftAbility.build());
+	}
+
+	// ================================================================== demonic
+	private static void demonic() {
+		VampireAbilities.registerAll();
 	}
 
 	// ================================================================== elemental

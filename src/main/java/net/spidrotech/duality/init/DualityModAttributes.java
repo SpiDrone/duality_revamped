@@ -23,6 +23,7 @@ public class DualityModAttributes {
 	public static final DeferredHolder<Attribute, Attribute> ORBING_PROFICIENCY = REGISTRY.register("orbing_proficiency", () -> new RangedAttribute("attribute.duality.orbing_proficiency", 1, 1, 10).setSyncable(true));
 	public static final DeferredHolder<Attribute, Attribute> BLOOD_MAX = REGISTRY.register("blood_max", () -> new RangedAttribute("attribute.duality.blood_max", 0, 0, 2).setSyncable(true));
 	public static final DeferredHolder<Attribute, Attribute> BLOOD_QUALITY = REGISTRY.register("blood_quality", () -> new RangedAttribute("attribute.duality.blood_quality", 25, -100, 100).setSyncable(true));
+	public static final DeferredHolder<Attribute, Attribute> VAMPIRE_RANK = REGISTRY.register("vampire_rank", () -> new RangedAttribute("attribute.duality.vampire_rank", 0, 0, 4).setSyncable(true));
 
 	@SubscribeEvent
 	public static void addAttributes(EntityAttributeModificationEvent event) {
@@ -30,5 +31,6 @@ public class DualityModAttributes {
 		event.add(EntityType.PLAYER, ORBING_PROFICIENCY);
 		event.add(EntityType.PLAYER, BLOOD_MAX);
 		event.getTypes().forEach(entity -> event.add(entity, BLOOD_QUALITY));
+		event.add(EntityType.PLAYER, VAMPIRE_RANK);
 	}
 }

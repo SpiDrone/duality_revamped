@@ -1,0 +1,72 @@
+{
+  "_fv": 79,
+  "_type": "overlay",
+  "definition": {
+    "priority": "NORMAL",
+    "components": [
+      {
+        "type": "progress_bar",
+        "data": {
+          "name": "progressbar_progress_bar",
+          "sua_image_mode": false,
+          "current": {
+            "fixedValue": 0.0,
+            "name": "ReturnJumpPower"
+          },
+          "max": {
+            "fixedValue": 100.0,
+            "name": "ReturnJumpMaxPower"
+          },
+          "direction": "LEFT_TO_RIGHT",
+          "displayCondition": {
+            "name": "ShouldJumpbar"
+          },
+          "sua_color_effect": "gradient",
+          "color1": {
+            "value": -26215,
+            "falpha": 0.0
+          },
+          "color2": {
+            "value": -10027162,
+            "falpha": 0.0
+          },
+          "color3": {
+            "value": -16711936,
+            "falpha": 0.0
+          },
+          "color4": {
+            "value": -65281,
+            "falpha": 0.0
+          },
+          "thresholdPercent": 0.25,
+          "emptyColor": {
+            "value": -13421773,
+            "falpha": 0.0
+          },
+          "borderColor": {
+            "value": -16777216,
+            "falpha": 0.0
+          },
+          "borderWidth": 1,
+          "sua_pulse_speed": 1.0,
+          "sua_pulse_easing": "easeInOutSine",
+          "width": 182,
+          "height": 8,
+          "anchorPoint": "BOTTOM_CENTER",
+          "x": 123,
+          "y": 192,
+          "locked": false
+        }
+      }
+    ],
+    "baseTexture": "",
+    "overlayTarget": "Ingame",
+    "gridSettings": {
+      "sx": 18,
+      "sy": 18,
+      "ox": 11,
+      "oy": 15,
+      "snapOnGrid": false
+    }
+  }
+}

@@ -33,7 +33,6 @@
       {
         "type": "label",
         "data": {
-          "hasShadow": false,
           "sua_max_width": 0,
           "sua_reveal_speed": 0.0,
           "sua_rainbow_speed": 0.0,
@@ -82,7 +81,6 @@
       {
         "type": "label",
         "data": {
-          "hasShadow": false,
           "sua_max_width": 0,
           "sua_reveal_speed": 0.0,
           "sua_rainbow_speed": 0.0,
@@ -111,7 +109,6 @@
       {
         "type": "label",
         "data": {
-          "hasShadow": false,
           "sua_max_width": 0,
           "sua_reveal_speed": 0.0,
           "sua_rainbow_speed": 0.0,
@@ -150,7 +147,6 @@
       {
         "type": "label",
         "data": {
-          "hasShadow": false,
           "sua_max_width": 0,
           "sua_reveal_speed": 0.0,
           "sua_rainbow_speed": 0.0,

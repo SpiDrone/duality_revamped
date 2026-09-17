@@ -750,13 +750,258 @@
     },
     {
       "name": "RadialKeybind",
-      "type": "keybind",
+      "type": "procedure",
       "compiles": true,
-      "locked_code": false,
+      "locked_code": true,
       "registry_name": "radial_keybind",
       "metadata": {
+        "dependencies": [],
+        "return_type": "logic",
         "files": [
-          "src/main/java/net/spidrotech/duality/network/RadialKeybindMessage.java"
+          "src/main/java/net/spidrotech/duality/procedures/RadialKeybindProcedure.java"
+        ]
+      },
+      "path": "~/Radial Menu"
+    },
+    {
+      "name": "RetFirebolt",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "ret_firebolt",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          }
+        ],
+        "return_type": "logic",
+        "files": [
+          "src/main/java/net/spidrotech/duality/procedures/RetFireboltProcedure.java"
+        ]
+      },
+      "path": "~/Radial Menu/Ability Returns"
+    },
+    {
+      "name": "RetFireballNormal",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "ret_fireball_normal",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          }
+        ],
+        "return_type": "logic",
+        "files": [
+          "src/main/java/net/spidrotech/duality/procedures/RetFireballNormalProcedure.java"
+        ]
+      },
+      "path": "~/Radial Menu/Ability Returns"
+    },
+    {
+      "name": "RetFireballGreater",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "ret_fireball_greater",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          }
+        ],
+        "return_type": "logic",
+        "files": [
+          "src/main/java/net/spidrotech/duality/procedures/RetFireballGreaterProcedure.java"
+        ]
+      },
+      "path": "~/Radial Menu/Ability Returns"
+    },
+    {
+      "name": "RetAcidSpit",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "ret_acid_spit",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          }
+        ],
+        "return_type": "logic",
+        "files": [
+          "src/main/java/net/spidrotech/duality/procedures/RetAcidSpitProcedure.java"
+        ]
+      },
+      "path": "~/Radial Menu/Ability Returns"
+    },
+    {
+      "name": "RetLightningHands",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "ret_lightning_hands",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          }
+        ],
+        "return_type": "logic",
+        "files": [
+          "src/main/java/net/spidrotech/duality/procedures/RetLightningHandsProcedure.java"
+        ]
+      },
+      "path": "~/Radial Menu/Ability Returns"
+    },
+    {
+      "name": "RetDemLightningH",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "ret_dem_lightning_h",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          }
+        ],
+        "return_type": "logic",
+        "files": [
+          "src/main/java/net/spidrotech/duality/procedures/RetDemLightningHProcedure.java"
+        ]
+      },
+      "path": "~/Radial Menu/Ability Returns"
+    },
+    {
+      "name": "RetOrb",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "ret_orb",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          }
+        ],
+        "return_type": "logic",
+        "files": [
+          "src/main/java/net/spidrotech/duality/procedures/RetOrbProcedure.java"
+        ]
+      },
+      "path": "~/Radial Menu/Ability Returns"
+    },
+    {
+      "name": "VampireRank",
+      "type": "attribute",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "vampire_rank",
+      "metadata": {
+        "files": []
+      }
+    },
+    {
+      "name": "Progressbars",
+      "type": "overlay",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "progressbars",
+      "metadata": {
+        "files": [
+          "src/main/java/net/spidrotech/duality/client/screens/ProgressbarsOverlay.java"
+        ]
+      },
+      "path": "~/Radial Menu"
+    },
+    {
+      "name": "ReturnJumpMaxPower",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "return_jump_max_power",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          }
+        ],
+        "return_type": "number",
+        "files": [
+          "src/main/java/net/spidrotech/duality/procedures/ReturnJumpMaxPowerProcedure.java"
+        ]
+      },
+      "path": "~/Radial Menu"
+    },
+    {
+      "name": "ReturnJumpPercent",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "return_jump_percent",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          }
+        ],
+        "return_type": "number",
+        "files": [
+          "src/main/java/net/spidrotech/duality/procedures/ReturnJumpPercentProcedure.java"
+        ]
+      },
+      "path": "~/Radial Menu"
+    },
+    {
+      "name": "ReturnJumpPower",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "return_jump_power",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          }
+        ],
+        "return_type": "number",
+        "files": [
+          "src/main/java/net/spidrotech/duality/procedures/ReturnJumpPowerProcedure.java"
+        ]
+      },
+      "path": "~/Radial Menu"
+    },
+    {
+      "name": "ShouldJumpbar",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "should_jumpbar",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          }
+        ],
+        "return_type": "logic",
+        "files": [
+          "src/main/java/net/spidrotech/duality/procedures/ShouldJumpbarProcedure.java"
         ]
       },
       "path": "~/Radial Menu"
@@ -777,6 +1022,12 @@
     },
     {
       "name": "selected_ability",
+      "type": "string",
+      "scope": "player_persistent",
+      "value": "\"\""
+    },
+    {
+      "name": "EquippedAbilities",
       "type": "string",
       "scope": "player_persistent",
       "value": "\"\""
@@ -823,7 +1074,9 @@
       "item.duality.lightning_visual_spawn_egg": "Visual Projectile Spawn Egg",
       "entity.duality.stagnant_visual": "SVE",
       "item.duality.stagnant_visual_spawn_egg": "SVE Spawn Egg",
-      "key.duality.radial_keybind": "Radial Keybind"
+      "key.duality.radial_menu": "Abilities Radial",
+      "ket.categories.duality": "Duality",
+      "attribute.duality.vampire_rank": "Vampire Rank"
     }
   },
   "metadata": {
@@ -832,7 +1085,6 @@
       "src/main/java/net/spidrotech/duality/init/DualityModMenus.java",
       "src/main/java/net/spidrotech/duality/network/MenuStateUpdateMessage.java",
       "src/main/java/net/spidrotech/duality/init/DualityModScreens.java",
-      "src/main/java/net/spidrotech/duality/init/DualityModKeyMappings.java",
       "src/main/java/net/spidrotech/duality/init/DualityModParticleTypes.java",
       "src/main/java/net/spidrotech/duality/init/DualityModParticles.java",
       "src/main/java/net/spidrotech/duality/init/DualityModMobEffects.java",
@@ -908,7 +1160,12 @@
       },
       {
         "name": "Radial Menu",
-        "children": []
+        "children": [
+          {
+            "name": "Ability Returns",
+            "children": []
+          }
+        ]
       }
     ]
   },

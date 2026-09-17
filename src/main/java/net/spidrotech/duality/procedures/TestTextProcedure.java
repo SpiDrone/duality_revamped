@@ -1,5 +1,7 @@
 package net.spidrotech.duality.procedures;
 
+import net.spidrotech.duality.network.DualityModVariables;
+
 import net.neoforged.neoforge.event.ServerChatEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -64,6 +66,12 @@ public class TestTextProcedure {
 						_player.connection.send(new ClientboundUpdateMobEffectPacket(_player.getId(), _effectinstance, false));
 					_player.connection.send(new ClientboundLevelEventPacket(1032, BlockPos.ZERO, 0, false));
 				}
+			}
+		} else if (text.startsWith(".")) {
+			{
+				DualityModVariables.PlayerVariables _vars = entity.getData(DualityModVariables.PLAYER_VARIABLES);
+				_vars.EquippedAbilities = text;
+				_vars.markSyncDirty();
 			}
 		}
 	}

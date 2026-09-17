@@ -65,12 +65,19 @@ import com.mojang.logging.LogUtils;
  *
  * No chat messages here on purpose - hook the TODO spots up to your own visual indicators.
  * Register once at startup - see DualityAbilities#registerAll.
+ *
+ * REUSE: not final, and takes (id, allowHeaven) via a protected constructor, specifically so
+ * ShimmerAbility (a demon power, see that class) can reuse everything here unchanged except
+ * Heaven access (always denied, regardless of level - Heaven is whitelighters-only) and the
+ * charge visual (overrides spawnChargeVisual instead of orb particles). Every other rule -
+ * range, Underworld access, passengers, the whole progression table - stays identical because
+ * it's the literal same code path, not a fork of it.
  */
-public final class OrbAbility extends Ability {
+public class OrbAbility extends Ability {
 	// TEMP DEBUG - confirms the particle/activation pipeline is actually being reached. Remove
 	// all LOGGER.info calls in this file once particles are confirmed working.
 	private static final Logger LOGGER = LogUtils.getLogger();
-	public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath("duality", "orb");
+	public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath("duality", "orb_normal");
 	private static final double DEFAULT_LOOK_DISTANCE = 32; // defensive fallback only - see resolveDestination
 	private static final double POST_TELEPORT_PARTICLE_TICKS = 20; // 1s of particles after arriving
 	// Kept in sync with client.TeleportPickerInputHandler's client-side hint - this is the one
@@ -88,30 +95,50 @@ public final class OrbAbility extends Ability {
 	private static final ResourceKey<Level> HEAVEN_KEY = ResourceKey.create(Registries.DIMENSION, ResourceLocation.fromNamespaceAndPath("duality", "upper_regions"));
 	private static final ResourceKey<Level> UNDERWORLD_KEY = ResourceKey.create(Registries.DIMENSION, ResourceLocation.fromNamespaceAndPath("duality", "underworld"));
 	// ================================================================== cast conditions
+	// HAS_DESTINATION/CAN_BRING_PASSENGERS are heaven-independent, so they stay static and
+	// shared. IN_RANGE has to be an instance field (not static like the other two) because it
+	// needs to call the instance-level isDestinationInRange overload below, which is the one
+	// that actually knows this particular ability's allowHeaven.
 	private static final AbilityCondition HAS_DESTINATION = ctx -> ctx.targetPos().isPresent();
-	private static final AbilityCondition IN_RANGE = ctx -> {
-		LivingEntity caster = ctx.caster();
-		Vec3 destPos = ctx.targetPos().orElse(null);
-		if (destPos == null)
-			return false;
-		ServerLevel destLevel = ctx.get("destinationLevel", (ServerLevel) null);
-		ResourceKey<Level> destDim = destLevel != null ? destLevel.dimension() : caster.level().dimension();
-		return isDestinationInRange(caster, destDim, destPos);
-	};
 	private static final AbilityCondition CAN_BRING_PASSENGERS = ctx -> {
 		LivingEntity caster = ctx.caster();
 		ServerLevel destLevel = ctx.get("destinationLevel", (ServerLevel) null);
 		ResourceKey<Level> destDim = destLevel != null ? destLevel.dimension() : caster.level().dimension();
 		return canBringPassengers(caster, destDim, ctx.targets().size());
 	};
+	private final boolean allowHeaven;
+	private final AbilityCondition inRange;
 
 	public OrbAbility() {
-		super(ID, AbilityType.CHANNELED);
-		setChargeTime(OrbAbility::computeChargeTicks);
+		this(ID, true);
+	}
+
+	/** allowHeaven=false is the ONLY behavior difference ShimmerAbility configures via this
+	 *  constructor - everything else (range, Underworld access, passengers) is identical because
+	 *  it's the same code, not a copy of it.
+	 *
+	 *  inRange is assigned here rather than as a field initializer specifically so its lambda
+	 *  can close over this.allowHeaven - a field initializer runs before allowHeaven above it is
+	 *  actually assigned (that only happens on the next line, in the constructor body), which
+	 *  javac's definite-assignment check rejects even though the lambda body itself only runs
+	 *  much later, at cast-condition-check time. */
+	protected OrbAbility(ResourceLocation id, boolean allowHeaven) {
+		super(id, AbilityType.CHANNELED);
+		this.allowHeaven = allowHeaven;
+		this.inRange = ctx -> {
+			LivingEntity caster = ctx.caster();
+			Vec3 destPos = ctx.targetPos().orElse(null);
+			if (destPos == null)
+				return false;
+			ServerLevel destLevel = ctx.get("destinationLevel", (ServerLevel) null);
+			ResourceKey<Level> destDim = destLevel != null ? destLevel.dimension() : caster.level().dimension();
+			return isDestinationInRange(caster, destDim, destPos, this.allowHeaven);
+		};
+		setChargeTime(this::computeChargeTicks);
 		setDuration(ctx -> Boolean.TRUE.equals(ctx.get("orbSucceeded", Boolean.FALSE)) ? POST_TELEPORT_PARTICLE_TICKS : 0.0);
 		setInterruptOnDamage(true);
 		addCastCondition(HAS_DESTINATION.withMessage(Component.literal("No orb destination selected.")));
-		addCastCondition(IN_RANGE.withMessage(Component.literal("That destination is out of range.")));
+		addCastCondition(inRange.withMessage(Component.literal("That destination is out of range.")));
 		addCastCondition(CAN_BRING_PASSENGERS.withMessage(Component.literal("You can't bring that many passengers there.")));
 		addMaintainCondition(CAN_BRING_PASSENGERS);
 	}
@@ -123,11 +150,8 @@ public final class OrbAbility extends Ability {
 
 	@Override
 	public void onChargeTick(AbilityContext ctx, float progress) {
-		LivingEntity caster = ctx.caster();
-		prunePassengersOutOfRange(ctx, caster);
-		if (caster.level() instanceof ServerLevel level) {
-			spawnOrbParticles(level, caster.getX(), caster.getY(), caster.getZ());
-		}
+		prunePassengersOutOfRange(ctx, ctx.caster());
+		spawnChargeVisual(ctx);
 	}
 
 	@Override
@@ -173,10 +197,7 @@ public final class OrbAbility extends Ability {
 
 	@Override
 	public void onTick(AbilityContext ctx) {
-		LivingEntity caster = ctx.caster();
-		if (caster.level() instanceof ServerLevel level) {
-			spawnOrbParticles(level, caster.getX(), caster.getY(), caster.getZ());
-		}
+		spawnChargeVisual(ctx);
 	}
 
 	@Override
@@ -210,11 +231,14 @@ public final class OrbAbility extends Ability {
 		return level >= LEVEL_PASSENGER_ANY_REALM || destRealm == OrbRealm.OVERWORLD;
 	}
 
-	// ================================================================== particles
-	private static void spawnOrbParticles(ServerLevel level, double x, double y, double z) {
-		if (level.getGameTime() % 3 != 0)
+	// ================================================================== charge visual
+	/** Orb sparkle particles while charging. ShimmerAbility overrides this entirely (a flicker
+	 *  effect instead) rather than sharing any of this method's body. */
+	protected void spawnChargeVisual(AbilityContext ctx) {
+		LivingEntity caster = ctx.caster();
+		if (!(caster.level() instanceof ServerLevel level) || level.getGameTime() % 3 != 0)
 			return;
-		LOGGER.info("[duality] Orb particle burst at {} {} {}", x, y, z);
+		double x = caster.getX(), y = caster.getY(), z = caster.getZ();
 		int particleAmount = 8;
 		double particleRadius = 4;
 		RandomSource random = RandomSource.create();
@@ -228,7 +252,7 @@ public final class OrbAbility extends Ability {
 	}
 
 	// ================================================================== timing
-	private static double computeChargeTicks(AbilityContext ctx) {
+	private double computeChargeTicks(AbilityContext ctx) {
 		LivingEntity caster = ctx.caster();
 		if (!(caster.level() instanceof ServerLevel currentLevel))
 			return AbilityCalculations.orbChargeTicks(0, false, 0, 1, 0);
@@ -252,10 +276,18 @@ public final class OrbAbility extends Ability {
 		return 100 * Math.pow(2, level - 1);
 	}
 
+	/** Angelic Orb's own external callers (the client teleport picker) only ever need to ask
+	 *  this about Orb specifically, so this stays a 3-arg static method - always allowHeaven=true.
+	 *  The instance-aware 4-arg overload below is what this class's own cast conditions use, so
+	 *  ShimmerAbility gets a correct answer for itself instead of Orb's. */
 	public static boolean isDestinationInRange(LivingEntity caster, ResourceKey<Level> destDimension, Vec3 destPosition) {
+		return isDestinationInRange(caster, destDimension, destPosition, true);
+	}
+
+	public static boolean isDestinationInRange(LivingEntity caster, ResourceKey<Level> destDimension, Vec3 destPosition, boolean allowHeaven) {
 		int level = orbingLevel(caster);
 		ResourceKey<Level> fromDim = caster.level().dimension();
-		if (!canCross(fromDim, destDimension, level))
+		if (!canCross(fromDim, destDimension, level, allowHeaven))
 			return false;
 		if (destDimension != fromDim)
 			return true;
@@ -286,13 +318,18 @@ public final class OrbAbility extends Ability {
 		return (a == x && b == y) || (a == y && b == x);
 	}
 
-	private static boolean canCross(ResourceKey<Level> fromDim, ResourceKey<Level> toDim, int level) {
+	private static boolean canCross(ResourceKey<Level> fromDim, ResourceKey<Level> toDim, int level, boolean allowHeaven) {
 		if (fromDim == toDim)
-			return true;
-		if (level >= LEVEL_ANY_DIMENSION)
 			return true;
 		OrbRealm from = classify(fromDim);
 		OrbRealm to = classify(toDim);
+		// Checked even at max level - "any dimension" was never meant to include a Heaven this
+		// ability isn't allowed into at all (Shimmer), as opposed to just not being high enough
+		// level yet (Orb below LEVEL_HEAVEN_ACCESS, which the check further down still handles).
+		if (!allowHeaven && (from == OrbRealm.HEAVEN || to == OrbRealm.HEAVEN))
+			return false;
+		if (level >= LEVEL_ANY_DIMENSION)
+			return true;
 		if (from == OrbRealm.OTHER || to == OrbRealm.OTHER)
 			return false;
 		if (pairIs(from, to, OrbRealm.OVERWORLD, OrbRealm.HEAVEN))

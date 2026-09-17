@@ -99,6 +99,21 @@ public final class AbilityManager {
 		return ActivationResult.success();
 	}
 
+	/** Whether caster would pass every cast condition for id right now, without casting it -
+	 *  ignores cooldown and whether it's already running. This is the "does this caster have access
+	 *  to this ability" check (e.g. rank gates), used when a mode auto-toggles abilities on. */
+	public boolean meetsCastConditions(LivingEntity caster, ResourceLocation id) {
+		Ability ability = registry.get(id);
+		if (ability == null)
+			return false;
+		AbilityContext ctx = new AbilityContext(caster, ability);
+		for (AbilityCondition condition : ability.castConditions()) {
+			if (!condition.test(ctx))
+				return false;
+		}
+		return true;
+	}
+
 	/** Adds a fellow traveller to an in-progress cast (e.g. right-clicking a party member while
 	 *  Orb is charging). */
 	public void addTarget(LivingEntity caster, ResourceLocation id, Entity target) {

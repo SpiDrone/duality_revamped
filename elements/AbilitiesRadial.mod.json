@@ -18,7 +18,7 @@
           },
           "internalBorderWidth": 5,
           "internalBorderColor": {
-            "value": -8781824,
+            "value": -65281,
             "falpha": 0.0
           },
           "borderEffectType": "solid",
@@ -26,14 +26,383 @@
             "value": -12566464,
             "falpha": 0.0
           },
-          "internalBorderEffectType": "solid",
+          "internalBorderEffectType": "holographic",
           "internalBorderColor2": {
-            "value": -12582912,
+            "value": -10092442,
             "falpha": 0.0
+          },
+          "displayCondition": {
+            "name": "RadialKeybind"
           },
           "sua_image_mode": false,
           "centerRadius": 22,
-          "buttons": [],
+          "buttons": [
+            {
+              "id": "fireball_normal",
+              "icon": "icon_ability_fireball_medium.png",
+              "unselectedEffect": "holographic",
+              "selectedEffect": "holographic",
+              "unselectedColor1": {
+                "value": -8355712,
+                "falpha": 0.0
+              },
+              "unselectedColor2": {
+                "value": -12566464,
+                "falpha": 0.0
+              },
+              "selectedColor1": {
+                "value": -52429,
+                "falpha": 0.0
+              },
+              "selectedColor2": {
+                "value": -10092544,
+                "falpha": 0.0
+              },
+              "radialValue": "fireball_normal",
+              "radialValueProcedure": {
+                "fixedValue": "fireball_normal"
+              },
+              "displayCondition": {
+                "name": "RetFireballNormal"
+              },
+              "iconTintEnabled": false,
+              "unselectedIconTint": {
+                "value": -1,
+                "falpha": 0.0
+              },
+              "selectedIconTint": {
+                "value": -1,
+                "falpha": 0.0
+              },
+              "tooltip": [
+                {
+                  "text": {
+                    "fixedValue": "Fire Ball"
+                  },
+                  "font": "spis_ui_api:boldpixels",
+                  "overrideColor": true,
+                  "color": {
+                    "value": -65536,
+                    "falpha": 0.0
+                  },
+                  "colorEffect": {
+                    "type": "holographic",
+                    "color2": {
+                      "value": -3381760,
+                      "falpha": 0.0
+                    },
+                    "color3": {
+                      "value": -8355712,
+                      "falpha": 0.0
+                    },
+                    "color4": {
+                      "value": -4144960,
+                      "falpha": 0.0
+                    },
+                    "speed": 2.0,
+                    "easing": "easeInOutSine"
+                  }
+                },
+                {
+                  "text": {
+                    "fixedValue": "Dmg: §4██"
+                  },
+                  "font": "default",
+                  "overrideColor": true,
+                  "color": {
+                    "value": -6710887,
+                    "falpha": 0.0
+                  },
+                  "colorEffect": {
+                    "type": "solid",
+                    "color2": {
+                      "value": -12566464,
+                      "falpha": 0.0
+                    },
+                    "color3": {
+                      "value": -8355712,
+                      "falpha": 0.0
+                    },
+                    "color4": {
+                      "value": -4144960,
+                      "falpha": 0.0
+                    },
+                    "speed": 1.0,
+                    "easing": "easeInOutSine"
+                  }
+                },
+                {
+                  "text": {
+                    "fixedValue": "Element: Flame"
+                  },
+                  "font": "default",
+                  "overrideColor": true,
+                  "color": {
+                    "value": -39424,
+                    "falpha": 0.0
+                  },
+                  "colorEffect": {
+                    "type": "solid",
+                    "color2": {
+                      "value": -12566464,
+                      "falpha": 0.0
+                    },
+                    "color3": {
+                      "value": -8355712,
+                      "falpha": 0.0
+                    },
+                    "color4": {
+                      "value": -4144960,
+                      "falpha": 0.0
+                    },
+                    "speed": 1.0,
+                    "easing": "easeInOutSine"
+                  }
+                }
+              ],
+              "tooltipLines": [],
+              "tooltipFont": "vanilla",
+              "tooltipBackgroundColor": {
+                "value": -267386864,
+                "falpha": 0.0
+              },
+              "tooltipBorderColor": {
+                "value": -3407668,
+                "falpha": 0.0
+              },
+              "tooltipTextColor": {
+                "value": -1,
+                "falpha": 0.0
+              },
+              "tooltipBackgroundTexture": "tooltip_background_flame.png",
+              "tooltipBackgroundTint": {
+                "value": -6710887,
+                "falpha": 0.0
+              },
+              "tooltipTextEffect": {
+                "type": "solid",
+                "color2": {
+                  "value": -12566464,
+                  "falpha": 0.0
+                },
+                "color3": {
+                  "value": -8355712,
+                  "falpha": 0.0
+                },
+                "color4": {
+                  "value": -4144960,
+                  "falpha": 0.0
+                },
+                "speed": 1.0,
+                "easing": "easeInOutSine"
+              },
+              "tooltipBackgroundEffect": {
+                "type": "solid",
+                "color2": {
+                  "value": -12566464,
+                  "falpha": 0.0
+                },
+                "color3": {
+                  "value": -8355712,
+                  "falpha": 0.0
+                },
+                "color4": {
+                  "value": -4144960,
+                  "falpha": 0.0
+                },
+                "speed": 1.0,
+                "easing": "easeInOutSine"
+              },
+              "tooltipBorderEffect": {
+                "type": "solid",
+                "color2": {
+                  "value": -12566464,
+                  "falpha": 0.0
+                },
+                "color3": {
+                  "value": -8355712,
+                  "falpha": 0.0
+                },
+                "color4": {
+                  "value": -4144960,
+                  "falpha": 0.0
+                },
+                "speed": 1.0,
+                "easing": "easeInOutSine"
+              },
+              "tooltipBackgroundTintEffect": {
+                "type": "solid",
+                "color2": {
+                  "value": -12566464,
+                  "falpha": 0.0
+                },
+                "color3": {
+                  "value": -8355712,
+                  "falpha": 0.0
+                },
+                "color4": {
+                  "value": -4144960,
+                  "falpha": 0.0
+                },
+                "speed": 1.0,
+                "easing": "easeInOutSine"
+              }
+            },
+            {
+              "id": "fireball_greater",
+              "icon": "icon_ability_fireball_large.png",
+              "unselectedEffect": "solid",
+              "selectedEffect": "holographic",
+              "unselectedColor1": {
+                "value": -8355712,
+                "falpha": 0.0
+              },
+              "unselectedColor2": {
+                "value": -12566464,
+                "falpha": 0.0
+              },
+              "selectedColor1": {
+                "value": -65536,
+                "falpha": 0.0
+              },
+              "selectedColor2": {
+                "value": -26368,
+                "falpha": 0.0
+              },
+              "radialValue": "fireball_greater",
+              "radialValueProcedure": {
+                "fixedValue": "fireball_greater"
+              },
+              "displayCondition": {
+                "name": "RetFireballGreater"
+              },
+              "iconTintEnabled": false,
+              "unselectedIconTint": {
+                "value": -1,
+                "falpha": 0.0
+              },
+              "selectedIconTint": {
+                "value": -1,
+                "falpha": 0.0
+              },
+              "tooltip": [
+                {
+                  "text": {
+                    "fixedValue": "Infero Blast"
+                  },
+                  "font": "spis_ui_api:boldpixels",
+                  "overrideColor": true,
+                  "color": {
+                    "value": -205,
+                    "falpha": 0.0
+                  },
+                  "colorEffect": {
+                    "type": "holographic",
+                    "color2": {
+                      "value": -26317,
+                      "falpha": 0.0
+                    },
+                    "color3": {
+                      "value": -8355712,
+                      "falpha": 0.0
+                    },
+                    "color4": {
+                      "value": -4144960,
+                      "falpha": 0.0
+                    },
+                    "speed": 1.0,
+                    "easing": "easeInOutSine"
+                  }
+                }
+              ],
+              "tooltipLines": [],
+              "tooltipFont": "vanilla",
+              "tooltipBackgroundColor": {
+                "value": -267386864,
+                "falpha": 0.0
+              },
+              "tooltipBorderColor": {
+                "value": -10066262,
+                "falpha": 0.0
+              },
+              "tooltipTextColor": {
+                "value": -1,
+                "falpha": 0.0
+              },
+              "tooltipBackgroundTint": {
+                "value": -1,
+                "falpha": 0.0
+              },
+              "tooltipTextEffect": {
+                "type": "solid",
+                "color2": {
+                  "value": -12566464,
+                  "falpha": 0.0
+                },
+                "color3": {
+                  "value": -8355712,
+                  "falpha": 0.0
+                },
+                "color4": {
+                  "value": -4144960,
+                  "falpha": 0.0
+                },
+                "speed": 1.0,
+                "easing": "easeInOutSine"
+              },
+              "tooltipBackgroundEffect": {
+                "type": "solid",
+                "color2": {
+                  "value": -12566464,
+                  "falpha": 0.0
+                },
+                "color3": {
+                  "value": -8355712,
+                  "falpha": 0.0
+                },
+                "color4": {
+                  "value": -4144960,
+                  "falpha": 0.0
+                },
+                "speed": 1.0,
+                "easing": "easeInOutSine"
+              },
+              "tooltipBorderEffect": {
+                "type": "solid",
+                "color2": {
+                  "value": -12566464,
+                  "falpha": 0.0
+                },
+                "color3": {
+                  "value": -8355712,
+                  "falpha": 0.0
+                },
+                "color4": {
+                  "value": -4144960,
+                  "falpha": 0.0
+                },
+                "speed": 1.0,
+                "easing": "easeInOutSine"
+              },
+              "tooltipBackgroundTintEffect": {
+                "type": "solid",
+                "color2": {
+                  "value": -12566464,
+                  "falpha": 0.0
+                },
+                "color3": {
+                  "value": -8355712,
+                  "falpha": 0.0
+                },
+                "color4": {
+                  "value": -4144960,
+                  "falpha": 0.0
+                },
+                "speed": 1.0,
+                "easing": "easeInOutSine"
+              }
+            }
+          ],
           "width": 120,
           "height": 120,
           "anchorPoint": "CENTER",
