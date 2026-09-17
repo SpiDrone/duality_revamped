@@ -163,6 +163,50 @@ public final class Villages {
 		return spawned;
 	}
 
+	/**
+	 * Reconciles every village's pantry chests with its food ledger.
+	 *
+	 * <p>This is where a player dropping a stack of bread into the village chest actually becomes
+	 * food the village eats, and where a month of eating that happened on cold chunks becomes an
+	 * emptier chest. Villages whose pantries aren't loaded are skipped and lose nothing by it - the
+	 * ledger is still the truth, and it catches up next time someone is nearby.
+	 *
+	 * @return how many villages were reconciled
+	 */
+	public static int pantrySweep() {
+		if (!isReady())
+			return 0;
+		int synced = 0;
+		for (VillageRecord village : store.villages()) {
+			VillagePantry.SyncResult result = VillagePantry.sync(store, bridge, village);
+			if (!result.synced())
+				continue;
+			synced++;
+			if (result.playerContributed()) {
+				bridge.announce(village, String.format("Someone has put %.0f days of food in %s's pantry. It holds %.0f of %.0f now.", result.playerDelta(),
+						village.name(), result.stored(), result.capacity()));
+				village.setMorale(village.morale() + Math.min(0.08, result.playerDelta() * 0.004));
+				// Food arriving from outside is the one thing that can break a blighted village's
+				// death spiral, so it's worth something on the duality score.
+				store.applyDuality(Math.min(6.0, result.playerDelta() * 0.15) * (village.faction().isEvil() ? -0.5 : 1.0));
+				store.save(village);
+			}
+		}
+		return synced;
+	}
+
+	/** Puts up a building at a position and hands it back. The pantry is the one worth placing by
+	 *  hand: put it where you want the village's chest to be. */
+	public static VillageBuilding addBuilding(VillageRecord village, BuildingType type, ServerLevel level, BlockPos pos) {
+		if (!isReady() || village == null)
+			return null;
+		VillageBuilding building = new VillageBuilding(type, currentDay(), pointOf(level, pos));
+		village.buildings().add(building);
+		VillageEconomy.recompute(store, village);
+		store.save(village);
+		return building;
+	}
+
 	// ------------------------------------------------------------------------------ registration
 	/** Registers a new village at a position. Returns null if the name is already taken. */
 	public static VillageRecord create(String name, VillageFaction faction, ServerLevel level, BlockPos pos) {

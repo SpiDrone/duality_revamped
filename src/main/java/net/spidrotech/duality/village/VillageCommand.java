@@ -42,6 +42,9 @@ import java.util.List;
  *   /village npc list &lt;village&gt;
  *   /village npc info &lt;npc&gt;              status, fate, where they are and how long they have
  *   /village npc rescue &lt;npc&gt;            free a captive
+ *   /village building add &lt;type&gt;         put one up where you stand - a pantry binds the village's chest
+ *   /village building list &lt;village&gt;     what's built and what each one does
+ *   /village pantry &lt;village&gt;            reconcile the chests with the ledger and report both
  *   /village world [duality &lt;n&gt;|add &lt;n&gt;] read or move the world duality score
  * </pre>
  */
@@ -77,6 +80,14 @@ public final class VillageCommand {
 		List<String> ids = new ArrayList<>();
 		for (NpcJob job : NpcJob.values()) {
 			ids.add(job.name());
+		}
+		return SharedSuggestionProvider.suggest(ids, builder);
+	};
+
+	private static final SuggestionProvider<CommandSourceStack> BUILDINGS = (ctx, builder) -> {
+		List<String> ids = new ArrayList<>();
+		for (BuildingType type : BuildingType.values()) {
+			ids.add(type.name());
 		}
 		return SharedSuggestionProvider.suggest(ids, builder);
 	};
@@ -127,6 +138,10 @@ public final class VillageCommand {
 						.then(Commands.literal("rescue").then(Commands.argument("npc", StringArgumentType.string()).suggests(NPC_IDS).executes(VillageCommand::npcRescue))) //
 						.then(Commands.literal("job").then(Commands.argument("npc", StringArgumentType.string()).suggests(NPC_IDS) //
 								.then(Commands.argument("job", StringArgumentType.word()).suggests(JOBS).executes(VillageCommand::npcJob))))) //
+				.then(Commands.literal("building") //
+						.then(Commands.literal("add").then(Commands.argument("type", StringArgumentType.word()).suggests(BUILDINGS).executes(VillageCommand::buildingAdd))) //
+						.then(Commands.literal("list").then(Commands.argument("village", StringArgumentType.string()).suggests(VILLAGE_NAMES).executes(VillageCommand::buildingList)))) //
+				.then(Commands.literal("pantry").then(Commands.argument("village", StringArgumentType.string()).suggests(VILLAGE_NAMES).executes(VillageCommand::pantry))) //
 				.then(Commands.literal("world").executes(VillageCommand::world) //
 						.then(Commands.literal("duality").then(Commands.argument("value", DoubleArgumentType.doubleArg(-WorldDualityState.LIMIT, WorldDualityState.LIMIT))
 								.executes(ctx -> setDuality(ctx, DoubleArgumentType.getDouble(ctx, "value"), false)))) //
@@ -231,6 +246,101 @@ public final class VillageCommand {
 			reply(ctx, String.format("  §8day %d §7[%s/%s] §f%s §8(%+.1f)", entry.day(), entry.eventId(), entry.outcome(), entry.text(),
 					entry.dualityDelta()));
 		}
+		return 1;
+	}
+
+	private static int buildingAdd(CommandContext<CommandSourceStack> ctx) {
+		if (notReady(ctx))
+			return 0;
+		if (!(ctx.getSource().getEntity() instanceof ServerPlayer player)) {
+			reply(ctx, "\u00a7cRun this as a player - the building goes where you're standing.");
+			return 0;
+		}
+		VillageRecord village = Villages.villageAt(player.serverLevel(), player.blockPosition());
+		if (village == null) {
+			reply(ctx, "\u00a7cYou aren't standing in a village. /village here will tell you what's nearby.");
+			return 0;
+		}
+		BuildingType type = BuildingType.parse(StringArgumentType.getString(ctx, "type"));
+		if (!type.suits(village.faction())) {
+			reply(ctx, "\u00a7cA " + village.faction().displayName() + " wouldn't put up a " + type.displayName().toLowerCase() + ".");
+			return 0;
+		}
+		VillageBuilding building = Villages.addBuilding(village, type, player.serverLevel(), player.blockPosition());
+		reply(ctx, "\u00a7a" + village.name() + " has a " + type.displayName().toLowerCase() + " at " + building.position() + ".");
+		if (type.storesFood()) {
+			reply(ctx, "\u00a77Its chest goes in within a few seconds, or put one there yourself - anything within "
+					+ VillageBuilding.FOOTPRINT_RADIUS + " blocks counts as the pantry.");
+			Villages.pantrySweep();
+		}
+		if (!type.favors().isEmpty()) {
+			StringBuilder favors = new StringBuilder();
+			for (VillageEvent event : type.favors()) {
+				favors.append(favors.isEmpty() ? "" : ", ").append(event.displayName());
+			}
+			reply(ctx, "\u00a77Makes these likelier here: \u00a7f" + favors);
+		}
+		if (!type.resists().isEmpty()) {
+			StringBuilder resists = new StringBuilder();
+			for (VillageEvent event : type.resists()) {
+				resists.append(resists.isEmpty() ? "" : ", ").append(event.displayName());
+			}
+			reply(ctx, "\u00a77Blunts these: \u00a7f" + resists);
+		}
+		return 1;
+	}
+
+	private static int buildingList(CommandContext<CommandSourceStack> ctx) {
+		VillageRecord village = requireVillage(ctx);
+		if (village == null)
+			return 0;
+		if (village.buildings().isEmpty()) {
+			reply(ctx, "\u00a77" + village.name() + " has nothing built.");
+			return 1;
+		}
+		reply(ctx, "\u00a76" + village.name() + " - " + village.buildings().size() + " building(s), housing " + village.housing() + ":");
+		for (VillageBuilding building : village.buildings()) {
+			BuildingType type = building.type();
+			StringBuilder effects = new StringBuilder();
+			if (type.storesFood())
+				effects.append(String.format("holds %.0f food; ", type.foodCapacity()));
+			if (type.foodProduction() > 0)
+				effects.append(String.format("+%.1f food/day; ", type.foodProduction()));
+			if (type.housing() > 0)
+				effects.append("houses ").append(type.housing()).append("; ");
+			if (type.fortification() > 0)
+				effects.append("+").append(type.fortification()).append(" walls; ");
+			if (type.garrison() > 0)
+				effects.append(String.format("+%.1f garrison; ", type.garrison()));
+			if (type.wardUpkeep() > 0)
+				effects.append(String.format("+%.2f wards/day; ", type.wardUpkeep()));
+			reply(ctx, "  \u00a7f" + type.displayName() + " \u00a78" + (building.isPlaced() ? building.position().toString() : "unplaced") + " \u00a77" + effects);
+		}
+		return 1;
+	}
+
+	private static int pantry(CommandContext<CommandSourceStack> ctx) {
+		VillageRecord village = requireVillage(ctx);
+		if (village == null)
+			return 0;
+		VillagePantry.SyncResult result = VillagePantry.sync(Villages.store(), Villages.bridge(), village);
+		reply(ctx, "\u00a76" + village.name() + " pantry: \u00a7f" + VillagePantry.describe(village));
+		if (!result.synced()) {
+			reply(ctx, "\u00a77Not readable from here - nothing placed, or nobody is near enough for the chunks to be loaded. "
+					+ "The ledger carries on regardless and squares up when someone's there.");
+			return 1;
+		}
+		if (result.playerDelta() != 0)
+			reply(ctx, String.format("\u00a77Since anyone last looked, someone has %s \u00a7f%.0f\u00a77 days of food.",
+					result.playerDelta() > 0 ? "added" : "taken", Math.abs(result.playerDelta())));
+		if (result.worldDelta() != 0)
+			reply(ctx, String.format("\u00a77The village has %s \u00a7f%.0f\u00a77 days of food since then.",
+					result.worldDelta() > 0 ? "put by" : "eaten", Math.abs(result.worldDelta())));
+		for (VillageBuilding pantry : village.pantries()) {
+			reply(ctx, "  \u00a78" + pantry.type().displayName() + " at " + pantry.position());
+		}
+		reply(ctx, String.format("\u00a77Eating \u00a7f%.0f\u00a77 a day, growing \u00a7f%.0f\u00a77. %s", village.foodUpkeep(), village.foodProduction(),
+				village.daysOfFoodLeft() < 0 ? "\u00a7aHolding." : String.format("\u00a7cEmpty in %.0f day(s).", village.daysOfFoodLeft())));
 		return 1;
 	}
 

@@ -118,10 +118,9 @@ starves; a village of nothing but farmers gets carried off one at a time. And a 
 renews wards faster than the 0.12/day decay, so a village with one never loses its protection while
 nobody is looking — which is exactly why raiders come for her first.
 
-Surplus goes in the granary (`foodStores`, capped by population and buildings). A full granary buys
-population growth and the occasional birth. An empty one costs morale, prosperity and then people,
-and the ones who don't grow food starve first — children and elders, then guards, then the farmers
-last of all.
+Surplus goes in the pantry — and the pantry is a real chest, see below. A full one buys population
+growth and the occasional birth. An empty one costs morale, prosperity and then people, and the ones
+who don't grow food starve first — children and elders, then guards, then the farmers last of all.
 
 The village manages itself, slowly. `VillageEconomy.neededJob` ranks what's missing by how fast the
 lack kills you — food, then the watch, then wards, then trades — and **at most one person changes
@@ -150,13 +149,75 @@ find a whitelighter, who clears it on the way out. Sixty simulated days from the
     day 21: The blight on Farmstead's fields has broken. They can grow food again.
     came out of it with pop 6 (from 10)
 
+## The pantry is a real chest
+
+The village's food is whatever is in the containers inside a pantry building, and nowhere else. Food
+in a chest in someone's house is their own business.
+
+This is awkward, because the simulation runs on cold chunks where there are no chests to read. So
+the ledger (`foodStores`) stays authoritative — it has to be, it's the thing that runs while nobody
+is there — and `VillagePantry` reconciles it against the containers whenever they happen to be
+loaded. Both directions matter:
+
+- **The world talks back.** The difference between what's in the chests now and what was in them
+  last time anyone looked is exactly what a player added or took. That lands on the ledger, so
+  walking up and emptying your inventory into the village chest genuinely feeds them — and it's
+  worth a nudge on the world duality score, because outside food is the one thing that breaks a
+  blighted village's death spiral.
+- **The ledger talks back.** Whatever the village ate or grew while you were away is pushed into the
+  containers, so coming back after a hard month you find the pantry emptied rather than exactly as
+  you left it.
+
+If a pantry building is placed and loaded but has no container, the mod puts a chest at the surface
+of that column — so a village always has somewhere for you to leave food. Break it and take the
+bread and the ledger notices on the next sweep: the village really has been robbed.
+
+Nutrition maps to food units at 4:1 (a loaf of bread ≈ 1.25 days for one villager). Anything with a
+status effect on it — rotten flesh, pufferfish — doesn't count; a village isn't fed on things that
+make people ill.
+
+**No pantry, no future.** Capacity comes only from pantry buildings, so a village with nowhere to
+put food is capped at `NO_PANTRY_CAPACITY` (8) and any bad week kills people. Building one is the
+single biggest thing a settlement can do for itself, and the first thing `neededBuilding` returns.
+
+## What buildings are for
+
+Buildings used to be a count. Each one now does something specific, and the something is the reason
+to build it:
+
+| building | what it's for |
+|---|---|
+| `PANTRY` / `GRANARY` / `BARN` | **where the food physically is** — 60 / 140 / 40 units |
+| `HOUSE` | houses 4; population past the housing stops growing |
+| `FARM` | +2 food/day on top of the farmers |
+| `CHURCH` | **doubles the odds of a whitelighter or coven visit**; blunts dark pacts and curses |
+| `SHRINE` | keeps a thin ward lit on its own; blunts curses |
+| `ALTAR` | the evil mirror of a church — favours dark pacts, repels whitelighters |
+| `PALISADE` / `WATCHTOWER` | walls; the tower also garrisons and blunts raids |
+| `BARRACKS` | garrison, and makes drilling worth doing |
+| `SMITHY` | garrison and prosperity |
+| `WELL` | blunts plague |
+| `INFIRMARY` | blunts plague and blight |
+| `TAVERN` | morale, and draws settlers |
+
+Two of those columns aren't numbers. `favors` multiplies an event's odds of being rolled here (×2
+per building, so two churches quadruple your whitelighter odds); `resists` multiplies the incoming
+threat down (×0.75 per building, floored at 0.35). That's how a church buys better odds of being
+blessed and a well makes a plague survivable.
+
+A village builds what it would most regret not having, in order: somewhere to put food, somewhere to
+live, more storage if the pantry is overflowing, a farm if the balance is thin, then holy ground, a
+well, walls, a smithy.
+
 ## New settlements
 
 Nothing places villages — there's no worldgen hook. The map gains settlements one of two ways:
 `/village create` (or `Villages.found`), and villages founding their own.
 
-A village that is fed, full and well off sends people out: population ≥ 18, prosperity ≥ 55, food
-banked, a mason or laborer to build with, and a 6% roll per day. `VillageExpansion` sites the
+A village that is fed, full and well off sends people out: population ≥ 18, prosperity ≥ 55, a mason
+or laborer to build with, and a pantry filled past 60% of what it can hold — which, since capacity
+*is* the pantry, means a village that wants to spread has to have built granaries first. Then a 6%
+roll per day. `VillageExpansion` sites the
 daughter 420–900 blocks out, no closer than 380 to anything existing, asks the bridge to snap it to
 real ground (and never generates terrain to do it), then moves 5–8 population and one or two named
 residents across — never the parent's last food producer.
@@ -232,6 +293,9 @@ otherwise takes twenty in-game days to play out.
     /village npc list <village>
     /village npc info <npc>                   status, fate, where they are, how long they have
     /village npc rescue <npc>
+    /village building add <type>              put one up where you stand — a pantry binds the chest
+    /village building list <village>          what's built and what each one does
+    /village pantry <village>                 reconcile the chests with the ledger, report both
     /village world [duality <n> | add <n>]
 
 A five-minute loop to see the whole thing work:
@@ -245,6 +309,8 @@ A five-minute loop to see the whole thing work:
     /village simulate 8
     /village npc info <their id>              and now they're something else
     /village event Ashmere BLIGHT             and now the survivors are hungry
+    /village pantry Ashmere                    find the chest; drop bread in it
+    /village building add CHURCH               now whitelighters are twice as likely here
 
 ## Tuning
 
@@ -256,6 +322,8 @@ Every number lives in one of four places:
 | per-event threat, duality weight, roll odds | the `VillageEvent` table |
 | outcome bands, variance, duality direction | `VillageEvents` (`resolveHostile`, `dualityDelta`) |
 | what each job is worth per day | the `NpcJob` table |
+| what each building is worth, and what it favours/resists | the `BuildingType` table |
+| nutrition per food unit, granularity tolerance | `VillagePantry` constants |
 | food rates, blight yield, job churn, build cost | `VillageEconomy` constants |
 | when and where villages found new ones | `VillageExpansion` constants |
 | day-to-day drift, event frequency, catch-up cap | `VillageSimulator` constants |
@@ -296,9 +364,13 @@ there" case, and it's deliberately the only way to get one.
   generator.
 - **A corpse entity.** `NpcRecord.corpseLocation` is recorded and `placeCorpse` logs it; there's no
   body to find in the world yet. The seam is `ServerVillageBridge.placeCorpse`.
-- **NPC behaviour in the world.** A farmer farms in the ledger, not in the fields — there's no AI
-  goal, no crop block, no pathing to a workstation. The economy is bookkeeping, and the entity
-  standing there doesn't know about it yet.
+- **NPC behaviour in the world.** A farmer farms in the ledger, not in the fields, and a hungry
+  villager eats from the ledger rather than walking to the pantry — there's no AI goal, no crop
+  block, no pathing to a workstation. The pantry chest is real and two-way; the *walk to it* isn't
+  built. That's the next piece, and it wants the NPC entity to exist first.
+- **Buildings as structures.** A building is a type and a position, not blocks. Nothing raises a
+  church; `/village building add` registers one wherever you've built it yourself, and the only
+  block the mod ever places is the pantry chest.
 - **Surfacing it to the player.** A raid announces itself to anyone within ~96 blocks and otherwise
   goes in the log. There's no quest UI, no rumour system, no "ask around about who went missing".
 - **Player-driven reinforcement.** `/village set` moves the numbers; there's no in-game way to build

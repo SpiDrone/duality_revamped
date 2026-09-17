@@ -20,21 +20,6 @@ import java.util.UUID;
  * goes away for twenty days comes back to a village that spent twenty days being somewhere.
  */
 public class VillageRecord {
-	/** One structure the village has put up. Buildings are mostly a prosperity/defense bookkeeping
-	 *  device today; the type string is deliberately free-form so worldgen can key off it later. */
-	public record Building(String type, long builtDay) {
-		public JsonObject toJson() {
-			JsonObject json = new JsonObject();
-			json.addProperty("type", type);
-			json.addProperty("built_day", builtDay);
-			return json;
-		}
-
-		public static Building fromJson(JsonObject json) {
-			return new Building(json.has("type") ? json.get("type").getAsString() : "HOUSE", json.has("built_day") ? json.get("built_day").getAsLong() : 0L);
-		}
-	}
-
 	/** One line of village history. This is the readable record a player can be shown - "what
 	 *  happened here while I was gone" - and the audit trail for the world duality score. */
 	public record LogEntry(long day, String eventId, String outcome, String text, double dualityDelta) {
@@ -57,6 +42,9 @@ public class VillageRecord {
 
 	/** How many log lines a village keeps before the oldest fall off the end. */
 	private static final int LOG_LIMIT = 60;
+	/** Days of food a village with no pantry can keep. Enough for a few days of bad luck and no
+	 *  more - there is physically nowhere to put the rest. */
+	public static final double NO_PANTRY_CAPACITY = 8.0;
 
 	private final String villageId;
 	private String name;
@@ -84,6 +72,10 @@ public class VillageRecord {
 	private double foodStores = 0.0;
 	/** Accumulated mason/laborer work toward the next building. */
 	private double buildProgress = 0.0;
+	/** Food units the pantry containers held the last time anyone looked. The difference between
+	 *  this and what's in them now is what a player added or took, which is the only way the world
+	 *  gets to talk back to the ledger - see {@link VillagePantry}. */
+	private double pantryCheckpoint = 0.0;
 	/** Days of ruined harvests left to run. While this is positive the fields yield a fraction of
 	 *  normal - see {@link VillageEconomy#BLIGHT_YIELD}. It's the one thing that can starve a
 	 *  village no matter how sensibly it assigns its people, which is what makes it worth a quest
@@ -96,7 +88,7 @@ public class VillageRecord {
 	private double foodProduction = 0.0;
 	private double foodUpkeep = 0.0;
 
-	private final List<Building> buildings = new ArrayList<>();
+	private final List<VillageBuilding> buildings = new ArrayList<>();
 	/** Named NPCs who live here. */
 	private final Set<String> residents = new LinkedHashSet<>();
 	/** Named NPCs held here against their will - the rescue targets. */
@@ -158,8 +150,13 @@ public class VillageRecord {
 				village.prosperity = 15;
 			}
 		}
-		// Everyone starts with a fortnight or so in the granary. Long enough to get organised,
-		// short enough that a village which never appoints a farmer will notice.
+		// A settlement that exists already has the houses its people live in and somewhere to keep
+		// food, both at the centre. Starting with no pantry would not be a challenge, just a slow
+		// death - there would be nowhere to put a good harvest.
+		village.buildings.add(new VillageBuilding(BuildingType.PANTRY, day, center));
+		for (int houses = Math.max(1, village.population / BuildingType.HOUSE.housing()); houses > 0; houses--) {
+			village.buildings.add(new VillageBuilding(BuildingType.HOUSE, day, center));
+		}
 		village.foodStores = village.population * 1.5;
 		return village;
 	}
@@ -272,10 +269,20 @@ public class VillageRecord {
 		this.foodStores = clamp(foodStores, 0, foodCapacity());
 	}
 
-	/** How much food this village can hold before the rest spoils. Bigger settlements with more
-	 *  buildings keep deeper granaries, so growth buys resilience as well as numbers. */
+	/**
+	 * How much food this village can hold - which is to say, how much its pantries can hold.
+	 *
+	 * <p>A village with nowhere to put food lives hand to mouth on {@link #NO_PANTRY_CAPACITY}, and
+	 * any bad week kills people. Building a pantry is the single biggest thing a settlement can do
+	 * for its own survival, and it's the thing a player can walk up to and fill.
+	 */
 	public double foodCapacity() {
-		return 30.0 + population * 4.0 + buildings.size() * 10.0;
+		double fromPantries = 0;
+		for (VillageBuilding building : buildings) {
+			if (building.isUsableStore())
+				fromPantries += building.type().foodCapacity();
+		}
+		return fromPantries > 0 ? fromPantries : NO_PANTRY_CAPACITY;
 	}
 
 	/** Food produced minus food eaten, per day. Negative means the granary is draining. */
@@ -287,6 +294,14 @@ public class VillageRecord {
 	public double daysOfFoodLeft() {
 		double balance = foodBalance();
 		return balance >= 0 ? -1 : foodStores / -balance;
+	}
+
+	public double pantryCheckpoint() {
+		return pantryCheckpoint;
+	}
+
+	public void setPantryCheckpoint(double pantryCheckpoint) {
+		this.pantryCheckpoint = Math.max(0, pantryCheckpoint);
 	}
 
 	public int blightDays() {
@@ -329,8 +344,114 @@ public class VillageRecord {
 		this.foodUpkeep = Math.max(0, foodUpkeep);
 	}
 
-	public List<Building> buildings() {
+	public List<VillageBuilding> buildings() {
 		return buildings;
+	}
+
+	/** The first placed building of a type, or null. */
+	public VillageBuilding building(BuildingType type) {
+		for (VillageBuilding building : buildings) {
+			if (building.type() == type)
+				return building;
+		}
+		return null;
+	}
+
+	public int countBuildings(BuildingType type) {
+		int count = 0;
+		for (VillageBuilding building : buildings) {
+			if (building.type() == type)
+				count++;
+		}
+		return count;
+	}
+
+	/** Every placed building that holds food. These, and only these, are where the village's food
+	 *  is - see {@link VillagePantry}. */
+	public List<VillageBuilding> pantries() {
+		List<VillageBuilding> found = new ArrayList<>();
+		for (VillageBuilding building : buildings) {
+			if (building.isUsableStore())
+				found.add(building);
+		}
+		return found;
+	}
+
+	public boolean hasPantry() {
+		for (VillageBuilding building : buildings) {
+			if (building.isUsableStore())
+				return true;
+		}
+		return false;
+	}
+
+	// The building contributions, summed. Kept as methods rather than stored fields so putting up
+	// or losing a building takes effect immediately and can't drift out of sync with the list.
+	public int buildingFortification() {
+		int total = 0;
+		for (VillageBuilding building : buildings) {
+			total += building.type().fortification();
+		}
+		return total;
+	}
+
+	public double buildingGarrison() {
+		return sum(BuildingType::garrison);
+	}
+
+	public double buildingFoodProduction() {
+		return sum(BuildingType::foodProduction);
+	}
+
+	public double buildingWardUpkeep() {
+		return sum(BuildingType::wardUpkeep);
+	}
+
+	public double buildingMorale() {
+		return sum(BuildingType::morale);
+	}
+
+	public double buildingProsperity() {
+		return sum(BuildingType::prosperity);
+	}
+
+	/** How many people the village has roofs for. Growth past this is slow and unhappy. */
+	public int housing() {
+		int total = 0;
+		for (VillageBuilding building : buildings) {
+			total += building.type().housing();
+		}
+		return total;
+	}
+
+	/** How much likelier this village's buildings make an event. A church doubles the odds of a
+	 *  whitelighter passing through; two churches quadruple them. */
+	public double buildingEventFavor(VillageEvent event) {
+		double multiplier = 1.0;
+		for (VillageBuilding building : buildings) {
+			if (building.type().favors().contains(event))
+				multiplier *= BuildingType.FAVOR_MULTIPLIER;
+		}
+		return multiplier;
+	}
+
+	/** What fraction of an event's threat gets through this village's buildings. A well against a
+	 *  plague, a watchtower against a raid. */
+	public double buildingThreatFraction(VillageEvent event) {
+		double fraction = 1.0;
+		for (VillageBuilding building : buildings) {
+			if (building.type().resists().contains(event))
+				fraction *= BuildingType.RESIST_FACTOR;
+		}
+		return Math.max(BuildingType.MIN_THREAT_FRACTION, fraction);
+	}
+
+	private double sum(java.util.function.ToDoubleFunction<BuildingType> field) {
+		double total = 0;
+		for (VillageBuilding building : buildings) {
+			total += field.applyAsDouble(building.type());
+		}
+		return total;
 	}
 
 	public Set<String> residents() {
@@ -397,8 +518,8 @@ public class VillageRecord {
 			// Garrison is the professional watch - named residents doing the job. The militia term
 			// is the untrained levy behind them. A village with real guards is a different problem
 			// to a village with a lot of frightened farmers holding spears.
-			case PHYSICAL -> garrison + militia * 3.0 + fortification * 4.0 + wards * 1.0 + population * 0.25;
-			case MAGICAL -> wards * 6.0 + garrison * 0.15 + militia * 0.5 + fortification * 0.5 + population * 0.1;
+			case PHYSICAL -> garrison + militia * 3.0 + (fortification + buildingFortification()) * 4.0 + wards * 1.0 + population * 0.25;
+			case MAGICAL -> wards * 6.0 + garrison * 0.15 + militia * 0.5 + (fortification + buildingFortification()) * 0.5 + population * 0.1;
 			// Full stores are what stop a village taking a bad offer, and empty ones are why it does.
 			case SOCIAL -> prosperity * 0.4 + morale * 25.0 + population * 0.5 + wards * 1.5 + Math.min(20.0, foodStores * 0.3);
 			case NONE -> 0.0;
@@ -432,6 +553,7 @@ public class VillageRecord {
 		stats.addProperty("food_stores", foodStores);
 		stats.addProperty("build_progress", buildProgress);
 		stats.addProperty("blight_days", blightDays);
+		stats.addProperty("pantry_checkpoint", pantryCheckpoint);
 		json.add("stats", stats);
 		JsonObject derived = new JsonObject();
 		derived.addProperty("garrison", garrison);
@@ -439,7 +561,7 @@ public class VillageRecord {
 		derived.addProperty("food_upkeep", foodUpkeep);
 		json.add("derived", derived);
 		JsonArray buildingArray = new JsonArray();
-		for (Building building : buildings) {
+		for (VillageBuilding building : buildings) {
 			buildingArray.add(building.toJson());
 		}
 		json.add("buildings", buildingArray);
@@ -488,13 +610,15 @@ public class VillageRecord {
 				village.buildProgress = stats.get("build_progress").getAsDouble();
 			if (stats.has("blight_days"))
 				village.blightDays = stats.get("blight_days").getAsInt();
+			if (stats.has("pantry_checkpoint"))
+				village.pantryCheckpoint = stats.get("pantry_checkpoint").getAsDouble();
 		}
 		// The "derived" block is informational; VillageEconomy#recompute rebuilds it from the roster
 		// on load, so a hand-edited value there is overwritten rather than trusted.
 		if (json.has("buildings")) {
 			JsonArray buildingArray = json.getAsJsonArray("buildings");
 			for (int i = 0; i < buildingArray.size(); i++) {
-				village.buildings.add(Building.fromJson(buildingArray.get(i).getAsJsonObject()));
+				village.buildings.add(VillageBuilding.fromJson(buildingArray.get(i).getAsJsonObject()));
 			}
 		}
 		readInto(json, "residents", village.residents);

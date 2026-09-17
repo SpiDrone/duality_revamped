@@ -57,9 +57,10 @@ public final class VillageEconomy {
 		}
 		int unnamed = Math.max(0, village.population() - residents.size());
 		production += unnamed * UNNAMED_FOOD_PRODUCTION;
+		production += village.buildingFoodProduction();
 		if (village.isBlighted())
 			production *= BLIGHT_YIELD;
-		village.setDerived(garrison, production, village.population() * FOOD_PER_PERSON);
+		village.setDerived(garrison + village.buildingGarrison(), production, village.population() * FOOD_PER_PERSON);
 	}
 
 	/** Rebuilds every village's derived numbers. Run on load, before anything reads a defense value. */
@@ -115,16 +116,17 @@ public final class VillageEconomy {
 			buildPoints += npc.job().buildPoints();
 			moraleGain += npc.job().morale();
 		}
-		village.setProsperity(village.prosperity() + prosperityGain);
-		village.setMorale(village.morale() + moraleGain);
+		// Buildings work too - a shrine keeps its own thin ward lit, a tavern keeps people cheerful.
+		village.setProsperity(village.prosperity() + prosperityGain + village.buildingProsperity());
+		village.setMorale(village.morale() + moraleGain + village.buildingMorale());
 		// A resident witch renews wards faster than they decay; everyone else only slows the loss.
-		village.setWards(village.wards() + wardUpkeep);
+		village.setWards(village.wards() + wardUpkeep + village.buildingWardUpkeep());
 
 		buildPoints += village.population() * 0.05;
 		village.setBuildProgress(village.buildProgress() + buildPoints);
 		if (village.buildProgress() >= BUILD_COST) {
 			village.setBuildProgress(village.buildProgress() - BUILD_COST);
-			raiseBuilding(village, day, random, notes);
+			raiseBuilding(store, village, day, random, notes);
 		}
 
 		// At most one person changes what they do in a day. Hunger gets first claim on that - a
@@ -149,7 +151,10 @@ public final class VillageEconomy {
 			if (village.flags().remove("HUNGRY"))
 				notes.add(village.name() + " is eating properly again.");
 			// Well fed and unafraid is the only state a village grows in.
-			if (village.foodStores() > village.population() * COMFORTABLE_STORES_DAYS && village.morale() > 0.6 && random.nextInt(100) < 10) {
+			// Fed, unafraid, and with a roof to put them under. A village that outgrows its housing
+			// stops growing until somebody builds.
+			boolean hasRoom = village.housing() > village.population();
+			if (village.foodStores() > village.population() * COMFORTABLE_STORES_DAYS && village.morale() > 0.6 && hasRoom && random.nextInt(100) < 10) {
 				village.addPopulation(1);
 				village.setFoodStores(village.foodStores() - COMFORTABLE_STORES_DAYS);
 				if (random.nextInt(100) < 35) {
@@ -302,16 +307,57 @@ public final class VillageEconomy {
 	}
 
 	// -------------------------------------------------------------------------------- helpers
-	private static void raiseBuilding(VillageRecord village, long day, Random random, List<String> notes) {
-		String[] types = {"HOUSE", "HOUSE", "BARN", "GRANARY", "WELL", "WORKSHOP", "SHRINE", "PALISADE"};
-		String type = types[random.nextInt(types.length)];
-		village.buildings().add(new VillageRecord.Building(type, day));
-		if (type.equals("PALISADE"))
-			village.setFortification(village.fortification() + 1);
-		if (type.equals("GRANARY") || type.equals("BARN"))
-			village.setFoodStores(village.foodStores() + 10);
+	private static void raiseBuilding(VillageStore store, VillageRecord village, long day, Random random, List<String> notes) {
+		BuildingType type = neededBuilding(store, village, random);
+		village.buildings().add(new VillageBuilding(type, day, scatter(village, random)));
 		village.setProsperity(village.prosperity() + 2);
-		notes.add(village.name() + " has finished a " + type.toLowerCase() + ".");
+		notes.add(village.name() + " has finished a " + type.displayName().toLowerCase() + ".");
+	}
+
+	/**
+	 * What this village should build next, in order of what it would most regret not having.
+	 *
+	 * <p>Somewhere to put food comes first, always: without a pantry the village is capped at
+	 * {@link VillageRecord#NO_PANTRY_CAPACITY} and cannot survive a bad month however well it farms.
+	 */
+	public static BuildingType neededBuilding(VillageStore store, VillageRecord village, Random random) {
+		if (!village.hasPantry())
+			return BuildingType.PANTRY;
+		if (village.housing() <= village.population())
+			return BuildingType.HOUSE;
+		// A full pantry with no room to grow into is a wasted good year.
+		if (village.foodStores() > village.foodCapacity() * 0.9)
+			return village.countBuildings(BuildingType.GRANARY) == 0 ? BuildingType.GRANARY : BuildingType.BARN;
+		if (village.foodBalance() < village.population() * 0.2)
+			return BuildingType.FARM;
+		// Somewhere to be blessed from, or to swear at.
+		BuildingType holy = village.faction().isEvil() ? BuildingType.ALTAR : BuildingType.CHURCH;
+		if (village.countBuildings(holy) == 0 && village.countBuildings(BuildingType.SHRINE) > 0)
+			return holy;
+		if (village.countBuildings(BuildingType.SHRINE) == 0)
+			return BuildingType.SHRINE;
+		if (village.countBuildings(BuildingType.WELL) == 0)
+			return BuildingType.WELL;
+		if (village.fortification() + village.buildingFortification() < 3)
+			return random.nextBoolean() ? BuildingType.PALISADE : BuildingType.WATCHTOWER;
+		if (village.countBuildings(BuildingType.SMITHY) == 0)
+			return BuildingType.SMITHY;
+		if (village.countBuildings(BuildingType.INFIRMARY) == 0 && village.isBlighted())
+			return BuildingType.INFIRMARY;
+		for (int attempt = 0; attempt < 8; attempt++) {
+			BuildingType candidate = BuildingType.values()[random.nextInt(BuildingType.values().length)];
+			if (candidate.suits(village.faction()))
+				return candidate;
+		}
+		return BuildingType.HOUSE;
+	}
+
+	/** Somewhere inside the village to put a new building. Roughly placed on purpose - the exact
+	 *  spot only matters for pantries, and the chest snaps to the surface when it's placed. */
+	public static WorldPoint scatter(VillageRecord village, Random random) {
+		int spread = Math.max(4, village.radius() / 2);
+		return new WorldPoint(village.center().dimension(), village.center().x() + random.nextInt(spread * 2 + 1) - spread, village.center().y(),
+				village.center().z() + random.nextInt(spread * 2 + 1) - spread);
 	}
 
 	/** Recompute against a roster already in hand, to save fetching it twice in the same tick. */
@@ -324,9 +370,10 @@ public final class VillageEconomy {
 		}
 		int unnamed = Math.max(0, village.population() - residents.size());
 		production += unnamed * UNNAMED_FOOD_PRODUCTION;
+		production += village.buildingFoodProduction();
 		if (village.isBlighted())
 			production *= BLIGHT_YIELD;
-		village.setDerived(garrison, production, village.population() * FOOD_PER_PERSON);
+		village.setDerived(garrison + village.buildingGarrison(), production, village.population() * FOOD_PER_PERSON);
 	}
 
 	private static void killResident(VillageStore store, VillageWorldBridge bridge, VillageRecord village, NpcRecord npc, long day, String cause) {

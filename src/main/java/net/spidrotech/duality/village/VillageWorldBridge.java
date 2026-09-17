@@ -25,6 +25,25 @@ public interface VillageWorldBridge {
 	 */
 	boolean spawnAt(NpcRecord npc, VillageRecord village);
 
+	/**
+	 * Reads the total food in this village's pantry containers.
+	 *
+	 * <p>Only the pantry buildings are scanned - that's the contract. Food in a chest in someone's
+	 * house is that person's business; the village's food is what's in the pantry.
+	 *
+	 * @return food units present, or a negative number if the pantry can't be read right now
+	 *         (chunks cold, nothing placed, no container built yet)
+	 */
+	double readPantry(VillageRecord village);
+
+	/**
+	 * Moves food into (positive) or out of (negative) this village's pantry containers.
+	 *
+	 * @return how much actually moved, which is less than asked for when the chests are full or
+	 *         empty - and that shortfall is what caps the village's stores
+	 */
+	double writePantry(VillageRecord village, double delta);
+
 	/** Leave a discoverable corpse where an NPC died, so the player who arrived too late has
 	 *  something to find. */
 	void placeCorpse(NpcRecord npc, VillageRecord village);
@@ -64,6 +83,16 @@ public interface VillageWorldBridge {
 		@Override
 		public WorldPoint resolveSite(WorldPoint proposal) {
 			return proposal;
+		}
+
+		@Override
+		public double readPantry(VillageRecord village) {
+			return -1;
+		}
+
+		@Override
+		public double writePantry(VillageRecord village, double delta) {
+			return delta;
 		}
 
 		@Override

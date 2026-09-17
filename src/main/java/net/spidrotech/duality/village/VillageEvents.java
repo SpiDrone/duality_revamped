@@ -103,6 +103,10 @@ public final class VillageEvents {
 		else
 			threat *= 1.0 - Math.max(0.0, lean) * 0.20;
 
+		// A well against a plague, a watchtower against a raid, a church against an envoy with an
+		// offer. Buildings don't add defense here so much as take the edge off the specific thing
+		// they were put up for.
+		threat *= village.buildingThreatFraction(event);
 		double defense = village.defenseAgainst(event.threat());
 		double ratio = (defense * vary(random)) / Math.max(1.0, threat * vary(random));
 		if (ratio >= 1.35)
@@ -163,7 +167,7 @@ public final class VillageEvents {
 			case COVEN_PROTECTION -> covenProtection(store, village, random, narrative);
 			case WHITELIGHTER_VISIT -> whitelighterVisit(village, narrative);
 			case SETTLERS_ARRIVE -> settlersArrive(store, village, day, random, narrative, affected);
-			case CONSTRUCTION -> construction(village, day, random, narrative);
+			case CONSTRUCTION -> construction(store, village, day, random, narrative);
 			case GOOD_HARVEST -> goodHarvest(village, random, narrative);
 			case MILITIA_DRILL -> militiaDrill(village, narrative);
 		}
@@ -454,19 +458,19 @@ public final class VillageEvents {
 		narrative.add(arrivals + " new faces in " + village.name() + (newcomer != null ? ", among them " + newcomer.name() + ", " + newcomer.jobLabel() + "." : "."));
 	}
 
-	private static void construction(VillageRecord village, long day, Random random, List<String> narrative) {
-		String[] types = {"HOUSE", "BARN", "GRANARY", "WELL", "SHRINE", "WORKSHOP", "PALISADE"};
-		String type = types[random.nextInt(types.length)];
-		village.buildings().add(new VillageRecord.Building(type, day));
+	private static void construction(VillageStore store, VillageRecord village, long day, Random random, List<String> narrative) {
+		BuildingType type = VillageEconomy.neededBuilding(store, village, random);
+		village.buildings().add(new VillageBuilding(type, day, VillageEconomy.scatter(village, random)));
 		village.setProsperity(village.prosperity() + 4);
-		if (type.equals("GRANARY") || type.equals("BARN"))
-			village.setFoodStores(village.foodStores() + 12);
-		if (type.equals("PALISADE") || random.nextInt(3) == 0) {
-			village.setFortification(village.fortification() + 1);
-			narrative.add(village.name() + " has finished a " + type.toLowerCase() + ". The place is harder to walk into than it was.");
-		} else {
-			narrative.add(village.name() + " has finished a " + type.toLowerCase() + ".");
-		}
+		String what = type.displayName().toLowerCase();
+		if (type.storesFood())
+			narrative.add(village.name() + " has finished a " + what + ". There is somewhere to keep food now.");
+		else if (type.fortification() > 0)
+			narrative.add(village.name() + " has finished a " + what + ". The place is harder to walk into than it was.");
+		else if (!type.favors().isEmpty())
+			narrative.add(village.name() + " has finished a " + what + ". People have started going there.");
+		else
+			narrative.add(village.name() + " has finished a " + what + ".");
 	}
 
 	private static void goodHarvest(VillageRecord village, Random random, List<String> narrative) {
@@ -476,7 +480,11 @@ public final class VillageEvents {
 		village.setFoodStores(before + village.population() * 3.0);
 		if (random.nextInt(3) == 0)
 			village.addPopulation(1);
-		narrative.add(String.format("A good year in %s. %.0f more days of food in the granary.", village.name(), village.foodStores() - before));
+		double kept = village.foodStores() - before;
+		if (village.hasPantry())
+			narrative.add(String.format("A good year in %s. %.0f more days of food in the pantry.", village.name(), kept));
+		else
+			narrative.add("A good year in " + village.name() + ", and nowhere to put it. Most of it will spoil before it's eaten.");
 	}
 
 	private static void militiaDrill(VillageRecord village, List<String> narrative) {
@@ -586,7 +594,16 @@ public final class VillageEvents {
 	private static void burnBuilding(VillageRecord village, List<String> narrative) {
 		if (village.buildings().isEmpty())
 			return;
-		VillageRecord.Building lost = village.buildings().remove(village.buildings().size() - 1);
-		narrative.add("The " + lost.type().toLowerCase() + " burned.");
+		VillageBuilding lost = village.buildings().remove(village.buildings().size() - 1);
+		// Losing the pantry doesn't just cost a building, it costs everything that was in it - the
+		// stores clamp down to whatever the remaining pantries can hold.
+		double before = village.foodStores();
+		// foodCapacity() just got smaller; re-clamping against it is what spills the stores that
+		// building was holding.
+		village.setFoodStores(before);
+		if (lost.type().storesFood() && before > village.foodStores())
+			narrative.add("The " + lost.type().displayName().toLowerCase() + " burned, and " + Math.round(before - village.foodStores()) + " days of food with it.");
+		else
+			narrative.add("The " + lost.type().displayName().toLowerCase() + " burned.");
 	}
 }

@@ -65,6 +65,8 @@ public final class VillageTicker {
 			Villages.store().saveWorld();
 		// Records that should have an entity and don't get one whenever their village is loaded.
 		Villages.embodySweep();
+		// And the food ledger squares up with the actual chests, in both directions.
+		Villages.pantrySweep();
 		// Being a little ahead of the world clock is normal - /village simulate deliberately runs
 		// the simulation forward, and it just means there's nothing to do until the days catch up.
 		// Only a gap too big to be that is a real rollback (/time set, a restored backup).

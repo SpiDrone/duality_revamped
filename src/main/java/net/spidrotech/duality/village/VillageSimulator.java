@@ -164,6 +164,9 @@ public final class VillageSimulator {
 			// Neighbours who hate each other find reasons.
 			if (aggressor != null)
 				weight *= 1.0 + Math.max(0, -village.relationTo(aggressor.villageId())) / 100.0;
+			// And buildings change what kind of place this is. A church is how a village buys
+			// itself better odds of a whitelighter passing through.
+			weight *= village.buildingEventFavor(event);
 			// Nothing to steal, nobody to take.
 			if (event.abducts() && store.residentsOf(village).isEmpty())
 				weight *= 0.35;

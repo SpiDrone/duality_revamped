@@ -8,6 +8,52 @@ import java.util.*;
 public class VillageHarness {
 	static int failures = 0;
 
+	/**
+	 * A pantry with no Minecraft behind it: one number for what's in the chests and one for how much
+	 * they hold. Enough to exercise every path VillagePantry has, in both directions.
+	 */
+	static class FakePantry implements VillageWorldBridge {
+		double contents = 0;
+		double capacity = 60;
+		boolean loaded = true;
+
+		@Override
+		public double readPantry(VillageRecord village) {
+			return loaded && village.hasPantry() ? contents : -1;
+		}
+
+		@Override
+		public double writePantry(VillageRecord village, double delta) {
+			if (!loaded)
+				return 0;
+			double moved = delta > 0 ? Math.min(delta, capacity - contents) : Math.max(delta, -contents);
+			contents += moved;
+			return moved;
+		}
+
+		@Override
+		public void despawn(NpcRecord npc) {
+		}
+
+		@Override
+		public boolean spawnAt(NpcRecord npc, VillageRecord village) {
+			return false;
+		}
+
+		@Override
+		public void placeCorpse(NpcRecord npc, VillageRecord village) {
+		}
+
+		@Override
+		public WorldPoint resolveSite(WorldPoint proposal) {
+			return proposal;
+		}
+
+		@Override
+		public void announce(VillageRecord village, String line) {
+		}
+	}
+
 	static void check(String label, boolean condition) {
 		System.out.println((condition ? "  ok   " : "  FAIL ") + label);
 		if (!condition)
@@ -200,6 +246,7 @@ public class VillageHarness {
 		check("the fields stop feeding anyone", farm.foodBalance() < 0);
 
 		int startingPopulation = farm.population();
+		int lowestPopulation = startingPopulation;
 		boolean wentHungry = false;
 		boolean starved = false;
 		boolean lifted = false;
@@ -210,12 +257,13 @@ public class VillageHarness {
 				lifted |= note.contains("blight on");
 			}
 			wentHungry |= farm.flags().contains("HUNGRY");
+			lowestPopulation = Math.min(lowestPopulation, farm.population());
 		}
 		check("the granary ran dry", wentHungry);
 		check("and then it cost lives", starved);
-		check("population actually fell", farm.population() < startingPopulation);
+		check("population fell before it recovered", lowestPopulation < startingPopulation);
 		check("the blight broke eventually", lifted && !farm.isBlighted());
-		System.out.printf("     came out of it with pop %d, %d farmers%n", farm.population(), VillageEconomy.countJob(econ, farm, NpcJob.FARMER));
+		System.out.printf("     %d at worst, %d now, %d farmers%n", lowestPopulation, farm.population(), VillageEconomy.countJob(econ, farm, NpcJob.FARMER));
 
 		System.out.println("== 13. guards are worth more on the wall than farmers ==");
 		System.out.printf("     %-28s %d%n", "4 farmers, no militia", repelCount(0, 0, 0.0, NpcJob.FARMER, 4));
@@ -227,8 +275,12 @@ public class VillageHarness {
 		VillageRecord seed = VillageRecord.create("Seedholm", VillageFaction.HUMAN, new WorldPoint("minecraft:overworld", 0, 64, 0), 1);
 		seed.setPopulation(30);
 		seed.setProsperity(90);
-		seed.setFoodStores(300);
+		// It built granaries, which is what having food to spare means now.
+		seed.buildings().add(new VillageBuilding(BuildingType.GRANARY, 1, seed.center()));
+		seed.buildings().add(new VillageBuilding(BuildingType.GRANARY, 1, seed.center()));
+		seed.setFoodStores(seed.foodCapacity());
 		world2.add(seed);
+		System.out.printf("     %s can store %.0f and has %.0f%n", seed.name(), seed.foodCapacity(), seed.foodStores());
 		for (int i = 0; i < 8; i++) {
 			NpcRecord npc = NpcRecord.create(VillageNames.person(random), seed.villageId());
 			npc.setJob(i < 5 ? NpcJob.FARMER : i < 7 ? NpcJob.MASON : NpcJob.LABORER);
@@ -251,6 +303,78 @@ public class VillageHarness {
 			check("it left with somebody who can work", !world2.residentsOf(daughter).isEmpty());
 			check("the parent kept a food producer", seed.foodBalance() > 0);
 		}
+
+		System.out.println("== 15. the chest and the ledger agree, in both directions ==");
+		VillageStore pantryStore = new VillageStore(Files.createTempDirectory("pantry").toFile()).load();
+		VillageRecord larder = VillageRecord.create("Larderton", VillageFaction.HUMAN, WorldPoint.ORIGIN, 1);
+		pantryStore.add(larder);
+		FakePantry chest = new FakePantry();
+		check("a new village has somewhere to put food", larder.hasPantry());
+
+		larder.setFoodStores(20);
+		VillagePantry.sync(pantryStore, chest, larder);
+		System.out.printf("     ledger 20 -> chest holds %.0f%n", chest.contents);
+		check("the ledger materialises into the chest", Math.abs(chest.contents - 20) < 1.5);
+
+		chest.contents += 30; // a player walks up and empties their inventory into it
+        VillagePantry.SyncResult donated = VillagePantry.sync(pantryStore, chest, larder);
+		System.out.printf("     player added 30 -> ledger %.0f, reported %+.0f%n", larder.foodStores(), donated.playerDelta());
+		check("food a player puts in becomes food the village has", larder.foodStores() > 45);
+		check("and the donation is reported", donated.playerContributed());
+
+		chest.loaded = false; // everyone walks away and the village eats for a fortnight
+		larder.setFoodStores(larder.foodStores() - 14);
+		check("nothing syncs while the chunks are cold", !VillagePantry.sync(pantryStore, chest, larder).synced());
+		double eaten = chest.contents;
+		chest.loaded = true;
+		VillagePantry.sync(pantryStore, chest, larder);
+		System.out.printf("     chest %.0f -> %.0f after a fortnight away%n", eaten, chest.contents);
+		check("coming back, the chest shows what was eaten", chest.contents < eaten - 10);
+
+		chest.contents = 0;
+		chest.capacity = 10;
+		larder.setFoodStores(500);
+		VillagePantry.sync(pantryStore, chest, larder);
+		check("the chests are the last word on how much fits", larder.foodStores() <= 10.5);
+
+		System.out.println("== 16. no pantry, no future ==");
+		VillageRecord roofless = VillageRecord.create("Roofless", VillageFaction.HUMAN, WorldPoint.ORIGIN, 1);
+		roofless.buildings().clear();
+		System.out.printf("     with a pantry %.0f, without %.0f%n", larder.foodCapacity(), roofless.foodCapacity());
+		check("a village with nowhere to keep food can barely keep any", roofless.foodCapacity() == VillageRecord.NO_PANTRY_CAPACITY);
+		check("and a pantry is worth many times that", larder.foodCapacity() > roofless.foodCapacity() * 4);
+		roofless.setFoodStores(999);
+		check("a good year mostly spoils", roofless.foodStores() <= VillageRecord.NO_PANTRY_CAPACITY);
+
+		System.out.println("== 17. buildings change what kind of place a village is ==");
+		VillageRecord plain = VillageRecord.create("Plain", VillageFaction.HUMAN, WorldPoint.ORIGIN, 1);
+		VillageRecord devout = VillageRecord.create("Devout", VillageFaction.HUMAN, WorldPoint.ORIGIN, 1);
+		devout.buildings().add(new VillageBuilding(BuildingType.CHURCH, 1, WorldPoint.ORIGIN));
+		System.out.printf("     whitelighter odds: plain x%.1f, with a church x%.1f%n", plain.buildingEventFavor(VillageEvent.WHITELIGHTER_VISIT),
+				devout.buildingEventFavor(VillageEvent.WHITELIGHTER_VISIT));
+		check("a church brings whitelighters", devout.buildingEventFavor(VillageEvent.WHITELIGHTER_VISIT) > plain.buildingEventFavor(VillageEvent.WHITELIGHTER_VISIT));
+		check("and makes a dark pact harder to sell", devout.buildingThreatFraction(VillageEvent.DARK_PACT) < 1.0);
+
+		VillageRecord watered = VillageRecord.create("Watered", VillageFaction.HUMAN, WorldPoint.ORIGIN, 1);
+		watered.buildings().add(new VillageBuilding(BuildingType.WELL, 1, WorldPoint.ORIGIN));
+		check("a well blunts a plague", watered.buildingThreatFraction(VillageEvent.PLAGUE) < 1.0);
+		check("but not a vampire raid", watered.buildingThreatFraction(VillageEvent.VAMPIRE_RAID) == 1.0);
+
+		VillageRecord walled2 = VillageRecord.create("Walled", VillageFaction.HUMAN, WorldPoint.ORIGIN, 1);
+		double bare = walled2.defenseAgainst(ThreatType.PHYSICAL);
+		walled2.buildings().add(new VillageBuilding(BuildingType.WATCHTOWER, 1, WorldPoint.ORIGIN));
+		check("a watchtower is worth real defense", walled2.defenseAgainst(ThreatType.PHYSICAL) > bare);
+		check("an altar is not for human villages", !BuildingType.ALTAR.suits(VillageFaction.HUMAN));
+		check("nor a church for a demon hold", !BuildingType.CHURCH.suits(VillageFaction.DEMON_HOLD));
+
+		System.out.println("== 18. a village builds what it most needs first ==");
+		VillageRecord bare2 = VillageRecord.create("Bare", VillageFaction.HUMAN, WorldPoint.ORIGIN, 1);
+		bare2.buildings().clear();
+		VillageStore needStore = new VillageStore(Files.createTempDirectory("need").toFile()).load();
+		needStore.add(bare2);
+		check("with nowhere to keep food, it builds a pantry", VillageEconomy.neededBuilding(needStore, bare2, random) == BuildingType.PANTRY);
+		bare2.buildings().add(new VillageBuilding(BuildingType.PANTRY, 1, WorldPoint.ORIGIN));
+		check("then somewhere to live", VillageEconomy.neededBuilding(needStore, bare2, random) == BuildingType.HOUSE);
 
 		System.out.println();
 		System.out.println(failures == 0 ? "ALL CHECKS PASSED" : failures + " CHECK(S) FAILED");

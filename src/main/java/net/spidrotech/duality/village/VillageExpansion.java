@@ -20,8 +20,18 @@ public final class VillageExpansion {
 	public static final int MIN_POPULATION = 18;
 	/** Prosperity before it can afford to. */
 	public static final double MIN_PROSPERITY = 55.0;
-	/** Days of food banked before it will let anyone leave with a cart. */
-	public static final double MIN_FOOD_DAYS = 10.0;
+	/**
+	 * How full the pantry has to be before anyone leaves with a cart, as a fraction of what the
+	 * village can store.
+	 *
+	 * <p>Expressed against capacity rather than as an absolute, because capacity is now the pantry
+	 * - so "we have food to spare" means "we filled what we built", and a village that wants to
+	 * spread has to have built granaries to do it. {@link #MIN_STORES} stops a village with one
+	 * small pantry qualifying on a few days' worth.
+	 */
+	public static final double MIN_STORES_FRACTION = 0.6;
+	/** Absolute floor on banked food, whatever the pantry's size. */
+	public static final double MIN_STORES = 40.0;
 	/** How far out daughter settlements are placed. */
 	public static final int MIN_DISTANCE = 420;
 	public static final int MAX_DISTANCE = 900;
@@ -42,7 +52,7 @@ public final class VillageExpansion {
 			return false;
 		if (village.population() < MIN_POPULATION || village.prosperity() < MIN_PROSPERITY)
 			return false;
-		if (village.foodStores() < village.population() * MIN_FOOD_DAYS / 2.0 || village.foodBalance() <= 0)
+		if (village.foodStores() < Math.max(MIN_STORES, village.foodCapacity() * MIN_STORES_FRACTION) || village.foodBalance() <= 0)
 			return false;
 		// Somebody has to be able to build the thing when they get there.
 		return VillageEconomy.countJob(store, village, NpcJob.MASON) + VillageEconomy.countJob(store, village, NpcJob.LABORER) > 0;
@@ -71,13 +81,12 @@ public final class VillageExpansion {
 		child.setWards(0);
 		child.setMorale(Math.min(0.95, parent.morale() + 0.05));
 		child.setProsperity(15);
-		child.setFoodStores(settlers * 6.0);
-		child.buildings().add(new VillageRecord.Building("HOUSE", day));
+		child.setFoodStores(Math.min(settlers * 6.0, parent.foodStores() * 0.4));
 		store.add(child);
 
 		parent.addPopulation(-settlers);
 		parent.setProsperity(parent.prosperity() - 15);
-		parent.setFoodStores(parent.foodStores() - settlers * 6.0);
+		parent.setFoodStores(parent.foodStores() - child.foodStores());
 		parent.setRelation(child.villageId(), 75);
 		child.setRelation(parent.villageId(), 75);
 		child.flags().add("FOUNDED_BY_" + parent.villageId());
