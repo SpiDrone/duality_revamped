@@ -54,6 +54,29 @@ public interface ParticlePattern {
 		return (ticksAlive, forward) -> List.of(Vec3.ZERO);
 	}
 
+	/**
+	 * An unbroken line paid out behind the projectile, like a thread of spit web.
+	 *
+	 * <p>Every other pattern drops one cluster per tick, which at speed leaves a dotted line with
+	 * gaps the length of a tick's travel. This fills the gap instead: forward is the projectile's
+	 * per-tick velocity, so points spaced from here back along -forward cover exactly the distance
+	 * it moved since the last emission, and each tick's run of points meets the previous one.
+	 */
+	static ParticlePattern strand(int pointsPerTick) {
+		return (ticksAlive, forward) -> {
+			List<Vec3> points = new ArrayList<>(pointsPerTick);
+			for (int i = 0; i < pointsPerTick; i++)
+				points.add(forward.scale(-(double) i / pointsPerTick));
+			return points;
+		};
+	}
+
+	/** Runs {@code pattern} only on every nth tick of flight - for sparse details like drips and
+	 *  clumps that would turn into a solid smear if emitted every tick. */
+	static ParticlePattern everyNTicks(int n, ParticlePattern pattern) {
+		return (ticksAlive, forward) -> ticksAlive % n == 0 ? pattern.offsets(ticksAlive, forward) : List.of();
+	}
+
 	private static Vec3 perpendicular(Vec3 axis) {
 		Vec3 arbitrary = Math.abs(axis.x) < 0.9 ? new Vec3(1, 0, 0) : new Vec3(0, 1, 0);
 		return axis.cross(arbitrary).normalize();

@@ -10,7 +10,10 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.bus.api.SubscribeEvent;
 
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.particles.ItemParticleOption;
 import net.minecraft.core.particles.DustParticleOptions;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 
 // TODO: fix to match your actual generated field name
 /**
@@ -48,7 +51,7 @@ public final class DualityProjectiles {
 		ParticleEmitter infernoEmitter = new ParticleEmitter().add(ParticleTypes.FLAME, ParticlePattern.cylinder(1.2, 12)).add(ParticleTypes.LARGE_SMOKE, ParticlePattern.spiral(1.0, 1.0));
 		// A wider ring of flame the projectile flies through the middle of, plus its own
 		// (bigger, slower) spiral of smoke - busier and more dramatic, matching "greater."
-		ProjectileRegistry.register("fireball", b -> b.speed(1.2).lifetimeTicks(100) // 5s max flight before despawning
+		ProjectileRegistry.register("firebolt", b -> b.speed(1.2).lifetimeTicks(100) // 5s max flight before despawning
 				.magicSchool("demonic").cooldownTicks(20).projectileScale(3.0f, 3.0f)// 1s
 				.param("firePower", 1.0).spawner(level -> new AbilityProjectileEntity(DualityModEntities.ABILITY_PROJECTILE.get(), level))//
 				.onEntityHit(ProjectileEffects.scaledFireDamage(3.0, 4, "firePower"))//
@@ -63,15 +66,29 @@ public final class DualityProjectiles {
 		// already-inherited small one (both fire on the same hitPos in the same tick), so the
 		// combined result naturally reads as denser/bigger than fireball alone without needing
 		// to re-declare the damage effect it also inherits.
-		ProjectileRegistry.registerVariant("fireball_greater", "fireball", b -> b.param("firePower", 2.0).speed(1.5).projectileScale(3.0f, 3.0f) // 0.2 base * 3.0 = 0.6 width/height
-				.particleEmitter(greaterFireballEmitter).texture("duality:textures/entities/test22.png").addEntityHitEffect(ProjectileEffects.impactParticles(ParticleTypes.FLAME, 10, 0.35))
-				.addEntityHitEffect(ProjectileEffects.impactParticles(ParticleTypes.LARGE_SMOKE, 8, 0.3)));
+		// Web spit's trail is a thread, not a puff: strand() lays an unbroken line of fine silk back
+		// along each tick's travel, so it reads as one strand paid out behind the glob, and every
+		// third tick drops a clump of cobweb shreds onto it so it looks tacky rather than clean.
+		DustParticleOptions silkThread = new DustParticleOptions(new Vector3f(0.94f, 0.94f, 0.9f), 0.45f);
+		ItemParticleOption webClump = new ItemParticleOption(ParticleTypes.ITEM, new ItemStack(Items.COBWEB));
+		ParticleEmitter webStrandEmitter = new ParticleEmitter().add(silkThread, ParticlePattern.strand(6)).add(webClump, ParticlePattern.everyNTicks(3, ParticlePattern.center()));
+		ProjectileRegistry.register("web_spit", b -> b.speed(1).lifetimeTicks(100) // 5s max flight before despawning
+				.magicSchool("demonic").cooldownTicks(20).projectileScale(3.0f, 3.0f)// 1s
+				.spawner(level -> new AbilityProjectileEntity(DualityModEntities.ABILITY_PROJECTILE.get(), level))//
+				.onEntityHit(ProjectileEffects.slowness(60, 2)) // 3s of Slowness III (-45% speed)
+				.model("web_spit")//
+				.addEntityHitEffect(ProjectileEffects.impactParticles(webClump, 12, 0.3)).addEntityHitEffect(ProjectileEffects.impactParticles(silkThread, 10, 0.25))
+				.onBlockHit(ProjectileEffects.impactParticlesOnBlock(webClump, 8, 0.25)).areaOfEffect(0.3, ProjectileEffects.slowness(60, 2)) // near misses still get stuck
+				.particleEmitter(webStrandEmitter));
 		// The "large fireball, small hitbox, hits a crowd" use case: looks huge (visualScale),
 		// hits almost nothing directly (hitbox stays at the tiny base size), noClip + high
 		// pierce mean it basically never stops from blocks or entities, and a generous AoE
 		// radius does the actual work of damaging everyone it sweeps past. Short lifetime since
 		// it's meant to blanket an area, not travel far.
-		ProjectileRegistry.register("fireball_inferno", b -> b.speed(0.8).lifetimeTicks(60) // 3s - a short blanketing sweep, not a long-range shot
+		ProjectileRegistry.registerVariant("fireball_normal", "firebolt", b -> b.param("firePower", 2.0).speed(1.5).projectileScale(3.0f, 3.0f) // 0.2 base * 3.0 = 0.6 width/height
+				.particleEmitter(greaterFireballEmitter).texture("duality:textures/entities/test22.png").addEntityHitEffect(ProjectileEffects.impactParticles(ParticleTypes.FLAME, 10, 0.35))
+				.addEntityHitEffect(ProjectileEffects.impactParticles(ParticleTypes.LARGE_SMOKE, 8, 0.3)));
+		ProjectileRegistry.register("fireball_greater", b -> b.speed(0.8).lifetimeTicks(60) // 3s - a short blanketing sweep, not a long-range shot
 				.magicSchool("demonic").cooldownTicks(100) // 5s - a big, costly ability
 				.param("firePower", 1.0).projectileScale(30.0f, 30.0f) // hitbox stays at the base 0.2 size
 				.visualScale(6.0f) // but looks huge

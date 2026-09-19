@@ -7,6 +7,8 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.core.particles.ParticleOptions;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.Blocks;
 
 import java.util.function.Consumer;
 import java.util.function.BiConsumer;
@@ -56,6 +58,15 @@ public final class ProjectileEffects {
 		};
 	}
 
+	/** Plain Slowness - amplifier 0 is Slowness I (-15% speed), each level another -15%. */
+	public static BiConsumer<ProjectileHitContext, Entity> slowness(int durationTicks, int amplifier) {
+		return (hit, target) -> {
+			if (target instanceof LivingEntity living) {
+				living.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, durationTicks, amplifier));
+			}
+		};
+	}
+
 	public static BiConsumer<ProjectileHitContext, Entity> knockback(double strength) {
 		return (hit, target) -> {
 			var caster = hit.caster();
@@ -76,6 +87,44 @@ public final class ProjectileEffects {
 				living.hurt(living.damageSources().indirectMagic(caster, caster), (float) (baseDamage * scale));
 			}
 			target.igniteForSeconds((float) (baseFireSeconds * scale));
+		};
+	}
+
+	/** Heavy slow that also kills any upward movement at the moment of the hit - so a web caught
+	 *  mid-jump pulls the target down instead of letting them sail on over it. */
+	public static BiConsumer<ProjectileHitContext, Entity> ensnare(int durationTicks, int slownessAmplifier) {
+		return (hit, target) -> {
+			if (!(target instanceof LivingEntity living))
+				return;
+			living.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, durationTicks, slownessAmplifier));
+			Vec3 motion = living.getDeltaMovement();
+			if (motion.y > 0)
+				living.setDeltaMovement(motion.x * 0.3, 0, motion.z * 0.3);
+			// Players own their own movement client-side; without this they never feel the stop.
+			living.hurtMarked = true;
+		};
+	}
+
+	/** Leaves a cobweb at the target's feet for a while - vanilla's own web drag does the rooting. */
+	public static BiConsumer<ProjectileHitContext, Entity> webAtTarget(int webTicks) {
+		return (hit, target) -> {
+			if (hit.level() != null)
+				TemporaryBlocks.place(hit.level(), target.blockPosition(), Blocks.COBWEB.defaultBlockState(), webTicks);
+		};
+	}
+
+	/**
+	 * Leaves a cobweb where the projectile struck a block. The hit point sits exactly on the struck
+	 * face, so it's rounded into whichever side is open: a shot into the floor lands its web on top,
+	 * one into a wall on the near side. If neither is air, no web.
+	 */
+	public static Consumer<ProjectileHitContext> webOnBlock(int webTicks) {
+		return hit -> {
+			if (hit.level() == null)
+				return;
+			BlockPos at = BlockPos.containing(hit.hitPos());
+			if (!TemporaryBlocks.place(hit.level(), at, Blocks.COBWEB.defaultBlockState(), webTicks))
+				TemporaryBlocks.place(hit.level(), at.above(), Blocks.COBWEB.defaultBlockState(), webTicks);
 		};
 	}
 

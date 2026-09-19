@@ -58,6 +58,9 @@
                 "value": -10092544,
                 "falpha": 0.0
               },
+              "onSelect": {
+                "name": "AbilitiesRadialSelect"
+              },
               "radialValue": "fireball_normal",
               "radialValueProcedure": {
                 "fixedValue": "fireball_normal"
@@ -269,6 +272,9 @@
                 "value": -26368,
                 "falpha": 0.0
               },
+              "onSelect": {
+                "name": "AbilitiesRadialSelect"
+              },
               "radialValue": "fireball_greater",
               "radialValueProcedure": {
                 "fixedValue": "fireball_greater"
@@ -371,6 +377,792 @@
                 "type": "solid",
                 "color2": {
                   "value": -12566464,
+                  "falpha": 0.0
+                },
+                "color3": {
+                  "value": -8355712,
+                  "falpha": 0.0
+                },
+                "color4": {
+                  "value": -4144960,
+                  "falpha": 0.0
+                },
+                "speed": 1.0,
+                "easing": "easeInOutSine"
+              },
+              "tooltipBackgroundTintEffect": {
+                "type": "solid",
+                "color2": {
+                  "value": -12566464,
+                  "falpha": 0.0
+                },
+                "color3": {
+                  "value": -8355712,
+                  "falpha": 0.0
+                },
+                "color4": {
+                  "value": -4144960,
+                  "falpha": 0.0
+                },
+                "speed": 1.0,
+                "easing": "easeInOutSine"
+              }
+            },
+            {
+              "id": "firebolt",
+              "icon": "icon_ability_fireball_small.png",
+              "unselectedEffect": "solid",
+              "selectedEffect": "solid",
+              "unselectedColor1": {
+                "value": -8355712,
+                "falpha": 0.0
+              },
+              "unselectedColor2": {
+                "value": -12566464,
+                "falpha": 0.0
+              },
+              "selectedColor1": {
+                "value": -65536,
+                "falpha": 0.0
+              },
+              "selectedColor2": {
+                "value": -26368,
+                "falpha": 0.0
+              },
+              "onSelect": {
+                "name": "AbilitiesRadialSelect"
+              },
+              "radialValue": "firebolt",
+              "radialValueProcedure": {
+                "fixedValue": "firebolt"
+              },
+              "displayCondition": {
+                "name": "RetFirebolt"
+              },
+              "iconTintEnabled": false,
+              "unselectedIconTint": {
+                "value": -1,
+                "falpha": 0.0
+              },
+              "selectedIconTint": {
+                "value": -1,
+                "falpha": 0.0
+              },
+              "tooltip": [
+                {
+                  "text": {
+                    "fixedValue": "Firebolt"
+                  },
+                  "font": "spis_ui_api:boldpixels",
+                  "overrideColor": true,
+                  "color": {
+                    "value": -26880,
+                    "falpha": 0.0
+                  },
+                  "colorEffect": {
+                    "type": "solid",
+                    "color2": {
+                      "value": -12566464,
+                      "falpha": 0.0
+                    },
+                    "color3": {
+                      "value": -8355712,
+                      "falpha": 0.0
+                    },
+                    "color4": {
+                      "value": -4144960,
+                      "falpha": 0.0
+                    },
+                    "speed": 1.0,
+                    "easing": "easeInOutSine"
+                  }
+                }
+              ],
+              "tooltipLines": [],
+              "tooltipFont": "vanilla",
+              "tooltipBackgroundColor": {
+                "value": -263978237,
+                "falpha": 0.0
+              },
+              "tooltipBorderColor": {
+                "value": -10066262,
+                "falpha": 0.0
+              },
+              "tooltipTextColor": {
+                "value": -1,
+                "falpha": 0.0
+              },
+              "tooltipBackgroundTint": {
+                "value": -1,
+                "falpha": 0.0
+              },
+              "tooltipTextEffect": {
+                "type": "solid",
+                "color2": {
+                  "value": -12566464,
+                  "falpha": 0.0
+                },
+                "color3": {
+                  "value": -8355712,
+                  "falpha": 0.0
+                },
+                "color4": {
+                  "value": -4144960,
+                  "falpha": 0.0
+                },
+                "speed": 1.0,
+                "easing": "easeInOutSine"
+              },
+              "tooltipBackgroundEffect": {
+                "type": "solid",
+                "color2": {
+                  "value": -12566464,
+                  "falpha": 0.0
+                },
+                "color3": {
+                  "value": -8355712,
+                  "falpha": 0.0
+                },
+                "color4": {
+                  "value": -4144960,
+                  "falpha": 0.0
+                },
+                "speed": 1.0,
+                "easing": "easeInOutSine"
+              },
+              "tooltipBorderEffect": {
+                "type": "solid",
+                "color2": {
+                  "value": -12566464,
+                  "falpha": 0.0
+                },
+                "color3": {
+                  "value": -8355712,
+                  "falpha": 0.0
+                },
+                "color4": {
+                  "value": -4144960,
+                  "falpha": 0.0
+                },
+                "speed": 1.0,
+                "easing": "easeInOutSine"
+              },
+              "tooltipBackgroundTintEffect": {
+                "type": "solid",
+                "color2": {
+                  "value": -12566464,
+                  "falpha": 0.0
+                },
+                "color3": {
+                  "value": -8355712,
+                  "falpha": 0.0
+                },
+                "color4": {
+                  "value": -4144960,
+                  "falpha": 0.0
+                },
+                "speed": 1.0,
+                "easing": "easeInOutSine"
+              }
+            },
+            {
+              "id": "web_spit",
+              "icon": "icon_ability_web_spit.png",
+              "unselectedEffect": "holographic",
+              "selectedEffect": "holographic",
+              "unselectedColor1": {
+                "value": -8355712,
+                "falpha": 0.0
+              },
+              "unselectedColor2": {
+                "value": -12566464,
+                "falpha": 0.0
+              },
+              "selectedColor1": {
+                "value": -1,
+                "falpha": 0.0
+              },
+              "selectedColor2": {
+                "value": -4144960,
+                "falpha": 0.0
+              },
+              "onSelect": {
+                "name": "AbilitiesRadialSelect"
+              },
+              "radialValue": "web_spit",
+              "radialValueProcedure": {
+                "fixedValue": "web_spit"
+              },
+              "displayCondition": {
+                "name": "RetWebSpit"
+              },
+              "iconTintEnabled": false,
+              "unselectedIconTint": {
+                "value": -1,
+                "falpha": 0.0
+              },
+              "selectedIconTint": {
+                "value": -1,
+                "falpha": 0.0
+              },
+              "tooltip": [
+                {
+                  "text": {
+                    "fixedValue": "Web Spit"
+                  },
+                  "font": "spis_ui_api:boldpixels",
+                  "overrideColor": true,
+                  "color": {
+                    "value": -6181449,
+                    "falpha": 0.0
+                  },
+                  "colorEffect": {
+                    "type": "solid",
+                    "color2": {
+                      "value": -12566464,
+                      "falpha": 0.0
+                    },
+                    "color3": {
+                      "value": -8355712,
+                      "falpha": 0.0
+                    },
+                    "color4": {
+                      "value": -4144960,
+                      "falpha": 0.0
+                    },
+                    "speed": 1.0,
+                    "easing": "easeInOutSine"
+                  }
+                }
+              ],
+              "tooltipLines": [],
+              "tooltipFont": "vanilla",
+              "tooltipBackgroundColor": {
+                "value": -263304370,
+                "falpha": 0.0
+              },
+              "tooltipBorderColor": {
+                "value": -10066262,
+                "falpha": 0.0
+              },
+              "tooltipTextColor": {
+                "value": -1,
+                "falpha": 0.0
+              },
+              "tooltipBackgroundTint": {
+                "value": -1,
+                "falpha": 0.0
+              },
+              "tooltipTextEffect": {
+                "type": "solid",
+                "color2": {
+                  "value": -12566464,
+                  "falpha": 0.0
+                },
+                "color3": {
+                  "value": -8355712,
+                  "falpha": 0.0
+                },
+                "color4": {
+                  "value": -4144960,
+                  "falpha": 0.0
+                },
+                "speed": 1.0,
+                "easing": "easeInOutSine"
+              },
+              "tooltipBackgroundEffect": {
+                "type": "solid",
+                "color2": {
+                  "value": -12566464,
+                  "falpha": 0.0
+                },
+                "color3": {
+                  "value": -8355712,
+                  "falpha": 0.0
+                },
+                "color4": {
+                  "value": -4144960,
+                  "falpha": 0.0
+                },
+                "speed": 1.0,
+                "easing": "easeInOutSine"
+              },
+              "tooltipBorderEffect": {
+                "type": "solid",
+                "color2": {
+                  "value": -12566464,
+                  "falpha": 0.0
+                },
+                "color3": {
+                  "value": -8355712,
+                  "falpha": 0.0
+                },
+                "color4": {
+                  "value": -4144960,
+                  "falpha": 0.0
+                },
+                "speed": 1.0,
+                "easing": "easeInOutSine"
+              },
+              "tooltipBackgroundTintEffect": {
+                "type": "solid",
+                "color2": {
+                  "value": -12566464,
+                  "falpha": 0.0
+                },
+                "color3": {
+                  "value": -8355712,
+                  "falpha": 0.0
+                },
+                "color4": {
+                  "value": -4144960,
+                  "falpha": 0.0
+                },
+                "speed": 1.0,
+                "easing": "easeInOutSine"
+              }
+            },
+            {
+              "id": "acid_spit",
+              "icon": "icon_ability_acid_spit.png",
+              "unselectedEffect": "holographic",
+              "selectedEffect": "holographic",
+              "unselectedColor1": {
+                "value": -8355712,
+                "falpha": 0.0
+              },
+              "unselectedColor2": {
+                "value": -12566464,
+                "falpha": 0.0
+              },
+              "selectedColor1": {
+                "value": -16711850,
+                "falpha": 0.0
+              },
+              "selectedColor2": {
+                "value": -393472,
+                "falpha": 0.0
+              },
+              "onSelect": {
+                "name": "AbilitiesRadialSelect"
+              },
+              "radialValue": "acid_spit",
+              "radialValueProcedure": {
+                "fixedValue": "acid_spit"
+              },
+              "displayCondition": {
+                "name": "RetAcidSpit"
+              },
+              "iconTintEnabled": false,
+              "unselectedIconTint": {
+                "value": -1,
+                "falpha": 0.0
+              },
+              "selectedIconTint": {
+                "value": -1,
+                "falpha": 0.0
+              },
+              "tooltip": [
+                {
+                  "text": {
+                    "fixedValue": "Acid Spit"
+                  },
+                  "font": "spis_ui_api:boldpixels",
+                  "overrideColor": true,
+                  "color": {
+                    "value": -16711900,
+                    "falpha": 0.0
+                  },
+                  "colorEffect": {
+                    "type": "holographic",
+                    "color2": {
+                      "value": -393472,
+                      "falpha": 0.0
+                    },
+                    "color3": {
+                      "value": -8355712,
+                      "falpha": 0.0
+                    },
+                    "color4": {
+                      "value": -4144960,
+                      "falpha": 0.0
+                    },
+                    "speed": 1.0,
+                    "easing": "easeInOutSine"
+                  }
+                }
+              ],
+              "tooltipLines": [],
+              "tooltipFont": "vanilla",
+              "tooltipBackgroundColor": {
+                "value": -267386864,
+                "falpha": 0.0
+              },
+              "tooltipBorderColor": {
+                "value": -10066262,
+                "falpha": 0.0
+              },
+              "tooltipTextColor": {
+                "value": -1,
+                "falpha": 0.0
+              },
+              "tooltipBackgroundTexture": "tooltip_background_acid.png",
+              "tooltipBackgroundTint": {
+                "value": -4934476,
+                "falpha": 0.0
+              },
+              "tooltipTextEffect": {
+                "type": "solid",
+                "color2": {
+                  "value": -12566464,
+                  "falpha": 0.0
+                },
+                "color3": {
+                  "value": -8355712,
+                  "falpha": 0.0
+                },
+                "color4": {
+                  "value": -4144960,
+                  "falpha": 0.0
+                },
+                "speed": 1.0,
+                "easing": "easeInOutSine"
+              },
+              "tooltipBackgroundEffect": {
+                "type": "solid",
+                "color2": {
+                  "value": -12566464,
+                  "falpha": 0.0
+                },
+                "color3": {
+                  "value": -8355712,
+                  "falpha": 0.0
+                },
+                "color4": {
+                  "value": -4144960,
+                  "falpha": 0.0
+                },
+                "speed": 1.0,
+                "easing": "easeInOutSine"
+              },
+              "tooltipBorderEffect": {
+                "type": "solid",
+                "color2": {
+                  "value": -12566464,
+                  "falpha": 0.0
+                },
+                "color3": {
+                  "value": -8355712,
+                  "falpha": 0.0
+                },
+                "color4": {
+                  "value": -4144960,
+                  "falpha": 0.0
+                },
+                "speed": 1.0,
+                "easing": "easeInOutSine"
+              },
+              "tooltipBackgroundTintEffect": {
+                "type": "solid",
+                "color2": {
+                  "value": -12566464,
+                  "falpha": 0.0
+                },
+                "color3": {
+                  "value": -8355712,
+                  "falpha": 0.0
+                },
+                "color4": {
+                  "value": -4144960,
+                  "falpha": 0.0
+                },
+                "speed": 1.0,
+                "easing": "easeInOutSine"
+              }
+            },
+            {
+              "id": "lightning_hands_normal",
+              "icon": "icon_ability_lightning_hands_0.png",
+              "unselectedEffect": "holographic",
+              "selectedEffect": "holographic",
+              "unselectedColor1": {
+                "value": -8355712,
+                "falpha": 0.0
+              },
+              "unselectedColor2": {
+                "value": -12566464,
+                "falpha": 0.0
+              },
+              "selectedColor1": {
+                "value": -1,
+                "falpha": 0.0
+              },
+              "selectedColor2": {
+                "value": -7680,
+                "falpha": 0.0
+              },
+              "onSelect": {
+                "name": "AbilitiesRadialSelect"
+              },
+              "radialValue": "lightning_hands_normal",
+              "radialValueProcedure": {
+                "fixedValue": "lightning_hands_normal"
+              },
+              "displayCondition": {
+                "name": "RetLightningHands"
+              },
+              "iconTintEnabled": false,
+              "unselectedIconTint": {
+                "value": -1,
+                "falpha": 0.0
+              },
+              "selectedIconTint": {
+                "value": -1,
+                "falpha": 0.0
+              },
+              "tooltip": [
+                {
+                  "text": {
+                    "fixedValue": "Lighting Strike"
+                  },
+                  "font": "spis_ui_api:boldpixels",
+                  "overrideColor": true,
+                  "color": {
+                    "value": -1,
+                    "falpha": 0.0
+                  },
+                  "colorEffect": {
+                    "type": "holographic",
+                    "color2": {
+                      "value": -393472,
+                      "falpha": 0.0
+                    },
+                    "color3": {
+                      "value": -8355712,
+                      "falpha": 0.0
+                    },
+                    "color4": {
+                      "value": -4144960,
+                      "falpha": 0.0
+                    },
+                    "speed": 1.0,
+                    "easing": "easeInOutSine"
+                  }
+                }
+              ],
+              "tooltipLines": [],
+              "tooltipFont": "vanilla",
+              "tooltipBackgroundColor": {
+                "value": -268171709,
+                "falpha": 0.0
+              },
+              "tooltipBorderColor": {
+                "value": -5376,
+                "falpha": 0.0
+              },
+              "tooltipTextColor": {
+                "value": -1,
+                "falpha": 0.0
+              },
+              "tooltipBackgroundTint": {
+                "value": -1,
+                "falpha": 0.0
+              },
+              "tooltipTextEffect": {
+                "type": "solid",
+                "color2": {
+                  "value": -12566464,
+                  "falpha": 0.0
+                },
+                "color3": {
+                  "value": -8355712,
+                  "falpha": 0.0
+                },
+                "color4": {
+                  "value": -4144960,
+                  "falpha": 0.0
+                },
+                "speed": 1.0,
+                "easing": "easeInOutSine"
+              },
+              "tooltipBackgroundEffect": {
+                "type": "solid",
+                "color2": {
+                  "value": -12566464,
+                  "falpha": 0.0
+                },
+                "color3": {
+                  "value": -8355712,
+                  "falpha": 0.0
+                },
+                "color4": {
+                  "value": -4144960,
+                  "falpha": 0.0
+                },
+                "speed": 1.0,
+                "easing": "easeInOutSine"
+              },
+              "tooltipBorderEffect": {
+                "type": "holographic",
+                "color2": {
+                  "value": -1,
+                  "falpha": 0.0
+                },
+                "color3": {
+                  "value": -8355712,
+                  "falpha": 0.0
+                },
+                "color4": {
+                  "value": -4144960,
+                  "falpha": 0.0
+                },
+                "speed": 1.0,
+                "easing": "easeInOutSine"
+              },
+              "tooltipBackgroundTintEffect": {
+                "type": "solid",
+                "color2": {
+                  "value": -12566464,
+                  "falpha": 0.0
+                },
+                "color3": {
+                  "value": -8355712,
+                  "falpha": 0.0
+                },
+                "color4": {
+                  "value": -4144960,
+                  "falpha": 0.0
+                },
+                "speed": 1.0,
+                "easing": "easeInOutSine"
+              }
+            },
+            {
+              "id": "lightning_hands_demonic",
+              "icon": "icon_ability_lightning_hands_1.png",
+              "unselectedEffect": "holographic",
+              "selectedEffect": "holographic",
+              "unselectedColor1": {
+                "value": -8355712,
+                "falpha": 0.0
+              },
+              "unselectedColor2": {
+                "value": -12566464,
+                "falpha": 0.0
+              },
+              "selectedColor1": {
+                "value": -1,
+                "falpha": 0.0
+              },
+              "selectedColor2": {
+                "value": -65536,
+                "falpha": 0.0
+              },
+              "onSelect": {
+                "name": "AbilitiesRadialSelect"
+              },
+              "radialValue": "lightning_hands_demonic",
+              "radialValueProcedure": {
+                "fixedValue": "lightning_hands_demonic"
+              },
+              "displayCondition": {
+                "name": "RetDemLightningH"
+              },
+              "iconTintEnabled": false,
+              "unselectedIconTint": {
+                "value": -1,
+                "falpha": 0.0
+              },
+              "selectedIconTint": {
+                "value": -1,
+                "falpha": 0.0
+              },
+              "tooltip": [
+                {
+                  "text": {
+                    "fixedValue": "Demonic Strike"
+                  },
+                  "font": "duality:boldpixels",
+                  "overrideColor": true,
+                  "color": {
+                    "value": -65536,
+                    "falpha": 0.0
+                  },
+                  "colorEffect": {
+                    "type": "holographic",
+                    "color2": {
+                      "value": -1,
+                      "falpha": 0.0
+                    },
+                    "color3": {
+                      "value": -8355712,
+                      "falpha": 0.0
+                    },
+                    "color4": {
+                      "value": -4144960,
+                      "falpha": 0.0
+                    },
+                    "speed": 1.0,
+                    "easing": "easeInOutSine"
+                  }
+                }
+              ],
+              "tooltipLines": [],
+              "tooltipFont": "vanilla",
+              "tooltipBackgroundColor": {
+                "value": -268304368,
+                "falpha": 0.0
+              },
+              "tooltipBorderColor": {
+                "value": -65536,
+                "falpha": 0.0
+              },
+              "tooltipTextColor": {
+                "value": -1,
+                "falpha": 0.0
+              },
+              "tooltipBackgroundTint": {
+                "value": -1,
+                "falpha": 0.0
+              },
+              "tooltipTextEffect": {
+                "type": "solid",
+                "color2": {
+                  "value": -12566464,
+                  "falpha": 0.0
+                },
+                "color3": {
+                  "value": -8355712,
+                  "falpha": 0.0
+                },
+                "color4": {
+                  "value": -4144960,
+                  "falpha": 0.0
+                },
+                "speed": 1.0,
+                "easing": "easeInOutSine"
+              },
+              "tooltipBackgroundEffect": {
+                "type": "solid",
+                "color2": {
+                  "value": -12566464,
+                  "falpha": 0.0
+                },
+                "color3": {
+                  "value": -8355712,
+                  "falpha": 0.0
+                },
+                "color4": {
+                  "value": -4144960,
+                  "falpha": 0.0
+                },
+                "speed": 1.0,
+                "easing": "easeInOutSine"
+              },
+              "tooltipBorderEffect": {
+                "type": "holographic",
+                "color2": {
+                  "value": -1,
                   "falpha": 0.0
                 },
                 "color3": {

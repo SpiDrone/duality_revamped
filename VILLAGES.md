@@ -349,9 +349,16 @@ first, every time. It tries ids most specific first:
     duality:npc                   the general duality villager
     minecraft:villager            stand-in, until one of the above exists
 
-**None of those duality entities are registered yet**, so today everything resolves to the last row
-and the log says so once. Register any subset and it's picked up immediately: records store a
-species and a job rather than an entity id, so there's no migration to do.
+`duality:npc` is registered (`village/entity/DualityNpcEntities`), so records resolve to the mod's
+own entity rather than the vanilla stand-in. The more specific rows are still free: register any
+subset and it's picked up immediately, because records store a species and a job rather than an
+entity id, so there's no migration to do.
+
+`DualityNpcEntity` holds no state beyond the id of the record it belongs to — job, status, fate and
+history stay in the file, and `record()` is the source of truth. Its goals read the record every
+time rather than caching, which is why an abducted NPC behaves correctly without anything having to
+notify the entity. It renders with vanilla's villager model for now; per-species and per-job looks
+switch on the synced `species()` / `jobId()` in `DualityNpcRenderer` and touch nothing else.
 
 The exception is `/village npc add`, which pins whatever entity you pointed at onto the record — a
 vanilla villager enrolled that way stays a vanilla villager. That's the "villagers might also live
@@ -359,15 +366,19 @@ there" case, and it's deliberately the only way to get one.
 
 ## Not built yet
 
-- **The duality NPC entities themselves.** See above — the resolution layer is in place and waiting.
+- **Species and job NPC variants.** `duality:npc` exists; the more specific ids above don't, and
+  every record currently resolves to the general one wearing a vanilla villager skin.
 - **Worldgen placement.** Villages are founded by command or by other villages, never by the map
   generator.
 - **A corpse entity.** `NpcRecord.corpseLocation` is recorded and `placeCorpse` logs it; there's no
   body to find in the world yet. The seam is `ServerVillageBridge.placeCorpse`.
-- **NPC behaviour in the world.** A farmer farms in the ledger, not in the fields, and a hungry
-  villager eats from the ledger rather than walking to the pantry — there's no AI goal, no crop
-  block, no pathing to a workstation. The pantry chest is real and two-way; the *walk to it* isn't
-  built. That's the next piece, and it wants the NPC entity to exist first.
+- **NPC behaviour in the world.** A farmer still farms in the ledger, not in the fields. Residents
+  now stay inside their village (`NpcStayHomeGoal`) and walk to the pantry chest
+  (`NpcVisitPantryGoal`), but the trip is scenery: eating is still resolved entirely in the daily
+  simulation and arriving consumes nothing. Making the walk *be* the meal means moving the food draw
+  out of the day tick, which needs deciding whether an unloaded village still eats — it does today,
+  and that's why the ledger owns it. Standing a shift at a workstation needs a job-to-building
+  mapping, which doesn't exist yet: `NpcJob` and `BuildingType` have no link between them.
 - **Buildings as structures.** A building is a type and a position, not blocks. Nothing raises a
   church; `/village building add` registers one wherever you've built it yourself, and the only
   block the mod ever places is the pantry chest.

@@ -1019,6 +1019,48 @@
           "src/main/resources/assets/duality/models/item/spider_queen_spawn_egg.json"
         ]
       }
+    },
+    {
+      "name": "RetWebSpit",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "ret_web_spit",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          }
+        ],
+        "return_type": "logic",
+        "files": [
+          "src/main/java/net/spidrotech/duality/procedures/RetWebSpitProcedure.java"
+        ]
+      },
+      "path": "~/Radial Menu/Ability Returns"
+    },
+    {
+      "name": "AbilitiesRadialSelect",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "abilities_radial_select",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          },
+          {
+            "name": "radial_value",
+            "type": "string"
+          }
+        ],
+        "files": [
+          "src/main/java/net/spidrotech/duality/procedures/AbilitiesRadialSelectProcedure.java"
+        ]
+      }
     }
   ],
   "variable_elements": [

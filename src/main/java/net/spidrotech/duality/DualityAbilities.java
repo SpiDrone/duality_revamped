@@ -8,6 +8,7 @@ import net.spidrotech.duality.abilities.teleportation.OrbAbility;
 import net.spidrotech.duality.abilities.vampire.VampireAbilities;
 import net.spidrotech.duality.abilities.shapeshift.ShapeshiftAbility;
 import net.spidrotech.duality.abilities.demon.AntiGravityAbility;
+import net.spidrotech.duality.abilities.demon.WallClimberAbility;
 import net.spidrotech.duality.abilities.demon.LevitateAbility;
 import net.spidrotech.duality.abilities.demon.FlightAbility;
 import net.spidrotech.duality.abilities.demon.VanishAbility;
@@ -76,6 +77,7 @@ public final class DualityAbilities {
 		AbilityManager.get().register(ScreechAbility.build());
 		AbilityManager.get().register(new ShimmerAbility());
 		AbilityManager.get().register(FlameAbility.build());
+		AbilityManager.get().register(WallClimberAbility.build());
 	}
 
 	// ================================================================== shapeshifting

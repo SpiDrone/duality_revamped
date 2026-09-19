@@ -1,6 +1,5 @@
-package net.spidrotech.duality.entity.ai;
+package net.spidrotech.duality.creatures;
 
-import net.spidrotech.duality.entity.SpiderQueenEntity;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -60,7 +59,7 @@ public class DemonSpiderChaseGoal extends Goal {
 	/** If stuck while on a wall, let go and retry this soon rather than waiting a full STUCK_TICKS. */
 	private static final int RETRY_AFTER_DROP_TICKS = 10;
 
-	private final SpiderQueenEntity spider;
+	private final DemonSpiderEntity spider;
 	private final DemonSpiderNavigation navigation;
 	private final double speed;
 	private final Deque<BlockPos> triedDetours = new ArrayDeque<>();
@@ -71,7 +70,7 @@ public class DemonSpiderChaseGoal extends Goal {
 	private int noProgressTicks;
 	private int detourTicks;
 
-	public DemonSpiderChaseGoal(SpiderQueenEntity spider, double speed) {
+	public DemonSpiderChaseGoal(DemonSpiderEntity spider, double speed) {
 		this.spider = spider;
 		this.navigation = (DemonSpiderNavigation) spider.getNavigation();
 		this.speed = speed;

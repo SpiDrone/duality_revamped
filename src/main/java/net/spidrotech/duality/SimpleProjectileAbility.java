@@ -35,7 +35,12 @@ public final class SimpleProjectileAbility extends Ability {
 		if (!(caster.level() instanceof ServerLevel level))
 			return;
 		AbilityProjectileBase projectile = definition.spawner().apply(level);
-		Vec3 direction = caster.getLookAngle();
+		Vec3 chest = caster.position().add(0, caster.getBbHeight() * CHEST_HEIGHT_FRACTION, 0);
+		// A caller that knows what it's shooting at (a mob's attack goal) sets a target position and
+		// the shot goes straight at it. Everyone else - players - fires along their look, as before.
+		// Mobs need the explicit aim: their body rotation lags their target, so their look vector
+		// would send the shot off to the side.
+		Vec3 direction = ctx.targetPos().map(target -> target.subtract(chest)).filter(v -> v.lengthSqr() > 1.0E-6).map(Vec3::normalize).orElseGet(caster::getLookAngle);
 		// Push the spawn point out along the look direction, clearing both the caster's own
 		// hitbox and the projectile's own (scaled) width - otherwise it spawns centered inside
 		// the caster's body on X/Z. Scales with projectile size, so a huge one doesn't spawn
@@ -46,7 +51,7 @@ public final class SimpleProjectileAbility extends Ability {
 		// caster, rather than eye level - previously the entity's feet always sat at eye level,
 		// so its visible bulk only ever extended upward from there, worse the bigger the
 		// projectile.
-		Vec3 centerPoint = caster.position().add(0, caster.getBbHeight() * CHEST_HEIGHT_FRACTION, 0).add(direction.scale(forwardDistance));
+		Vec3 centerPoint = chest.add(direction.scale(forwardDistance));
 		// Computed from the definition directly (base registered height * heightScale) rather
 		// than the entity's own getBbHeight(), since dimensions aren't correctly scaled until
 		// configure() runs below - and configure() needs to run AFTER setPos() so its internal
@@ -56,5 +61,6 @@ public final class SimpleProjectileAbility extends Ability {
 		projectile.setPos(spawnPos.x, spawnPos.y, spawnPos.z);
 		projectile.configure(definition, caster, direction);
 		level.addFreshEntity(projectile);
+		ProjectileCastNetwork.announce(caster, definition.id());
 	}
 }

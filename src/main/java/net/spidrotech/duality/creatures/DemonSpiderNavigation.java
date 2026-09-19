@@ -1,4 +1,4 @@
-package net.spidrotech.duality.entity.ai;
+package net.spidrotech.duality.creatures;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;

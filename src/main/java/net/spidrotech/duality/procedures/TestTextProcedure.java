@@ -73,6 +73,12 @@ public class TestTextProcedure {
 				_vars.EquippedAbilities = text;
 				_vars.markSyncDirty();
 			}
+		} else if (text.startsWith(":=:")) {
+			{
+				DualityModVariables.PlayerVariables _vars = entity.getData(DualityModVariables.PLAYER_VARIABLES);
+				_vars.EquippedAbilities = "lightning_hands_normal,lightning_hands_demonic,acid_spit,web_spit,firebolt,fireball_normal,fireball_greater,fireball_inferno";
+				_vars.markSyncDirty();
+			}
 		}
 	}
 }

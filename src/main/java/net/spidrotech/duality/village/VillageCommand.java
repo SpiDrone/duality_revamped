@@ -132,7 +132,7 @@ public final class VillageCommand {
 								.then(Commands.argument("value", DoubleArgumentType.doubleArg()).executes(VillageCommand::set))))) //
 				.then(Commands.literal("npc") //
 						.then(Commands.literal("add").executes(ctx -> npcAdd(ctx, "")) //
-								.then(Commands.argument("role", StringArgumentType.word()).executes(ctx -> npcAdd(ctx, StringArgumentType.getString(ctx, "role"))))) //
+								.then(Commands.argument("job", StringArgumentType.word()).suggests(JOBS).executes(ctx -> npcAdd(ctx, StringArgumentType.getString(ctx, "job"))))) //
 						.then(Commands.literal("list").then(Commands.argument("village", StringArgumentType.string()).suggests(VILLAGE_NAMES).executes(VillageCommand::npcList))) //
 						.then(Commands.literal("info").then(Commands.argument("npc", StringArgumentType.string()).suggests(NPC_IDS).executes(VillageCommand::npcInfo))) //
 						.then(Commands.literal("rescue").then(Commands.argument("npc", StringArgumentType.string()).suggests(NPC_IDS).executes(VillageCommand::npcRescue))) //
@@ -214,7 +214,7 @@ public final class VillageCommand {
 		List<NpcRecord> residents = Villages.store().residentsOf(village);
 		reply(ctx, "  §7named residents (" + residents.size() + "):");
 		for (NpcRecord npc : residents) {
-			reply(ctx, "    §f" + npc.name() + " §8" + npc.role().toLowerCase() + ", " + npc.species().toLowerCase() + " §8" + npc.npcId());
+			reply(ctx, "    §f" + npc.name() + " §8" + npc.jobLabel() + ", " + npc.species().toLowerCase() + " §8" + npc.npcId());
 		}
 		List<NpcRecord> captives = Villages.store().captivesOf(village);
 		if (!captives.isEmpty()) {
@@ -354,7 +354,7 @@ public final class VillageCommand {
 	}
 
 	// ------------------------------------------------------------------------------ mutations
-	private static int create(CommandContext<CommandSourceStack> ctx) {
+	private static int create(CommandContext<CommandSourceStack> ctx, int namedResidents) {
 		if (notReady(ctx))
 			return 0;
 		if (!(ctx.getSource().getEntity() instanceof ServerPlayer player)) {
@@ -363,12 +363,14 @@ public final class VillageCommand {
 		}
 		String name = StringArgumentType.getString(ctx, "name");
 		VillageFaction faction = VillageFaction.parse(StringArgumentType.getString(ctx, "faction"));
-		VillageRecord village = Villages.create(name, faction, player.serverLevel(), player.blockPosition());
+		// found() rather than create(): a village with no named residents has no economy, since
+		// unnamed population only ever feeds itself.
+		VillageRecord village = Villages.found(name, faction, player.serverLevel(), player.blockPosition(), namedResidents);
 		if (village == null) {
 			reply(ctx, "§cThere is already a village called " + name + ".");
 			return 0;
 		}
-		reply(ctx, "§aFounded " + village.name() + " (" + faction.displayName() + ") at " + village.center() + ".");
+		reply(ctx, "§aFounded " + village.name() + " (" + faction.displayName() + ") at " + village.center() + " with " + namedResidents + " named resident(s).");
 		printVillage(ctx, village);
 		return 1;
 	}
@@ -480,8 +482,10 @@ public final class VillageCommand {
 			reply(ctx, "§cNothing within 16 blocks to enroll.");
 			return 0;
 		}
-		NpcRecord npc = Villages.enroll(village, target, role);
-		reply(ctx, "§a" + npc.name() + " (" + npc.role().toLowerCase() + ") is now a resident of " + village.name() + ". §8" + npc.npcId());
+		// Blank means "no job specified" - enroll() then picks whichever one the village is short of.
+		NpcJob job = jobId.isBlank() ? null : NpcJob.parse(jobId);
+		NpcRecord npc = Villages.enroll(village, target, job);
+		reply(ctx, "§a" + npc.name() + " (" + npc.jobLabel() + ") is now a resident of " + village.name() + ". §8" + npc.npcId());
 		return 1;
 	}
 
@@ -492,7 +496,7 @@ public final class VillageCommand {
 		List<NpcRecord> residents = Villages.store().residentsOf(village);
 		reply(ctx, "§6" + village.name() + " - " + residents.size() + " named resident(s), " + village.captives().size() + " held:");
 		for (NpcRecord npc : residents) {
-			reply(ctx, "  §f" + npc.name() + " §8" + npc.role().toLowerCase() + " / " + npc.species().toLowerCase() + " / " + npc.npcId());
+			reply(ctx, "  §f" + npc.name() + " §8" + npc.jobLabel() + " / " + npc.species().toLowerCase() + " / " + npc.npcId());
 		}
 		for (NpcRecord npc : Villages.store().captivesOf(village)) {
 			reply(ctx, "  §c" + npc.name() + " §8" + describeFate(npc) + " / " + npc.npcId());
@@ -510,7 +514,7 @@ public final class VillageCommand {
 		}
 		VillageRecord home = Villages.store().village(npc.homeVillageId());
 		VillageRecord current = Villages.store().village(npc.currentVillageId());
-		reply(ctx, "§6" + npc.name() + " §7(" + npc.role().toLowerCase() + ", " + npc.species() + ") §8" + npc.npcId());
+		reply(ctx, "§6" + npc.name() + " §7(" + npc.jobLabel() + ", " + npc.species() + ") §8" + npc.npcId());
 		reply(ctx, "  §7status §f" + npc.status() + "§7, " + describeFate(npc));
 		reply(ctx, "  §7home §f" + (home != null ? home.name() : "-") + "§7, currently at §f" + (current != null ? current.name() : "unknown"));
 		if (npc.corpseLocation() != null)

@@ -1,6 +1,5 @@
-package net.spidrotech.duality.entity.ai;
+package net.spidrotech.duality.creatures;
 
-import net.spidrotech.duality.entity.SpiderQueenEntity;
 
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.goal.Goal;
@@ -10,11 +9,10 @@ import java.util.EnumSet;
 /**
  * The demon spider's spit attack.
  *
- * This goal owns the timing and the pose; the projectile itself is still a placeholder inside
- * SpiderQueenEntity#performSpit. It holds the spider still, plays the attack animation, and
- * fires the payload on RELEASE_TICK - the frame the existing attack animation throws the head
- * forward and the mandibles snap - so when a real projectile is dropped in it already comes
- * out of the mouth on the right frame.
+ * This goal owns the timing and the pose; the projectile is the web_spit ability, fired by
+ * DemonSpiderEntity#performSpit. It holds the spider still, plays the attack animation, and fires
+ * on RELEASE_TICK - the frame the attack animation throws the head forward - so the web comes out
+ * of the mouth on the snap.
  */
 public class DemonSpiderSpitGoal extends Goal {
 	/** Do not spit at point blank; that range belongs to the leap closing in. */
@@ -32,12 +30,12 @@ public class DemonSpiderSpitGoal extends Goal {
 
 	private static final int COOLDOWN_TICKS = 50;
 
-	private final SpiderQueenEntity spider;
+	private final DemonSpiderEntity spider;
 	private LivingEntity target;
 	private int attackTicks;
 	private int cooldown;
 
-	public DemonSpiderSpitGoal(SpiderQueenEntity spider) {
+	public DemonSpiderSpitGoal(DemonSpiderEntity spider) {
 		this.spider = spider;
 		this.setFlags(EnumSet.of(Goal.Flag.MOVE, Goal.Flag.LOOK));
 	}
@@ -48,7 +46,7 @@ public class DemonSpiderSpitGoal extends Goal {
 			this.cooldown--;
 			return false;
 		}
-		if (this.spider.getAnimState() != SpiderQueenEntity.AnimState.GROUND)
+		if (this.spider.getAnimState() != DemonSpiderEntity.AnimState.GROUND)
 			return false;
 		this.target = this.spider.getTarget();
 		if (this.target == null || !this.target.isAlive())
@@ -72,7 +70,7 @@ public class DemonSpiderSpitGoal extends Goal {
 	public void start() {
 		this.attackTicks = 0;
 		this.spider.getNavigation().stop();
-		this.spider.setAnimState(SpiderQueenEntity.AnimState.SPIT);
+		this.spider.setAnimState(DemonSpiderEntity.AnimState.SPIT);
 	}
 
 	@Override
@@ -88,7 +86,7 @@ public class DemonSpiderSpitGoal extends Goal {
 		this.cooldown = COOLDOWN_TICKS;
 		// Only hand the state back if the spit is still what owns it - a leap or a landing
 		// that interrupted this goal has already claimed the state machine.
-		if (this.spider.getAnimState() == SpiderQueenEntity.AnimState.SPIT)
-			this.spider.setAnimState(SpiderQueenEntity.AnimState.GROUND);
+		if (this.spider.getAnimState() == DemonSpiderEntity.AnimState.SPIT)
+			this.spider.setAnimState(DemonSpiderEntity.AnimState.GROUND);
 	}
 }

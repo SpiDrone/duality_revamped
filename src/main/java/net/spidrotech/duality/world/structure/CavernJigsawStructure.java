@@ -143,6 +143,6 @@ public class CavernJigsawStructure extends Structure {
 
 	@Override
 	public StructureType<?> type() {
-		return DualityStructureTypes.CAVERN_JIGSAW.get();
+		return DualityStructureTypes.CAVERN_JIGSAW;
 	}
 }

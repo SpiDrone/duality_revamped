@@ -280,9 +280,13 @@ too eagerly, raise `STUCK_TICKS`.
 | `JUMP_WINDUP_TICKS` | 10 (0.5s) | crouch before launch; matches `jump_start` length |
 | `LAND_ANIM_LEAD_TICKS` | 8 (0.4s) | how early `jump_land` starts before touchdown |
 | `LEAP_COOLDOWN_TICKS` | 70 (3.5s) | spacing between leaps |
-| `DemonSpiderLeapGoal.MIN_LEAP_DISTANCE` | 4.0 | closer than this, spit instead |
-| `DemonSpiderLeapGoal.MAX_LEAP_DISTANCE` | 12.0 | past this the arc goes floaty |
-| `DemonSpiderLeapGoal.LEAP_UP_THRESHOLD` | 1.5 | height gap that justifies a jump alone |
+| `DemonSpiderLeapGoal.MIN_LEAP_DISTANCE` | 4.0 | horizontal; closer than this, spit instead |
+| `DemonSpiderLeapGoal.MAX_LEAP_DISTANCE` | 12.0 | horizontal; longest leap of any kind |
+| `DemonSpiderLeapGoal.MAX_POUNCE_DISTANCE` | 8.0 | horizontal; longest pounce across level ground |
+| `DemonSpiderLeapGoal.LEAP_UP_THRESHOLD` | 1.5 | height gap past which a target isn't "level" |
+| `DemonSpiderEntity.LEAP_SPEED` | 0.8 | blocks/tick; higher = flatter, faster arcs |
+| `DemonSpiderEntity.LEAP_MAX_VERTICAL_SPEED` | 0.9 | caps the arc at ~4 blocks up |
+| `DemonSpiderEntity.LEAP_UPHILL_CLEARANCE` | 1.0 | how far above a ledge's lip an uphill arc peaks |
 
 Keep `JUMP_WINDUP_TICKS` at 10 unless you re-export `jump_start` at a different
 length — the wind-up is meant to end exactly on the launch, and a mismatch
@@ -293,11 +297,16 @@ either truncates the crouch or leaves the spider frozen after it finishes.
 ~4 ticks after. Raise it if it still looks like it lands flat; lower it if the
 legs extend so early they hang in the air.
 
-The arc itself is solved in `SpiderQueenEntity.launchLeapAt` — flight time
-scales with horizontal distance, vertical impulse is derived from it. The one
-fudge factor is `dragCompensation`, which scales the horizontal impulse back up
-to cover MC's ~0.98/tick drag. If long leaps consistently fall short, raise the
-`0.5` exponent multiplier; if they overshoot, lower it.
+The spider only leaps when it gains something: walking can't reach the target
+(up a ledge, across a gap), or it's a pounce across level ground. It never
+leaps straight up — a leap needs horizontal distance to cover.
+
+The arc is solved exactly in `DemonSpiderEntity.solveLeap`, against vanilla's
+real airborne physics (horizontal speed ×0.91 per tick; vertical minus 0.08
+then ×0.98). There's no fudge factor: checked by simulation, leaps land exactly
+1 block short of the target, level, uphill and downhill. Peak heights are ~0.4
+blocks on a 4-block pounce, ~0.8 on 8, ~1.9 on 12. To make leaps flatter, raise
+`LEAP_SPEED`; to let them reach higher ledges, raise `LEAP_MAX_VERTICAL_SPEED`.
 
 ## Climb rotation — **measure in game**
 
@@ -318,14 +327,15 @@ The rotation is render-only and never touches the entity's real `yRot`, so
 nudging these cannot break pathfinding. The lean speed is the `0.15` in
 `tickClimbLean` — that is how fast it tips onto the wall.
 
-## Spit — placeholder
+## Spit
 
-`SpiderQueenEntity.performSpit` is a stub that only plays a sound. The timing
-around it is finished: `DemonSpiderSpitGoal` holds the spider still, drives the
-`attack` animation and calls `performSpit` on `RELEASE_TICK` (7), the frame the
-animation throws the head forward. Drop a real projectile spawn into that
-method and the attack is done — the likely home is this mod's existing
-`ProjectileRegistry` / `AbilityProjectileBase` stack rather than a new entity.
+The spider fires the same `web_spit` ability players cast (`DualityProjectiles`),
+so its speed, cooldown and hit effects are tuned there and apply to both.
+`DemonSpiderSpitGoal` holds the spider still, drives the `attack` animation and
+calls `DemonSpiderEntity.performSpit` on `RELEASE_TICK` (7), the frame the
+animation throws the head forward. The shot is aimed at the target's chest
+(`SPIT_AIM_HEIGHT`, 0.6 of their height) rather than along the spider's look,
+which lags its target.
 
 `MIN_RANGE` 3.0 / `MAX_RANGE` 16.0 / `COOLDOWN_TICKS` 50 shape when it fires.
 Note `MAX_RANGE` is capped in practice by the 16.0 `FOLLOW_RANGE` attribute.

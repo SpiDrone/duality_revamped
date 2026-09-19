@@ -15,10 +15,11 @@ import net.neoforged.api.distmarker.Dist;
  * class doc). Model/texture come from StagnantVisualEntity's DATA_model/DATA_texture fields;
  * model id 1 is the orb-belt model already registered in StagnantVisualRenderer.
  *
- * Runs on the MOD bus (FMLClientSetupEvent is a mod-bus lifecycle event, not a GAME-bus runtime
- * event) - see your own "@EventBusSubscriber bus mismatch" note, this is the MOD-bus case.
+ * FMLClientSetupEvent is a mod-bus lifecycle event. The explicit bus = Bus.MOD this used to carry
+ * is deprecated for removal in NeoForge 21.1 because the bus is now worked out from the event type
+ * itself - MCreator's own DualityModEntities subscribes to mod-bus events with no bus argument.
  */
-@EventBusSubscriber(modid = "duality", value = Dist.CLIENT, bus = EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber(modid = "duality", value = Dist.CLIENT)
 public final class ClientOrbitVisualSetup {
 	private ClientOrbitVisualSetup() {
 	}

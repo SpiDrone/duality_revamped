@@ -19,6 +19,7 @@ import com.mojang.brigadier.arguments.FloatArgumentType;
  * of these yet (see DualityAbilities#demonGeneric), so anyone can try them.
  *
  *   /demon blink | vanish | levitate | flight | screech    cast/toggle
+ *   /demon wallclimber                                     toggle wall climbing
  *   /demon antigravity <0-100>                             set percent and turn it on
  *   /demon antigravity off                                 turn it off
  */
@@ -35,6 +36,7 @@ public final class DemonTestCommand {
 				.then(Commands.literal("levitate").executes(ctx -> cast(ctx.getSource(), LevitateAbility.ID))) //
 				.then(Commands.literal("flight").executes(ctx -> cast(ctx.getSource(), FlightAbility.ID))) //
 				.then(Commands.literal("screech").executes(ctx -> cast(ctx.getSource(), ScreechAbility.ID))) //
+				.then(Commands.literal("wallclimber").executes(ctx -> cast(ctx.getSource(), WallClimberAbility.ID))) //
 				.then(Commands.literal("antigravity") //
 						.then(Commands.literal("off").executes(ctx -> antiGravityOff(ctx.getSource()))) //
 						.then(Commands.argument("percent", FloatArgumentType.floatArg(0, 100))

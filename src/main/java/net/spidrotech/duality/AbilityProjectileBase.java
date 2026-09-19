@@ -92,11 +92,24 @@ public abstract class AbilityProjectileBase extends PathfinderMob {
 		}
 		Vec3 velocity = direction.normalize().scale(definition.speed());
 		this.setDeltaMovement(velocity);
-		this.setYRot((float) (Mth.atan2(velocity.x, velocity.z) * (180F / Math.PI)));
-		this.setXRot((float) (Mth.atan2(velocity.y, velocity.horizontalDistance()) * (180F / Math.PI)));
+		this.faceMotion();
 		this.yRotO = this.getYRot();
 		this.xRotO = this.getXRot();
 		this.previousTickPosition = this.position();
+	}
+
+	/**
+	 * Points yRot/xRot along the current velocity, in vanilla's convention (yaw 0 faces +Z and turns
+	 * toward -X; positive pitch looks down) - the same one every look vector and renderer assumes.
+	 * The launch code this replaced had yaw mirrored and pitch inverted, which went unnoticed only
+	 * because nothing read the rotation until a projectile shape with a front needed to.
+	 */
+	private void faceMotion() {
+		Vec3 v = this.getDeltaMovement();
+		if (v.lengthSqr() < 1.0E-7)
+			return; // stopped dead has no direction - keep the last one rather than snapping to 0
+		this.setYRot((float) (Mth.atan2(-v.x, v.z) * (180F / Math.PI)));
+		this.setXRot((float) (-Mth.atan2(v.y, v.horizontalDistance()) * (180F / Math.PI)));
 	}
 
 	public ProjectileDefinition definition() {
@@ -206,6 +219,10 @@ public abstract class AbilityProjectileBase extends PathfinderMob {
 		if (def.gravityStrength() != 0) {
 			this.setDeltaMovement(this.getDeltaMovement().add(0, -def.gravityStrength(), 0));
 		}
+		// Every tick, not just at launch: gravity bends the path, and a shape with a front should
+		// nose down over the arc. Set after super.tick() on purpose - Mob's LookControl zeroes xRot
+		// during it, and this is the value the entity tracker then sends to clients.
+		this.faceMotion();
 		Vec3 start = this.position();
 		Vec3 end = start.add(this.getDeltaMovement());
 		// previousTickPosition is only set in configure(), which runs for freshly-spawned

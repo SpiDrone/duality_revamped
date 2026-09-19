@@ -87,6 +87,10 @@ public class ServerVillageBridge implements VillageWorldBridge {
 			return false;
 		entity.setCustomName(Component.literal(npc.name()));
 		entity.setCustomNameVisible(true);
+		// One of the mod's own NPCs can carry its record id, so its goals can read the record
+		// without a reverse lookup. A vanilla stand-in just doesn't get this.
+		if (entity instanceof net.spidrotech.duality.village.entity.DualityNpcEntity duality)
+			duality.bindTo(npc);
 		// Named villagers are not despawn fodder - losing one to a mob cap would quietly break a
 		// quest that's already been written into a file.
 		if (entity instanceof Mob mob)

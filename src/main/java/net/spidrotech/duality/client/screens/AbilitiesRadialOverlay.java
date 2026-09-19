@@ -2,9 +2,7 @@ package net.spidrotech.duality.client.screens;
 
 import org.checkerframework.checker.units.qual.h;
 
-import net.spidrotech.duality.procedures.RetFireballNormalProcedure;
-import net.spidrotech.duality.procedures.RetFireballGreaterProcedure;
-import net.spidrotech.duality.procedures.RadialKeybindProcedure;
+import net.spidrotech.duality.procedures.*;
 
 import net.neoforged.neoforge.client.event.RenderGuiEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -20,6 +18,68 @@ import net.minecraft.client.Minecraft;
 public class AbilitiesRadialOverlay {
 	private static boolean sua_radial_abilities_radial_open = false;
 	private static net.spidrone.uiapi.UIRadialMenuElement.RadialWheel sua_radial_abilities_radial_wheel = null;
+	static {
+		net.spidrone.uiapi.RadialMenuNetwork.registerHandler("duality:radial_abilities_radial", (serverPlayer, selectionId) -> {
+			net.minecraft.world.entity.Entity entity = serverPlayer;
+			double x = entity.getX();
+			double y = entity.getY();
+			double z = entity.getZ();
+			net.minecraft.world.level.Level world = entity.level();
+			switch (selectionId) {
+				case "fireball_normal" -> {
+					if (RetFireballNormalProcedure.execute(entity)) {
+						String radial_value = "fireball_normal";
+
+						AbilitiesRadialSelectProcedure.execute(entity, radial_value);
+					}
+				}
+				case "fireball_greater" -> {
+					if (RetFireballGreaterProcedure.execute(entity)) {
+						String radial_value = "fireball_greater";
+
+						AbilitiesRadialSelectProcedure.execute(entity, radial_value);
+					}
+				}
+				case "firebolt" -> {
+					if (RetFireboltProcedure.execute(entity)) {
+						String radial_value = "firebolt";
+
+						AbilitiesRadialSelectProcedure.execute(entity, radial_value);
+					}
+				}
+				case "web_spit" -> {
+					if (RetWebSpitProcedure.execute(entity)) {
+						String radial_value = "web_spit";
+
+						AbilitiesRadialSelectProcedure.execute(entity, radial_value);
+					}
+				}
+				case "acid_spit" -> {
+					if (RetAcidSpitProcedure.execute(entity)) {
+						String radial_value = "acid_spit";
+
+						AbilitiesRadialSelectProcedure.execute(entity, radial_value);
+					}
+				}
+				case "lightning_hands_normal" -> {
+					if (RetLightningHandsProcedure.execute(entity)) {
+						String radial_value = "lightning_hands_normal";
+
+						AbilitiesRadialSelectProcedure.execute(entity, radial_value);
+					}
+				}
+				case "lightning_hands_demonic" -> {
+					if (RetDemLightningHProcedure.execute(entity)) {
+						String radial_value = "lightning_hands_demonic";
+
+						AbilitiesRadialSelectProcedure.execute(entity, radial_value);
+					}
+				}
+				default -> {
+				}
+			}
+		});
+	}
 
 	@SubscribeEvent(priority = EventPriority.NORMAL)
 	public static void eventHandler(RenderGuiEvent.Pre event) {
@@ -46,6 +106,21 @@ public class AbilitiesRadialOverlay {
 				if (RetFireballGreaterProcedure.execute(entity))
 					wheel.add("fireball_greater", net.spidrone.uiapi.UIColorEffects.solid(-8355712), net.spidrone.uiapi.UIColorEffects.holographic(-65536, -26368),
 							net.minecraft.resources.ResourceLocation.parse("duality:textures/screens/icon_ability_fireball_large.png"), net.spidrone.uiapi.UIColorEffects.solid(0xFFFFFFFF), net.spidrone.uiapi.UIColorEffects.solid(0xFFFFFFFF));
+				if (RetFireboltProcedure.execute(entity))
+					wheel.add("firebolt", net.spidrone.uiapi.UIColorEffects.solid(-8355712), net.spidrone.uiapi.UIColorEffects.solid(-65536), net.minecraft.resources.ResourceLocation.parse("duality:textures/screens/icon_ability_fireball_small.png"),
+							net.spidrone.uiapi.UIColorEffects.solid(0xFFFFFFFF), net.spidrone.uiapi.UIColorEffects.solid(0xFFFFFFFF));
+				if (RetWebSpitProcedure.execute(entity))
+					wheel.add("web_spit", net.spidrone.uiapi.UIColorEffects.holographic(-8355712, -12566464), net.spidrone.uiapi.UIColorEffects.holographic(-1, -4144960),
+							net.minecraft.resources.ResourceLocation.parse("duality:textures/screens/icon_ability_web_spit.png"), net.spidrone.uiapi.UIColorEffects.solid(0xFFFFFFFF), net.spidrone.uiapi.UIColorEffects.solid(0xFFFFFFFF));
+				if (RetAcidSpitProcedure.execute(entity))
+					wheel.add("acid_spit", net.spidrone.uiapi.UIColorEffects.holographic(-8355712, -12566464), net.spidrone.uiapi.UIColorEffects.holographic(-16711850, -393472),
+							net.minecraft.resources.ResourceLocation.parse("duality:textures/screens/icon_ability_acid_spit.png"), net.spidrone.uiapi.UIColorEffects.solid(0xFFFFFFFF), net.spidrone.uiapi.UIColorEffects.solid(0xFFFFFFFF));
+				if (RetLightningHandsProcedure.execute(entity))
+					wheel.add("lightning_hands_normal", net.spidrone.uiapi.UIColorEffects.holographic(-8355712, -12566464), net.spidrone.uiapi.UIColorEffects.holographic(-1, -7680),
+							net.minecraft.resources.ResourceLocation.parse("duality:textures/screens/icon_ability_lightning_hands_0.png"), net.spidrone.uiapi.UIColorEffects.solid(0xFFFFFFFF), net.spidrone.uiapi.UIColorEffects.solid(0xFFFFFFFF));
+				if (RetDemLightningHProcedure.execute(entity))
+					wheel.add("lightning_hands_demonic", net.spidrone.uiapi.UIColorEffects.holographic(-8355712, -12566464), net.spidrone.uiapi.UIColorEffects.holographic(-1, -65536),
+							net.minecraft.resources.ResourceLocation.parse("duality:textures/screens/icon_ability_lightning_hands_1.png"), net.spidrone.uiapi.UIColorEffects.solid(0xFFFFFFFF), net.spidrone.uiapi.UIColorEffects.solid(0xFFFFFFFF));
 				if (!wheel.getButtons().isEmpty()) {
 					net.spidrone.uiapi.UIRadialMenuElement.openRadialMenu(wheel, wheel.getButtons().size());
 					sua_radial_abilities_radial_wheel = wheel;
@@ -87,6 +162,44 @@ public class AbilitiesRadialOverlay {
 							net.spidrone.uiapi.UIRadialMenuElement.wedgeHoveredShowTooltip(event.getGuiGraphics(), sua_radial_abilities_radial_wheel, sua_radial_abilities_radial_wheel.getButtons().size(),
 									w / 2 + -60 + sua_radial_abilities_radial_radius, h / 2 + -60 + sua_radial_abilities_radial_radius, sua_radial_abilities_radial_radius + 0, net.minecraft.resources.ResourceLocation.parse("minecraft:default"), null,
 									-267386864, -10066262, -1);
+						}
+						case "firebolt" -> {
+							long sua_tt_time = System.currentTimeMillis();
+							sua_radial_abilities_radial_wheel.setTooltipLines("firebolt", net.spidrone.uiapi.UIRadialMenuElement.TooltipLine.of("Firebolt", net.minecraft.resources.ResourceLocation.parse("spis_ui_api:boldpixels"), -26880));
+							net.spidrone.uiapi.UIRadialMenuElement.wedgeHoveredShowTooltip(event.getGuiGraphics(), sua_radial_abilities_radial_wheel, sua_radial_abilities_radial_wheel.getButtons().size(),
+									w / 2 + -60 + sua_radial_abilities_radial_radius, h / 2 + -60 + sua_radial_abilities_radial_radius, sua_radial_abilities_radial_radius + 0, net.minecraft.resources.ResourceLocation.parse("minecraft:default"), null,
+									-263978237, -10066262, -1);
+						}
+						case "web_spit" -> {
+							long sua_tt_time = System.currentTimeMillis();
+							sua_radial_abilities_radial_wheel.setTooltipLines("web_spit", net.spidrone.uiapi.UIRadialMenuElement.TooltipLine.of("Web Spit", net.minecraft.resources.ResourceLocation.parse("spis_ui_api:boldpixels"), -6181449));
+							net.spidrone.uiapi.UIRadialMenuElement.wedgeHoveredShowTooltip(event.getGuiGraphics(), sua_radial_abilities_radial_wheel, sua_radial_abilities_radial_wheel.getButtons().size(),
+									w / 2 + -60 + sua_radial_abilities_radial_radius, h / 2 + -60 + sua_radial_abilities_radial_radius, sua_radial_abilities_radial_radius + 0, net.minecraft.resources.ResourceLocation.parse("minecraft:default"), null,
+									-263304370, -10066262, -1);
+						}
+						case "acid_spit" -> {
+							long sua_tt_time = System.currentTimeMillis();
+							sua_radial_abilities_radial_wheel.setTooltipLines("acid_spit", net.spidrone.uiapi.UIRadialMenuElement.TooltipLine.of("Acid Spit", net.minecraft.resources.ResourceLocation.parse("spis_ui_api:boldpixels"),
+									((net.spidrone.uiapi.UIColorEffects.holographic(-16711900, -393472).colorAt(0, 1, 0f, sua_tt_time) & 0x00FFFFFF) | (-16711900 & 0xFF000000))));
+							net.spidrone.uiapi.UIRadialMenuElement.wedgeHoveredShowTooltip(event.getGuiGraphics(), sua_radial_abilities_radial_wheel, sua_radial_abilities_radial_wheel.getButtons().size(),
+									w / 2 + -60 + sua_radial_abilities_radial_radius, h / 2 + -60 + sua_radial_abilities_radial_radius, sua_radial_abilities_radial_radius + 0, net.minecraft.resources.ResourceLocation.parse("minecraft:default"),
+									net.minecraft.resources.ResourceLocation.parse("duality:textures/screens/tooltip_background_acid.png"), -4934476, -10066262, -1);
+						}
+						case "lightning_hands_normal" -> {
+							long sua_tt_time = System.currentTimeMillis();
+							sua_radial_abilities_radial_wheel.setTooltipLines("lightning_hands_normal", net.spidrone.uiapi.UIRadialMenuElement.TooltipLine.of("Lighting Strike", net.minecraft.resources.ResourceLocation.parse("spis_ui_api:boldpixels"),
+									((net.spidrone.uiapi.UIColorEffects.holographic(-1, -393472).colorAt(0, 1, 0f, sua_tt_time) & 0x00FFFFFF) | (-1 & 0xFF000000))));
+							net.spidrone.uiapi.UIRadialMenuElement.wedgeHoveredShowTooltip(event.getGuiGraphics(), sua_radial_abilities_radial_wheel, sua_radial_abilities_radial_wheel.getButtons().size(),
+									w / 2 + -60 + sua_radial_abilities_radial_radius, h / 2 + -60 + sua_radial_abilities_radial_radius, sua_radial_abilities_radial_radius + 0, net.minecraft.resources.ResourceLocation.parse("minecraft:default"), null,
+									-268171709, ((net.spidrone.uiapi.UIColorEffects.holographic(-5376, -1).colorAt(0, 1, 0f, sua_tt_time) & 0x00FFFFFF) | (-5376 & 0xFF000000)), -1);
+						}
+						case "lightning_hands_demonic" -> {
+							long sua_tt_time = System.currentTimeMillis();
+							sua_radial_abilities_radial_wheel.setTooltipLines("lightning_hands_demonic", net.spidrone.uiapi.UIRadialMenuElement.TooltipLine.of("Demonic Strike", net.minecraft.resources.ResourceLocation.parse("duality:boldpixels"),
+									((net.spidrone.uiapi.UIColorEffects.holographic(-65536, -1).colorAt(0, 1, 0f, sua_tt_time) & 0x00FFFFFF) | (-65536 & 0xFF000000))));
+							net.spidrone.uiapi.UIRadialMenuElement.wedgeHoveredShowTooltip(event.getGuiGraphics(), sua_radial_abilities_radial_wheel, sua_radial_abilities_radial_wheel.getButtons().size(),
+									w / 2 + -60 + sua_radial_abilities_radial_radius, h / 2 + -60 + sua_radial_abilities_radial_radius, sua_radial_abilities_radial_radius + 0, net.minecraft.resources.ResourceLocation.parse("minecraft:default"), null,
+									-268304368, ((net.spidrone.uiapi.UIColorEffects.holographic(-65536, -1).colorAt(0, 1, 0f, sua_tt_time) & 0x00FFFFFF) | (-65536 & 0xFF000000)), -1);
 						}
 						default -> {
 						}
