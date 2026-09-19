@@ -99,10 +99,13 @@ public final class RaceCatalog {
 	 * numbers here are a starting point, not a balance pass.
 	 *
 	 * <p>Read a race as a package: what it costs out of the five-point pool, what it puts into the
-	 * stat line for free, and what it can do. A vampire costs 4 and arrives with Strength and
-	 * Agility already at 3 and Presence at 2 - seven points' worth of stats and two powers, paid
-	 * for by having one point left to distribute. A human costs nothing and starts almost flat,
-	 * with all five to spend wherever they like.
+	 * stat line for free, and what it can do. The stat maps here are <b>grants</b> - {@code
+	 * Map.of(STRENGTH, 2)} means "+2 Strength, free", landing the character on a Strength of 3.
+	 * Those points never come out of the budget and can never be moved onto another skill.
+	 *
+	 * <p>So a vampire costs 4 of the 5, leaving one point to distribute, and separately arrives
+	 * with five points' worth of free stats it did not pay for. A human costs nothing, grants
+	 * little, and has all five to spend wherever it likes.
 	 */
 	public static void registerDefaults() {
 		RACES.clear();
@@ -114,7 +117,7 @@ public final class RaceCatalog {
 								Map.of(SkillType.ATTUNEMENT, 1, SkillType.INSIGHT, 1)),
 						SubraceDefinition.of("hunter", "Hunter", "You were taught what's out there, and what to do about it.", List.of("dash"),
 								Map.of(SkillType.AGILITY, 1, SkillType.INSIGHT, 1), 1)),
-				List.of("orb_normal", "dash", "deflect"), 1, Map.of(SkillType.ENDURANCE, 2, SkillType.PRESENCE, 2), true, "", 0));
+				List.of("orb_normal", "dash", "deflect"), 1, Map.of(SkillType.ENDURANCE, 1, SkillType.PRESENCE, 1), true, "", 0));
 
 		register(RaceDefinition.of("witch", "Witch", "Power through craft and will. The strongest hands in the world and the frailest body holding them.",
 				List.of(SubraceDefinition.of("elemental", "Elemental", "Fire and storm answer you first.", List.of("fireball"),
@@ -123,7 +126,7 @@ public final class RaceCatalog {
 								Map.of(SkillType.INSIGHT, 3, SkillType.STRENGTH, -1)),
 						SubraceDefinition.of("warlock_touched", "Warlock-Touched", "You took something you shouldn't have, and it took back.", List.of("shimmer"),
 								Map.of(SkillType.ATTUNEMENT, 2, SkillType.PRESENCE, -2), 1)),
-				List.of("fireball", "fireball_greater", "lightning_hands_normal", "orb_normal", "shimmer"), 2, Map.of(SkillType.ATTUNEMENT, 4, SkillType.INSIGHT, 2),
+				List.of("fireball", "fireball_greater", "lightning_hands_normal", "orb_normal", "shimmer"), 2, Map.of(SkillType.ATTUNEMENT, 3, SkillType.INSIGHT, 1),
 				false, "", 2));
 
 		register(RaceDefinition.of("vampire", "Vampire", "Fast, strong, and on a clock. Everything you are runs on somebody else's blood.",
@@ -133,7 +136,7 @@ public final class RaceCatalog {
 								Map.of(SkillType.ENDURANCE, 2, SkillType.FORTUNE, -1)),
 						SubraceDefinition.of("crimson_court", "Crimson Court", "Highborn, and it shows. Everyone in the room knows what you are.",
 								List.of("vampire_mode"), Map.of(SkillType.PRESENCE, 3, SkillType.INSIGHT, -1))),
-				List.of("leap", "dash", "deflect", "vampire_mode", "shapeshift"), 2, Map.of(SkillType.STRENGTH, 3, SkillType.AGILITY, 3, SkillType.PRESENCE, 2),
+				List.of("leap", "dash", "deflect", "vampire_mode", "shapeshift"), 2, Map.of(SkillType.STRENGTH, 2, SkillType.AGILITY, 2, SkillType.PRESENCE, 1),
 				false, "vampire", 4));
 
 		register(RaceDefinition.of("demon", "Demon", "Born of the underworld, or made there. Either way the surface is not yours.",
@@ -144,13 +147,13 @@ public final class RaceCatalog {
 						SubraceDefinition.of("shapeshifter", "Shapeshifter", "No face of your own worth keeping.", List.of("shapeshift", "vanish"),
 								Map.of(SkillType.INSIGHT, 2, SkillType.STRENGTH, -1))),
 				List.of("blink", "flame", "screech", "shimmer", "vanish", "levitate", "anti_gravity", "flight", "lightning_hands_demonic", "acid_spit"), 3,
-				Map.of(SkillType.STRENGTH, 4, SkillType.ATTUNEMENT, 3, SkillType.ENDURANCE, 2), false, "", 4));
+				Map.of(SkillType.STRENGTH, 3, SkillType.ATTUNEMENT, 2, SkillType.ENDURANCE, 1), false, "", 4));
 
 		register(RaceDefinition.of("whitelighter", "Whitelighter", "You died well enough that they gave you a job. You cannot hurt anyone, and you can save everyone.",
 				List.of(SubraceDefinition.of("guardian", "Guardian", "Assigned to someone, and answerable for them.", List.of("orb_normal"),
 						Map.of(SkillType.PRESENCE, 2, SkillType.STRENGTH, -2)),
 						SubraceDefinition.of("elder_touched", "Elder-Touched", "They have plans for you, and they don't explain them.", List.of("orb_normal"),
 								Map.of(SkillType.ATTUNEMENT, 2, SkillType.INSIGHT, 2, SkillType.STRENGTH, -2))),
-				List.of("orb_normal", "shimmer"), 1, Map.of(SkillType.ATTUNEMENT, 3, SkillType.PRESENCE, 3, SkillType.FORTUNE, 2), false, "", 3));
+				List.of("orb_normal", "shimmer"), 1, Map.of(SkillType.ATTUNEMENT, 2, SkillType.PRESENCE, 2, SkillType.FORTUNE, 1), false, "", 3));
 	}
 }

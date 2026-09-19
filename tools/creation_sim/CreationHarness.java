@@ -21,8 +21,8 @@ public class CreationHarness {
 			idsUnique &= seen.add(race.id());
 			picksSane &= race.abilityPicks() >= 0 && race.abilityPicks() <= race.abilityPool().size() + 2;
 			for (SkillType skill : SkillType.values()) {
-				int base = race.baseSkill(skill);
-				baseInRange &= base >= SkillType.MIN && base <= SkillType.MAX;
+				int free = race.freeStat(skill);
+				baseInRange &= free >= 0 && SkillType.MIN + free <= SkillType.MAX;
 			}
 			Set<String> subIds = new HashSet<>();
 			for (SubraceDefinition subrace : race.subraces()) {
@@ -73,7 +73,10 @@ public class CreationHarness {
 		v.selectSubrace(vamp, fledgling);
 		System.out.printf("     vampire costs %d, leaving %d of %d to spend%n", v.raceCost(vamp, fledgling), v.pointsBudget(vamp, fledgling),
 				CharacterDraft.STARTING_POINTS);
-		System.out.printf("     it granted %s%n", vamp.grantedPointsMap(fledgling));
+		System.out.printf("     it granted %s for free, on top of that%n", vamp.grantedPointsMap(fledgling));
+		int grantTotal = vamp.grantedPointsMap(fledgling).values().stream().mapToInt(Integer::intValue).sum();
+		System.out.printf("     %d free stat points, none of them out of the budget%n", grantTotal);
+		check("the grants are worth more than the race cost", grantTotal > vamp.pointCost());
 		check("being a vampire costs 4", vamp.pointCost() == 4);
 		check("which leaves 1 to distribute", v.pointsBudget(vamp, fledgling) == CharacterDraft.STARTING_POINTS - 4);
 		check("strength arrives already raised", vamp.grantedPoints(SkillType.STRENGTH, fledgling) == 2);
@@ -91,6 +94,31 @@ public class CreationHarness {
 		h.selectRace(free);
 		check("a free race keeps the whole pool", h.pointsBudget(free, null) == CharacterDraft.STARTING_POINTS);
 		System.out.printf("     human costs %d, leaving %d%n", free.pointCost(), h.pointsBudget(free, null));
+
+		System.out.println("== 3a. free stats are free: they never touch the spending budget ==");
+		// A race that costs NOTHING and still grants stats is the cleanest proof the two are
+		// independent - the player keeps every point AND gets the stats.
+		RaceDefinition gifted = RaceDefinition.of("gifted", "Gifted", "Free stats, no cost.", List.of(), List.of(), 0,
+				Map.of(SkillType.STRENGTH, 2, SkillType.INSIGHT, 3), true, "", 0);
+		CharacterDraft g = new CharacterDraft();
+		g.selectRace(gifted);
+		System.out.printf("     grants %s, costs %d, budget %d%n", gifted.freeStatMap(), gifted.pointCost(), g.pointsBudget(gifted, null));
+		check("five free stat points granted", gifted.freeStat(SkillType.STRENGTH) + gifted.freeStat(SkillType.INSIGHT) == 5);
+		check("and the full budget is still there", g.pointsBudget(gifted, null) == CharacterDraft.STARTING_POINTS);
+		check("nothing has been spent", g.pointsSpent() == 0);
+		check("strength reads as floor plus grant", g.skillValue(SkillType.STRENGTH, gifted, null) == SkillType.MIN + 2);
+		check("insight reads as floor plus grant", g.skillValue(SkillType.INSIGHT, gifted, null) == SkillType.MIN + 3);
+		// The other half: those points cannot be taken back and moved onto something else.
+		check("a free point cannot be refunded", !g.allocate(SkillType.STRENGTH, -1, gifted, null).ok());
+		check("not even down to the floor", g.skillValue(SkillType.STRENGTH, gifted, null) == SkillType.MIN + 2);
+		check("so the budget cannot be inflated by stripping them", g.pointsRemaining(gifted, null) == CharacterDraft.STARTING_POINTS);
+		for (int i = 0; i < CharacterDraft.STARTING_POINTS; i++) {
+			g.allocate(SkillType.AGILITY, 1, gifted, null);
+		}
+		check("all five spend elsewhere, on top of the grants", g.pointsRemaining(gifted, null) == 0);
+		check("and the grants are untouched by that", g.skillValue(SkillType.STRENGTH, gifted, null) == SkillType.MIN + 2);
+		check("a reset refunds only what was bought", g.resetSkills().ok() && g.skillValue(SkillType.STRENGTH, gifted, null) == SkillType.MIN + 2
+				&& g.pointsRemaining(gifted, null) == CharacterDraft.STARTING_POINTS);
 
 		System.out.println("== 3b. a dearer lineage refunds what no longer fits ==");
 		CharacterDraft trim = new CharacterDraft();

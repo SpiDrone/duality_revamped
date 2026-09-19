@@ -92,37 +92,44 @@ spent later from the in-game stat screen via `CharacterAttributes.spendPoint(pla
 walking off screen four with points in hand is a real choice, and the step counts as complete either
 way. Creation caps a skill at `SkillType.MAX` (10).
 
-## Races cost points, and what they grant is a floor
+## Free stats, and the point cost — two separate things
 
-A race is a package: what it costs out of the five-point pool, what it puts into the stat line for
-free, and what it can do.
+A race hands out two different kinds of thing, and they don't interact:
+
+**Free stats** are granted outright. They never come out of the spending budget, and they can't be
+refunded and moved onto another skill — those points were never the player's to move. Write them as
+the *grant itself*:
 
 ```java
 RaceDefinition.of(id, name, desc, subraces, abilityPool, picks,
-                  Map.of(STRENGTH, 3, AGILITY, 3, PRESENCE, 2),  // where the stats start
+                  Map.of(STRENGTH, 2, AGILITY, 2, PRESENCE, 1),  // ← free stats: "+2 Strength"
                   startsUnlocked, equippedTag,
-                  4);                                            // ← pointCost
+                  4);                                             // ← pointCost, separate
 ```
 
-Picking that race spends 4 of the 5, leaves **1** to distribute, and hands the character Strength 3
-and Agility 3 before they touch a slider. `allocate(STRENGTH, -1)` on a freshly-picked vampire is
-refused — *"Strength is already down to what being a Vampire gives you."* Only points the player
-bought can be refunded.
+`Map.of(STRENGTH, 2)` means **+2 Strength, free**, landing the character on a Strength of 3 (every
+skill floors at `SkillType.MIN`, 1). `allocate(STRENGTH, -1)` on that character is refused —
+*"Strength is already down to what being a Vampire gives you."*
+
+**Point cost** is a separate charge against the 5-point budget for being that race at all. It can be
+0. A race that grants +2 Strength and costs nothing leaves the player all five points to spend *and*
+a Strength of 3 they can build on but never take apart.
 
 | | reads | means |
 |---|---|---|
+| free stats | `race.freeStat(skill)` | points granted, above the floor |
+| free stats, all | `race.freeStatMap()` | `{STRENGTH: 2, AGILITY: 2, PRESENCE: 1}` |
+| with lineage folded in | `race.grantedPoints(skill, subrace)` | the actual floor for this build |
 | cost | `race.pointCost()` | comes off the budget up front |
-| granted | `race.grantedPoints(skill, subrace)` | the floor, in points above the minimum |
-| granted, all | `race.grantedPointsMap(subrace)` | `{STRENGTH: 2, AGILITY: 2, PRESENCE: 1}` for a summary panel |
 | budget | `draft.pointsBudget(race, subrace)` | `STARTING_POINTS − cost`, floored at 0 |
 
-Lineages can charge too (`SubraceDefinition.of(..., pointCost)`), on top of the race. Switching to a
-dearer lineage after spending refunds the difference automatically rather than leaving the draft
-overspent — highest-spend skill first.
+Lineages adjust free stats up or down (`skillBonusMap()`) and can charge a `pointCost` of their own
+on top of the race's. Switching to a dearer lineage after spending refunds the difference
+automatically rather than leaving the draft overspent — highest-spend skill first.
 
 The starting catalog, for scale:
 
-| race | cost | leaves | grants |
+| race | cost | leaves | free stats |
 |---|---|---|---|
 | Human | 0 | 5 | Endurance +1, Presence +1 |
 | Witch | 2 | 3 | Attunement +3, Insight +1 |
@@ -130,9 +137,9 @@ The starting catalog, for scale:
 | Vampire | 4 | 1 | Strength +2, Agility +2, Presence +1 |
 | Demon | 4 | 1 | Strength +3, Attunement +2, Endurance +1 |
 
-A human costs nothing, starts almost flat, and has all five to put wherever they like. A vampire
-arrives with five points' worth of stats already on and one point of freedom. That's the trade the
-cost buys you, and it's a number in one table.
+A vampire spends 4 of its 5 on being a vampire, leaving one point of freedom — and separately
+arrives with five points' worth of stats it never paid for. A human costs nothing, grants little,
+and has all five to put wherever it likes.
 
 ### 5 — Appearance and name
 
@@ -217,9 +224,10 @@ Check a change in a couple of seconds, no client launch:
 
     sh tools/creation_sim/run.sh
 
-65 checks: catalog consistency (unique ids, in-range skills, granted powers not double-offered,
-nothing priced past the pool), lock enforcement, race costs and the granted floor, the point budget,
-pick limits, what changing your mind cleans up, name rules, and commit gating.
+90 checks: catalog consistency (unique ids, in-range skills, granted powers not double-offered,
+nothing priced past the pool), lock enforcement, free stats being genuinely free and genuinely
+unremovable, race costs, the point budget, pick limits, what changing your mind cleans up, name
+rules, and commit gating.
 
 ## Driving it from chat
 

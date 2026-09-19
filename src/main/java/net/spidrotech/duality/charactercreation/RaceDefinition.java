@@ -13,6 +13,13 @@ import java.util.Map;
  * character sheet as {@code species_profiles[0].class}, which is what the rest of the mod already
  * keys species behaviour off.
  *
+ * <p><b>Free stats and the budget are two separate things.</b> {@link #freeStats()} is what being
+ * this race gives you for nothing: it never touches the spending budget, and it can't be refunded
+ * and moved onto another skill - those points were never the player's to move. {@link #pointCost()}
+ * is a separate charge against the budget for being this race at all, and it can be 0. A race that
+ * grants +2 Strength and costs nothing leaves the player all five points to spend and a Strength of
+ * 3 they can build on but never take apart.
+ *
  * @param id              stable id; also the species name written to the character sheet
  * @param displayName     what screen one shows
  * @param description     body text for the screen
@@ -20,7 +27,10 @@ import java.util.Map;
  * @param subraces        lineages offered on screen two; empty means screen two is skipped
  * @param abilityPool     powers screen three offers, before any subrace additions
  * @param abilityPicks    how many of them a character may take
- * @param baseSkills      starting value per skill before allocation, in {@link SkillType} order
+ * @param freeStats       stats the race hands over for nothing, as points above the floor every
+ *                        character starts at, in {@link SkillType} order. These do not come out of
+ *                        the creation budget and cannot be refunded into other skills - see the
+ *                        class note below.
  * @param startsUnlocked  false means the player must have earned it - see {@link RaceCatalog#selectableFor}
  * @param equippedTag     marker written into the player's EquippedAbilities string, e.g. "vampire",
  *                        which is what {@code VampireRank#isVampire} and friends already look for.
@@ -31,12 +41,12 @@ import java.util.Map;
  *                        0 for a race that's free to be.
  */
 public record RaceDefinition(String id, String displayName, String description, String iconHint, List<SubraceDefinition> subraces, List<String> abilityPool,
-		int abilityPicks, List<Integer> baseSkills, boolean startsUnlocked, String equippedTag, int pointCost) {
+		int abilityPicks, List<Integer> freeStats, boolean startsUnlocked, String equippedTag, int pointCost) {
 
 	public RaceDefinition {
 		subraces = List.copyOf(subraces);
 		abilityPool = List.copyOf(abilityPool);
-		baseSkills = normalizeBase(baseSkills);
+		freeStats = normalizeFree(freeStats);
 		abilityPicks = Math.max(0, abilityPicks);
 		pointCost = Math.max(0, pointCost);
 	}
@@ -55,17 +65,18 @@ public record RaceDefinition(String id, String displayName, String description, 
 		return !subraces.isEmpty();
 	}
 
-	public int baseSkill(SkillType skill) {
-		return baseSkills.get(skill.ordinal());
+	/** Points this race hands over in a skill for free, before any lineage adjustment. */
+	public int freeStat(SkillType skill) {
+		return freeStats.get(skill.ordinal());
 	}
 
 	/**
-	 * What being this race put into a skill for free - the amount above the floor everyone starts
-	 * at, with the lineage folded in.
+	 * Everything this skill gets for free once the lineage is folded in - the race's
+	 * {@link #freeStat} plus the lineage's adjustment, clamped into the legal range.
 	 *
-	 * <p>This is the other half of "a vampire costs 4 points and 2 of them go into Strength": the
-	 * cost is {@link #pointCost()}, and the 2 is this. It is also the value the player cannot
-	 * refund below, because points spent on top are the only ones they own.
+	 * <p>This is the number the player cannot take back: it never came out of their budget, so
+	 * there is nothing to refund and nothing to move somewhere else. Points they buy on top are the
+	 * only ones they own.
 	 */
 	public int grantedPoints(SkillType skill, SubraceDefinition subrace) {
 		return Math.max(0, startingSkills(subrace).get(skill) - SkillType.MIN);
@@ -82,10 +93,12 @@ public record RaceDefinition(String id, String displayName, String description, 
 		return granted;
 	}
 
-	public Map<SkillType, Integer> baseSkillMap() {
+	public Map<SkillType, Integer> freeStatMap() {
 		Map<SkillType, Integer> map = new EnumMap<>(SkillType.class);
 		for (SkillType skill : SkillType.values()) {
-			map.put(skill, baseSkill(skill));
+			int free = freeStat(skill);
+			if (free != 0)
+				map.put(skill, free);
 		}
 		return map;
 	}
@@ -104,31 +117,37 @@ public record RaceDefinition(String id, String displayName, String description, 
 		return List.copyOf(pool);
 	}
 
-	/** Base values with the lineage's adjustment folded in, clamped to the legal range. This is
-	 *  what screen four should draw the sliders from. */
+	/** Where each skill sits before the player spends anything: the floor, plus the race's free
+	 *  stats, plus the lineage's adjustment. What screen four draws the sliders from. */
 	public Map<SkillType, Integer> startingSkills(SubraceDefinition subrace) {
 		Map<SkillType, Integer> map = new EnumMap<>(SkillType.class);
 		for (SkillType skill : SkillType.values()) {
-			int value = baseSkill(skill) + (subrace == null ? 0 : subrace.skillBonus(skill));
+			int value = SkillType.MIN + freeStat(skill) + (subrace == null ? 0 : subrace.skillBonus(skill));
 			map.put(skill, Math.max(SkillType.MIN, Math.min(SkillType.MAX, value)));
 		}
 		return map;
 	}
 
 	/** Builder-ish helper so the catalog reads as a table rather than a wall of arguments. */
+	/**
+	 * Builder-ish helper so the catalog reads as a table rather than a wall of arguments.
+	 *
+	 * @param freeStats what the race grants, written as the grant itself: {@code Map.of(STRENGTH, 2)}
+	 *                  means "+2 Strength, free". A skill left out gets nothing.
+	 */
 	public static RaceDefinition of(String id, String displayName, String description, List<SubraceDefinition> subraces, List<String> abilityPool, int abilityPicks,
-			Map<SkillType, Integer> baseSkills, boolean startsUnlocked, String equippedTag, int pointCost) {
-		return new RaceDefinition(id, displayName, description, "", subraces, abilityPool, abilityPicks, SubraceDefinition.toList(baseSkills), startsUnlocked,
+			Map<SkillType, Integer> freeStats, boolean startsUnlocked, String equippedTag, int pointCost) {
+		return new RaceDefinition(id, displayName, description, "", subraces, abilityPool, abilityPicks, SubraceDefinition.toList(freeStats), startsUnlocked,
 				equippedTag, pointCost);
 	}
 
-	/** Missing entries default to {@link SkillType#MIN} rather than zero - a race that forgets to
-	 *  list a skill should start it at the floor, not below it. */
-	private static List<Integer> normalizeBase(List<Integer> values) {
+	/** A skill nobody listed grants nothing. Clamped to what the floor can actually absorb, so a
+	 *  race can't grant a skill past its ceiling. */
+	private static List<Integer> normalizeFree(List<Integer> values) {
 		Integer[] out = new Integer[SkillType.values().length];
 		for (int i = 0; i < out.length; i++) {
-			int raw = values != null && i < values.size() && values.get(i) != null ? values.get(i) : SkillType.MIN;
-			out[i] = Math.max(SkillType.MIN, Math.min(SkillType.MAX, raw));
+			int raw = values != null && i < values.size() && values.get(i) != null ? values.get(i) : 0;
+			out[i] = Math.max(0, Math.min(SkillType.MAX - SkillType.MIN, raw));
 		}
 		return List.of(out);
 	}
