@@ -78,6 +78,8 @@ public final class CharacterCreationNetwork {
 			writeInts(buf, view.skillValues());
 			writeInts(buf, view.allocatedPoints());
 			buf.writeVarInt(view.pointsRemaining());
+			buf.writeVarInt(view.pointsBudget());
+			buf.writeVarInt(view.raceCost());
 			buf.writeVarInt(view.abilityPicksRemaining());
 			buf.writeUtf(view.name());
 			buf.writeBoolean(view.nameUsable());
@@ -98,6 +100,8 @@ public final class CharacterCreationNetwork {
 			List<Integer> skills = readInts(buf);
 			List<Integer> allocated = readInts(buf);
 			int points = buf.readVarInt();
+			int budget = buf.readVarInt();
+			int raceCost = buf.readVarInt();
 			int picks = buf.readVarInt();
 			String name = buf.readUtf();
 			boolean nameUsable = buf.readBoolean();
@@ -109,8 +113,8 @@ public final class CharacterCreationNetwork {
 			boolean complete = buf.readBoolean();
 			List<String> selectable = readStrings(buf);
 			String message = buf.readUtf();
-			return new SyncDraftPayload(new DraftView(active, step, raceId, subraceId, abilities, granted, skills, allocated, points, picks, name, nameUsable,
-					completed, complete, selectable, message));
+			return new SyncDraftPayload(new DraftView(active, step, raceId, subraceId, abilities, granted, skills, allocated, points, budget, raceCost, picks, name,
+					nameUsable, completed, complete, selectable, message));
 		});
 
 		@Override
@@ -226,6 +230,7 @@ public final class CharacterCreationNetwork {
 		writeInts(buf, race.baseSkills());
 		buf.writeBoolean(race.startsUnlocked());
 		buf.writeUtf(race.equippedTag());
+		buf.writeVarInt(race.pointCost());
 		buf.writeVarInt(race.subraces().size());
 		for (SubraceDefinition subrace : race.subraces()) {
 			writeSubrace(buf, subrace);
@@ -242,12 +247,13 @@ public final class CharacterCreationNetwork {
 		List<Integer> baseSkills = readInts(buf);
 		boolean startsUnlocked = buf.readBoolean();
 		String tag = buf.readUtf();
+		int pointCost = buf.readVarInt();
 		int count = buf.readVarInt();
 		List<SubraceDefinition> subraces = new ArrayList<>(count);
 		for (int i = 0; i < count; i++) {
 			subraces.add(readSubrace(buf));
 		}
-		return new RaceDefinition(id, displayName, description, iconHint, subraces, pool, picks, baseSkills, startsUnlocked, tag);
+		return new RaceDefinition(id, displayName, description, iconHint, subraces, pool, picks, baseSkills, startsUnlocked, tag, pointCost);
 	}
 
 	private static void writeSubrace(FriendlyByteBuf buf, SubraceDefinition subrace) {
@@ -258,10 +264,12 @@ public final class CharacterCreationNetwork {
 		writeStrings(buf, subrace.grantedAbilities());
 		writeStrings(buf, subrace.extraAbilityPool());
 		writeInts(buf, subrace.skillBonuses());
+		buf.writeVarInt(subrace.pointCost());
 	}
 
 	private static SubraceDefinition readSubrace(FriendlyByteBuf buf) {
-		return new SubraceDefinition(buf.readUtf(), buf.readUtf(), buf.readUtf(512), buf.readUtf(), readStrings(buf), readStrings(buf), readInts(buf));
+		return new SubraceDefinition(buf.readUtf(), buf.readUtf(), buf.readUtf(512), buf.readUtf(), readStrings(buf), readStrings(buf), readInts(buf),
+				buf.readVarInt());
 	}
 
 	private static void writeStrings(FriendlyByteBuf buf, List<String> values) {

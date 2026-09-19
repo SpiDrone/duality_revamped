@@ -18,19 +18,29 @@ import java.util.Map;
  * @param grantedAbilities powers every character of this lineage gets, no choice involved
  * @param extraAbilityPool powers added to what screen three offers
  * @param skillBonuses     per-skill adjustment applied before allocation, in {@link SkillType} order
+ * @param pointCost        points this lineage takes out of the budget on top of the race's own cost.
+ *                         Usually 0 - a race pays for what it is, and a lineage only charges when it
+ *                         is a real step up from its siblings.
  */
 public record SubraceDefinition(String id, String displayName, String description, String iconHint, List<String> grantedAbilities, List<String> extraAbilityPool,
-		List<Integer> skillBonuses) {
+		List<Integer> skillBonuses, int pointCost) {
 
 	public SubraceDefinition {
 		grantedAbilities = List.copyOf(grantedAbilities);
 		extraAbilityPool = List.copyOf(extraAbilityPool);
 		skillBonuses = normalize(skillBonuses);
+		pointCost = Math.max(0, pointCost);
 	}
 
-	/** The common case: a lineage that grants one power and nudges two stats. */
+	/** The common case: a lineage that grants one power, nudges two stats and costs nothing extra. */
 	public static SubraceDefinition of(String id, String displayName, String description, List<String> grantedAbilities, Map<SkillType, Integer> bonuses) {
-		return new SubraceDefinition(id, displayName, description, "", grantedAbilities, List.of(), toList(bonuses));
+		return of(id, displayName, description, grantedAbilities, bonuses, 0);
+	}
+
+	/** As above, for a lineage that charges for itself. */
+	public static SubraceDefinition of(String id, String displayName, String description, List<String> grantedAbilities, Map<SkillType, Integer> bonuses,
+			int pointCost) {
+		return new SubraceDefinition(id, displayName, description, "", grantedAbilities, List.of(), toList(bonuses), pointCost);
 	}
 
 	public int skillBonus(SkillType skill) {

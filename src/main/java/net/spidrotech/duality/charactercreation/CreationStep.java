@@ -50,14 +50,16 @@ public enum CreationStep {
 	 *
 	 * <p>Note what isn't required: unspent skill points are fine (they carry over to the stat
 	 * screen), and so is picking fewer powers than the pool allows. Only a race, a subrace where
-	 * the race has any, and a usable name are actually mandatory.
+	 * the race has any, and a usable name are actually mandatory. A race whose cost eats the whole
+	 * budget therefore passes this step with nothing to spend, which is the intended shape of an
+	 * expensive race.
 	 */
 	public boolean isSatisfiedBy(CharacterDraft draft, RaceDefinition race, SubraceDefinition subrace) {
 		return switch (this) {
 			case RACE -> race != null;
 			case SUBRACE -> race != null && (race.subraces().isEmpty() || subrace != null);
 			case ABILITIES -> race != null && draft.abilityIds().size() <= draft.abilityPickLimit(race, subrace);
-			case SKILLS -> draft.pointsSpent() <= CharacterDraft.STARTING_POINTS;
+			case SKILLS -> draft.pointsSpent() <= draft.pointsBudget(race, subrace);
 			case APPEARANCE -> CharacterDraft.isNameUsable(draft.name());
 			case READY -> true;
 		};

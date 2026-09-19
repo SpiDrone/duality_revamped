@@ -25,15 +25,20 @@ import java.util.Map;
  * @param equippedTag     marker written into the player's EquippedAbilities string, e.g. "vampire",
  *                        which is what {@code VampireRank#isVampire} and friends already look for.
  *                        Empty for races with no such marker.
+ * @param pointCost       how much of the creation budget being this costs. A race that starts you
+ *                        strong should charge for it: a vampire at cost 4 walks into screen four
+ *                        with one point to spend, on top of whatever its base stats already gave.
+ *                        0 for a race that's free to be.
  */
 public record RaceDefinition(String id, String displayName, String description, String iconHint, List<SubraceDefinition> subraces, List<String> abilityPool,
-		int abilityPicks, List<Integer> baseSkills, boolean startsUnlocked, String equippedTag) {
+		int abilityPicks, List<Integer> baseSkills, boolean startsUnlocked, String equippedTag, int pointCost) {
 
 	public RaceDefinition {
 		subraces = List.copyOf(subraces);
 		abilityPool = List.copyOf(abilityPool);
 		baseSkills = normalizeBase(baseSkills);
 		abilityPicks = Math.max(0, abilityPicks);
+		pointCost = Math.max(0, pointCost);
 	}
 
 	public SubraceDefinition subrace(String subraceId) {
@@ -52,6 +57,29 @@ public record RaceDefinition(String id, String displayName, String description, 
 
 	public int baseSkill(SkillType skill) {
 		return baseSkills.get(skill.ordinal());
+	}
+
+	/**
+	 * What being this race put into a skill for free - the amount above the floor everyone starts
+	 * at, with the lineage folded in.
+	 *
+	 * <p>This is the other half of "a vampire costs 4 points and 2 of them go into Strength": the
+	 * cost is {@link #pointCost()}, and the 2 is this. It is also the value the player cannot
+	 * refund below, because points spent on top are the only ones they own.
+	 */
+	public int grantedPoints(SkillType skill, SubraceDefinition subrace) {
+		return Math.max(0, startingSkills(subrace).get(skill) - SkillType.MIN);
+	}
+
+	/** Every skill this race and lineage put something into, for a "what you get" panel. */
+	public Map<SkillType, Integer> grantedPointsMap(SubraceDefinition subrace) {
+		Map<SkillType, Integer> granted = new EnumMap<>(SkillType.class);
+		for (SkillType skill : SkillType.values()) {
+			int points = grantedPoints(skill, subrace);
+			if (points != 0)
+				granted.put(skill, points);
+		}
+		return granted;
 	}
 
 	public Map<SkillType, Integer> baseSkillMap() {
@@ -89,9 +117,9 @@ public record RaceDefinition(String id, String displayName, String description, 
 
 	/** Builder-ish helper so the catalog reads as a table rather than a wall of arguments. */
 	public static RaceDefinition of(String id, String displayName, String description, List<SubraceDefinition> subraces, List<String> abilityPool, int abilityPicks,
-			Map<SkillType, Integer> baseSkills, boolean startsUnlocked, String equippedTag) {
+			Map<SkillType, Integer> baseSkills, boolean startsUnlocked, String equippedTag, int pointCost) {
 		return new RaceDefinition(id, displayName, description, "", subraces, abilityPool, abilityPicks, SubraceDefinition.toList(baseSkills), startsUnlocked,
-				equippedTag);
+				equippedTag, pointCost);
 	}
 
 	/** Missing entries default to {@link SkillType#MIN} rather than zero - a race that forgets to

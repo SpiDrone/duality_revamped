@@ -260,7 +260,7 @@ public final class CharacterCreation {
 
 		Map<SkillType, Integer> skills = draft.skillValues(race, subrace);
 		List<String> abilities = startingAbilities(draft, subrace);
-		writeSheet(sheet, race, subrace, skills, abilities, draft.pointsRemaining());
+		writeSheet(sheet, race, subrace, skills, abilities, draft.pointsRemaining(race, subrace));
 		// The appearance the player built during creation lives in SkinManager's in-memory slot
 		// (it had no character to save to); this is where it finally gets a home.
 		JsonObject charCreator = sheet.has(SkinLoadoutCodec.SECTION) ? sheet.getAsJsonObject(SkinLoadoutCodec.SECTION) : new JsonObject();

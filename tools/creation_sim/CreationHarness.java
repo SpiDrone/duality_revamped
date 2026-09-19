@@ -43,9 +43,18 @@ public class CreationHarness {
 		check("starting skills stay in range", baseInRange);
 		check("pick counts are sane", picksSane);
 		check("granted powers aren't also offered as choices", grantsExcluded);
+		boolean affordable = true;
 		for (RaceDefinition race : RaceCatalog.all()) {
-			System.out.printf("     %-14s %d lineage(s), pool %d, %d pick(s)%s%n", race.id(), race.subraces().size(), race.abilityPool().size(),
-					race.abilityPicks(), race.startsUnlocked() ? "" : " [locked]");
+			affordable &= race.pointCost() <= CharacterDraft.STARTING_POINTS;
+			for (SubraceDefinition subrace : race.subraces()) {
+				affordable &= race.pointCost() + subrace.pointCost() <= CharacterDraft.STARTING_POINTS;
+			}
+		}
+		check("no race plus lineage costs more than the pool", affordable);
+		for (RaceDefinition race : RaceCatalog.all()) {
+			System.out.printf("     %-14s costs %d, leaves %d, %d lineage(s), %d pick(s), gives %s%s%n", race.id(), race.pointCost(),
+					CharacterDraft.STARTING_POINTS - race.pointCost(), race.subraces().size(), race.abilityPicks(), race.grantedPointsMap(null),
+					race.startsUnlocked() ? "" : " [locked]");
 		}
 
 		System.out.println("== 2. locked races stay locked ==");
@@ -56,31 +65,77 @@ public class CreationHarness {
 		check("one unlock doesn't open the rest", !RaceCatalog.isSelectableFor(Set.of("vampire"), "demon"));
 		System.out.printf("     with nothing earned: %d of %d races offered%n", RaceCatalog.selectableFor(Set.of()).size(), RaceCatalog.all().size());
 
-		System.out.println("== 3. the point budget holds ==");
+		System.out.println("== 3. a race costs points, and what it grants is a floor ==");
+		RaceDefinition vamp = RaceCatalog.get("vampire");
+		SubraceDefinition fledgling = vamp.subrace("fledgling_line");
+		CharacterDraft v = new CharacterDraft();
+		v.selectRace(vamp);
+		v.selectSubrace(vamp, fledgling);
+		System.out.printf("     vampire costs %d, leaving %d of %d to spend%n", v.raceCost(vamp, fledgling), v.pointsBudget(vamp, fledgling),
+				CharacterDraft.STARTING_POINTS);
+		System.out.printf("     it granted %s%n", vamp.grantedPointsMap(fledgling));
+		check("being a vampire costs 4", vamp.pointCost() == 4);
+		check("which leaves 1 to distribute", v.pointsBudget(vamp, fledgling) == CharacterDraft.STARTING_POINTS - 4);
+		check("strength arrives already raised", vamp.grantedPoints(SkillType.STRENGTH, fledgling) == 2);
+		check("and that shows up as the skill's value", v.skillValue(SkillType.STRENGTH, vamp, fledgling) == SkillType.MIN + 2);
+		check("the granted points cannot be refunded", !v.allocate(SkillType.STRENGTH, -1, vamp, fledgling).ok());
+		check("the one remaining point spends", v.allocate(SkillType.STRENGTH, 1, vamp, fledgling).ok());
+		check("strength is now granted 2 plus bought 1", v.skillValue(SkillType.STRENGTH, vamp, fledgling) == SkillType.MIN + 3);
+		check("the bought point can be refunded", v.allocate(SkillType.STRENGTH, -1, vamp, fledgling).ok());
+		check("but not one past it", !v.allocate(SkillType.STRENGTH, -1, vamp, fledgling).ok());
+		v.allocate(SkillType.STRENGTH, 1, vamp, fledgling);
+		check("and a second point isn't there to spend", !v.allocate(SkillType.AGILITY, 1, vamp, fledgling).ok());
+
+		RaceDefinition free = RaceCatalog.get("human");
+		CharacterDraft h = new CharacterDraft();
+		h.selectRace(free);
+		check("a free race keeps the whole pool", h.pointsBudget(free, null) == CharacterDraft.STARTING_POINTS);
+		System.out.printf("     human costs %d, leaving %d%n", free.pointCost(), h.pointsBudget(free, null));
+
+		System.out.println("== 3b. a dearer lineage refunds what no longer fits ==");
+		CharacterDraft trim = new CharacterDraft();
+		RaceDefinition human = RaceCatalog.get("human");
+		SubraceDefinition mortal = human.subrace("mortal");
+		SubraceDefinition hunter = human.subrace("hunter");
+		trim.selectRace(human);
+		trim.selectSubrace(human, mortal);
+		for (int i = 0; i < CharacterDraft.STARTING_POINTS; i++) {
+			trim.allocate(SkillType.FORTUNE, 1, human, mortal);
+		}
+		check("all five spent on the free lineage", trim.pointsSpent() == CharacterDraft.STARTING_POINTS);
+		trim.selectSubrace(human, hunter);
+		System.out.printf("     hunter costs %d more; spent trimmed to %d of %d%n", hunter.pointCost(), trim.pointsSpent(), trim.pointsBudget(human, hunter));
+		check("switching to a dearer lineage refunds the overspend", trim.pointsSpent() == trim.pointsBudget(human, hunter));
+		check("and the draft is never left overspent", trim.pointsRemaining(human, hunter) >= 0);
+		check("the skills step accepts it", CreationStep.SKILLS.isSatisfiedBy(trim, human, hunter));
+
+		System.out.println("== 3c. the point budget holds ==");
 		CharacterDraft draft = new CharacterDraft();
 		RaceDefinition witch = RaceCatalog.get("witch");
 		SubraceDefinition seer = witch.subrace("seer");
 		draft.selectRace(witch);
 		draft.selectSubrace(witch, seer);
-		check("starts with the full budget", draft.pointsRemaining() == CharacterDraft.STARTING_POINTS);
-		for (int i = 0; i < CharacterDraft.STARTING_POINTS; i++) {
+		int budget = draft.pointsBudget(witch, seer);
+		System.out.printf("     witch costs %d, leaving %d%n", witch.pointCost(), budget);
+		check("starts with its budget", draft.pointsRemaining(witch, seer) == budget);
+		for (int i = 0; i < budget; i++) {
 			draft.allocate(SkillType.ENDURANCE, 1, witch, seer);
 		}
-		check("five points spend", draft.pointsRemaining() == 0);
-		check("a sixth is refused", !draft.allocate(SkillType.ENDURANCE, 1, witch, seer).ok());
-		check("refunding works", draft.allocate(SkillType.ENDURANCE, -1, witch, seer).ok() && draft.pointsRemaining() == 1);
+		check("the budget spends", draft.pointsRemaining(witch, seer) == 0);
+		check("one past it is refused", !draft.allocate(SkillType.ENDURANCE, 1, witch, seer).ok());
+		check("refunding works", draft.allocate(SkillType.ENDURANCE, -1, witch, seer).ok() && draft.pointsRemaining(witch, seer) == 1);
 		check("refunding past the start is refused", !draft.allocate(SkillType.STRENGTH, -1, witch, seer).ok());
-		check("reset hands everything back", draft.resetSkills().ok() && draft.pointsRemaining() == CharacterDraft.STARTING_POINTS);
+		check("reset hands everything back", draft.resetSkills().ok() && draft.pointsRemaining(witch, seer) == budget);
 		// Attunement starts high for a witch, so the cap should bite before the budget does.
 		int attunement = draft.skillValue(SkillType.ATTUNEMENT, witch, seer);
 		int room = SkillType.MAX - attunement;
 		System.out.printf("     witch/seer attunement starts at %d, %d below the cap of %d%n", attunement, room, SkillType.MAX);
 		boolean cappedOut = false;
-		for (int i = 0; i < CharacterDraft.STARTING_POINTS; i++) {
+		for (int i = 0; i < budget; i++) {
 			if (!draft.allocate(SkillType.ATTUNEMENT, 1, witch, seer).ok())
 				cappedOut = true;
 		}
-		check("the per-skill cap is enforced", room >= CharacterDraft.STARTING_POINTS || cappedOut);
+		check("the per-skill cap is enforced", room >= budget || cappedOut);
 		check("and never exceeded", draft.skillValue(SkillType.ATTUNEMENT, witch, seer) <= SkillType.MAX);
 
 		System.out.println("== 4. powers are bounded by the pool and the pick count ==");
@@ -103,12 +158,12 @@ public class CreationHarness {
 		mind.toggleAbility(witch.selectableAbilities(seer).get(0), witch, seer);
 		mind.allocate(SkillType.ENDURANCE, 2, witch, seer);
 		mind.setName("Idra Vane");
-		check("choices are held", !mind.abilityIds().isEmpty() && mind.pointsRemaining() == 3);
+		check("choices are held", !mind.abilityIds().isEmpty() && mind.pointsSpent() == 2);
 		RaceDefinition vampire = RaceCatalog.get("vampire");
 		mind.selectRace(vampire);
 		check("switching race drops the old lineage", mind.subraceId().isEmpty());
 		check("switching race drops the old powers", mind.abilityIds().isEmpty());
-		check("switching race refunds the points", mind.pointsRemaining() == CharacterDraft.STARTING_POINTS);
+		check("switching race refunds the points", mind.pointsSpent() == 0);
 		check("but the name is kept - it isn't race-specific", mind.name().equals("Idra Vane"));
 
 		SubraceDefinition court = vampire.subrace("crimson_court");
@@ -145,10 +200,13 @@ public class CreationHarness {
 		gate.setName("Sable Marrow");
 		check("named, and now complete", gate.isComplete(vampire, court));
 		check("with no powers picked at all", gate.abilityIds().isEmpty());
-		check("and every point unspent - they carry over", gate.pointsRemaining() == CharacterDraft.STARTING_POINTS);
+		check("and every point unspent - they carry over", gate.pointsSpent() == 0);
 
 		System.out.println("== 8. the view the screens draw from ==");
 		DraftView view = DraftView.of(gate, vampire, court, List.of("human", "vampire"), "hello");
+		check("the race's cost carries", view.raceCost() == vampire.pointCost() + court.pointCost());
+		check("the budget carries", view.pointsBudget() == CharacterDraft.STARTING_POINTS - view.raceCost());
+		check("the granted floor is readable", view.baseSkill(SkillType.STRENGTH) == vampire.grantedPoints(SkillType.STRENGTH, court) + SkillType.MIN);
 		check("it is active", view.active());
 		check("race and lineage carry", view.raceId().equals("vampire") && view.subraceId().equals("crimson_court"));
 		check("granted powers are listed separately", view.grantedAbilityIds().equals(court.grantedAbilities()));
@@ -159,7 +217,7 @@ public class CreationHarness {
 		check("an inactive view is safe to read", !DraftView.INACTIVE.active() && DraftView.INACTIVE.skill(SkillType.STRENGTH) == SkillType.MIN);
 
 		System.out.println("== 9. a race with no lineages doesn't block on screen two ==");
-		RaceDefinition bare = RaceDefinition.of("bare", "Bare", "No lineages.", List.of(), List.of("orb_normal"), 1, Map.of(), true, "");
+		RaceDefinition bare = RaceDefinition.of("bare", "Bare", "No lineages.", List.of(), List.of("orb_normal"), 1, Map.of(), true, "", 0);
 		CharacterDraft simple = new CharacterDraft();
 		simple.selectRace(bare);
 		simple.setName("Test");

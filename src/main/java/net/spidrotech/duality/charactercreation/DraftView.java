@@ -14,12 +14,12 @@ import java.util.List;
  * picture, not the truth: acting on a stale one is safe, because the server re-checks.
  */
 public record DraftView(boolean active, CreationStep step, String raceId, String subraceId, List<String> abilityIds, List<String> grantedAbilityIds,
-		List<Integer> skillValues, List<Integer> allocatedPoints, int pointsRemaining, int abilityPicksRemaining, String name, boolean nameUsable,
-		List<CreationStep> completedSteps, boolean complete, List<String> selectableRaceIds, String statusMessage) {
+		List<Integer> skillValues, List<Integer> allocatedPoints, int pointsRemaining, int pointsBudget, int raceCost, int abilityPicksRemaining, String name,
+		boolean nameUsable, List<CreationStep> completedSteps, boolean complete, List<String> selectableRaceIds, String statusMessage) {
 
 	/** What the client holds when the player isn't in the creator. */
 	public static final DraftView INACTIVE = new DraftView(false, CreationStep.RACE, "", "", List.of(), List.of(), zeroes(), zeroes(), CharacterDraft.STARTING_POINTS,
-			0, "", false, List.of(), false, List.of(), "");
+			CharacterDraft.STARTING_POINTS, 0, 0, "", false, List.of(), false, List.of(), "");
 
 	public DraftView {
 		abilityIds = List.copyOf(abilityIds);
@@ -45,9 +45,9 @@ public record DraftView(boolean active, CreationStep step, String raceId, String
 			allocated.add(draft.allocatedTo(skill));
 		}
 		return new DraftView(true, draft.step(), draft.raceId(), draft.subraceId(), List.copyOf(draft.abilityIds()),
-				subrace == null ? List.of() : subrace.grantedAbilities(), values, allocated, draft.pointsRemaining(), draft.abilityPicksRemaining(race, subrace),
-				draft.name(), CharacterDraft.isNameUsable(draft.name()), draft.completedSteps(race, subrace), draft.isComplete(race, subrace), selectableRaceIds,
-				statusMessage);
+				subrace == null ? List.of() : subrace.grantedAbilities(), values, allocated, draft.pointsRemaining(race, subrace), draft.pointsBudget(race, subrace),
+				draft.raceCost(race, subrace), draft.abilityPicksRemaining(race, subrace), draft.name(), CharacterDraft.isNameUsable(draft.name()),
+				draft.completedSteps(race, subrace), draft.isComplete(race, subrace), selectableRaceIds, statusMessage);
 	}
 
 	/** The race this draft is on, resolved against whichever catalog copy is local. */
@@ -67,6 +67,17 @@ public record DraftView(boolean active, CreationStep step, String raceId, String
 	/** Points the player has put into this skill, which is what a "refund" arrow should gate on. */
 	public int allocated(SkillType type) {
 		return allocatedPoints.get(type.ordinal());
+	}
+
+	/**
+	 * The floor: what being this race and lineage put into the skill for free.
+	 *
+	 * <p>The player cannot refund below this, so a screen showing "5" made of a granted 3 and a
+	 * bought 2 should draw the granted part differently and grey the minus arrow once
+	 * {@link #allocated} hits zero.
+	 */
+	public int baseSkill(SkillType type) {
+		return skill(type) - allocated(type);
 	}
 
 	public boolean isStepComplete(CreationStep candidate) {

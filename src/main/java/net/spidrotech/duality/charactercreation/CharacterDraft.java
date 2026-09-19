@@ -20,9 +20,15 @@ import java.util.Set;
  * rules can be exercised without a game running - see {@code tools/creation_sim}.
  */
 public class CharacterDraft {
-	/** Points the player gets to spend on screen four. Whatever's left over is carried onto the
-	 *  character sheet and spent later from the stat screen, so leaving some unspent is a real
-	 *  choice rather than a mistake to block on. */
+	/**
+	 * The whole pool a character is built from. A race's {@link RaceDefinition#pointCost()} comes
+	 * out of this before the player spends anything, so picking something powerful leaves less to
+	 * distribute - see {@link #pointsBudget}.
+	 *
+	 * <p>Whatever's left at the end isn't lost: it's carried onto the character sheet and spent
+	 * later from the stat screen, so walking away with points in hand is a real choice rather than
+	 * a mistake to block on.
+	 */
 	public static final int STARTING_POINTS = 5;
 	/** Longest name a character may have. */
 	public static final int NAME_MAX = 24;
@@ -102,6 +108,9 @@ public class CharacterDraft {
 		abilityIds.retainAll(race.selectableAbilities(subrace));
 		// And the stat line moved under the allocation, so re-clamp it.
 		clampAllocations(race, subrace);
+		// A dearer lineage can shrink the budget out from under what's already spent; refund the
+		// difference rather than leaving the draft overspent.
+		trimToBudget(race, subrace);
 		return DraftResult.ok("Lineage set to " + subrace.displayName() + ".");
 	}
 
@@ -140,8 +149,25 @@ public class CharacterDraft {
 		return total;
 	}
 
-	public int pointsRemaining() {
-		return STARTING_POINTS - pointsSpent();
+	/** What being this race and lineage costs, before the player spends a thing. */
+	public int raceCost(RaceDefinition race, SubraceDefinition subrace) {
+		return (race == null ? 0 : race.pointCost()) + (subrace == null ? 0 : subrace.pointCost());
+	}
+
+	/**
+	 * Points actually available to distribute on screen four: the pool, less what the race and
+	 * lineage charge for themselves.
+	 *
+	 * <p>Floored at zero. A race that costs more than the pool is a catalog authoring mistake, and
+	 * the right behaviour is "you get nothing to spend", not a negative budget that makes every
+	 * refund look like an overspend.
+	 */
+	public int pointsBudget(RaceDefinition race, SubraceDefinition subrace) {
+		return Math.max(0, STARTING_POINTS - raceCost(race, subrace));
+	}
+
+	public int pointsRemaining(RaceDefinition race, SubraceDefinition subrace) {
+		return pointsBudget(race, subrace) - pointsSpent();
 	}
 
 	public int allocatedTo(SkillType skill) {
@@ -173,10 +199,12 @@ public class CharacterDraft {
 		if (delta == 0)
 			return DraftResult.OK;
 		int spent = allocatedTo(skill);
+		// The floor is whatever the race and lineage granted: those points were never the player's
+		// to refund, so "back to where it started" is as low as this goes.
 		if (spent + delta < 0)
-			return DraftResult.no(skill.displayName() + " is already back to where it started.");
-		if (delta > pointsRemaining())
-			return DraftResult.no("Only " + pointsRemaining() + " point(s) left.");
+			return DraftResult.no(skill.displayName() + " is already down to what being a " + race.displayName() + " gives you.");
+		if (delta > pointsRemaining(race, subrace))
+			return DraftResult.no("Only " + pointsRemaining(race, subrace) + " point(s) left.");
 		if (skillValue(skill, race, subrace) + delta > SkillType.MAX)
 			return DraftResult.no(skill.displayName() + " caps at " + SkillType.MAX + " during creation.");
 		setAllocated(skill, spent + delta);
@@ -256,6 +284,21 @@ public class CharacterDraft {
 			allocated.remove(skill);
 		else
 			allocated.put(skill, value);
+	}
+
+	/** Hands points back, highest-spend first, until the draft fits its budget again. */
+	private void trimToBudget(RaceDefinition race, SubraceDefinition subrace) {
+		int budget = pointsBudget(race, subrace);
+		while (pointsSpent() > budget) {
+			SkillType biggest = null;
+			for (SkillType skill : SkillType.values()) {
+				if (allocatedTo(skill) > 0 && (biggest == null || allocatedTo(skill) > allocatedTo(biggest)))
+					biggest = skill;
+			}
+			if (biggest == null)
+				return;
+			setAllocated(biggest, allocatedTo(biggest) - 1);
+		}
 	}
 
 	/** Refunds any allocation a changed lineage has pushed over the cap, rather than silently

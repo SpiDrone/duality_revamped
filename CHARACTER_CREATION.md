@@ -72,8 +72,11 @@ Seven stats, `SkillType`: STRENGTH, AGILITY, ENDURANCE, ATTUNEMENT, PRESENCE, IN
 has `displayName()` and `description()` for hover text.
 
 ```java
-ClientCharacterCreation.pointsRemaining();       // of CharacterDraft.STARTING_POINTS (5)
-ClientCharacterCreation.skill(type);             // total: race + lineage + spent
+ClientCharacterCreation.pointsBudget();          // what's actually spendable: 5 − race cost
+ClientCharacterCreation.raceCost();              // what being this race cost
+ClientCharacterCreation.pointsRemaining();       // of the budget
+ClientCharacterCreation.skill(type);             // total: granted + bought
+ClientCharacterCreation.baseSkill(type);         // the granted floor — can't be refunded below
 ClientCharacterCreation.allocated(type);         // just what the player paid for
 ClientCharacterCreation.canRaise(type);          // enable the + arrow
 ClientCharacterCreation.canLower(type);          // enable the −
@@ -81,10 +84,55 @@ ClientCharacterCreation.allocate(type, +1);
 ClientCharacterCreation.resetSkills();
 ```
 
+Draw a skill as `baseSkill` + `allocated`, styled differently — the granted part was never the
+player's to refund.
+
 **Leftover points are not lost.** They're written to the character as `unspent_skill_points` and
 spent later from the in-game stat screen via `CharacterAttributes.spendPoint(player, skill)`. So
 walking off screen four with points in hand is a real choice, and the step counts as complete either
 way. Creation caps a skill at `SkillType.MAX` (10).
+
+## Races cost points, and what they grant is a floor
+
+A race is a package: what it costs out of the five-point pool, what it puts into the stat line for
+free, and what it can do.
+
+```java
+RaceDefinition.of(id, name, desc, subraces, abilityPool, picks,
+                  Map.of(STRENGTH, 3, AGILITY, 3, PRESENCE, 2),  // where the stats start
+                  startsUnlocked, equippedTag,
+                  4);                                            // ← pointCost
+```
+
+Picking that race spends 4 of the 5, leaves **1** to distribute, and hands the character Strength 3
+and Agility 3 before they touch a slider. `allocate(STRENGTH, -1)` on a freshly-picked vampire is
+refused — *"Strength is already down to what being a Vampire gives you."* Only points the player
+bought can be refunded.
+
+| | reads | means |
+|---|---|---|
+| cost | `race.pointCost()` | comes off the budget up front |
+| granted | `race.grantedPoints(skill, subrace)` | the floor, in points above the minimum |
+| granted, all | `race.grantedPointsMap(subrace)` | `{STRENGTH: 2, AGILITY: 2, PRESENCE: 1}` for a summary panel |
+| budget | `draft.pointsBudget(race, subrace)` | `STARTING_POINTS − cost`, floored at 0 |
+
+Lineages can charge too (`SubraceDefinition.of(..., pointCost)`), on top of the race. Switching to a
+dearer lineage after spending refunds the difference automatically rather than leaving the draft
+overspent — highest-spend skill first.
+
+The starting catalog, for scale:
+
+| race | cost | leaves | grants |
+|---|---|---|---|
+| Human | 0 | 5 | Endurance +1, Presence +1 |
+| Witch | 2 | 3 | Attunement +3, Insight +1 |
+| Whitelighter | 3 | 2 | Attunement +2, Presence +2, Fortune +1 |
+| Vampire | 4 | 1 | Strength +2, Agility +2, Presence +1 |
+| Demon | 4 | 1 | Strength +3, Attunement +2, Endurance +1 |
+
+A human costs nothing, starts almost flat, and has all five to put wherever they like. A vampire
+arrives with five points' worth of stats already on and one point of freedom. That's the trade the
+cost buys you, and it's a number in one table.
 
 ### 5 — Appearance and name
 
@@ -161,13 +209,17 @@ races in there are starting data wired to ability ids that actually exist today;
 starting point, not a balance pass. Add a race and screens one and two gain an option with no other
 change.
 
+One rule the harness enforces: a race plus any one of its lineages must not cost more than
+`STARTING_POINTS`. Over-budget is treated as "nothing to spend" rather than a negative budget, but
+it's an authoring mistake and the test will say so.
+
 Check a change in a couple of seconds, no client launch:
 
     sh tools/creation_sim/run.sh
 
-47 checks: catalog consistency (unique ids, in-range skills, granted powers not double-offered),
-lock enforcement, the point budget, pick limits, what changing your mind cleans up, name rules, and
-commit gating.
+65 checks: catalog consistency (unique ids, in-range skills, granted powers not double-offered,
+nothing priced past the pool), lock enforcement, race costs and the granted floor, the point budget,
+pick limits, what changing your mind cleans up, name rules, and commit gating.
 
 ## Driving it from chat
 

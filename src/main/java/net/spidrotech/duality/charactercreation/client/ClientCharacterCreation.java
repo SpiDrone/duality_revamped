@@ -156,10 +156,27 @@ public final class ClientCharacterCreation {
 	}
 
 	// ------------------------------------------------------------------------------ screen four
-	/** Points left of {@link CharacterDraft#STARTING_POINTS}. Leaving some is allowed - they carry
-	 *  onto the character and can be spent later from the stat screen. */
+	/** Points left to distribute. Leaving some is allowed - they carry onto the character and can
+	 *  be spent later from the stat screen. */
 	public static int pointsRemaining() {
 		return view.pointsRemaining();
+	}
+
+	/** What the player actually has to spend: {@link CharacterDraft#STARTING_POINTS} less what the
+	 *  race and lineage charge. Draw the bar against this, not against the raw pool. */
+	public static int pointsBudget() {
+		return view.pointsBudget();
+	}
+
+	/** What being this race and lineage cost. "Vampire - 4 points" on screen one comes from here. */
+	public static int raceCost() {
+		return view.raceCost();
+	}
+
+	/** The floor a skill sits at because of the race and lineage - the part the player didn't buy
+	 *  and can't refund. Draw it differently from the bought part. */
+	public static int baseSkill(SkillType type) {
+		return view.baseSkill(type);
 	}
 
 	/** A skill's total: where the race and lineage put it, plus what's been spent. */
