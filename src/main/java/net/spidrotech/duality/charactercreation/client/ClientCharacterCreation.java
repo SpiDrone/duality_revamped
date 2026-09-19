@@ -1,6 +1,8 @@
 package net.spidrotech.duality.charactercreation.client;
 
 import net.spidrotech.duality.charactercreation.CharacterCreationNetwork;
+import net.spidrotech.duality.charactercreation.CharacterDisplay;
+import net.spidrotech.duality.charactercreation.CharacterIdentity;
 import net.spidrotech.duality.charactercreation.CharacterDraft;
 import net.spidrotech.duality.charactercreation.CreationAction;
 import net.spidrotech.duality.charactercreation.CreationStep;
@@ -11,6 +13,9 @@ import net.spidrotech.duality.charactercreation.SkillType;
 import net.spidrotech.duality.charactercreation.SubraceDefinition;
 
 import net.neoforged.neoforge.network.PacketDistributor;
+
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.entity.player.Player;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -252,6 +257,25 @@ public final class ClientCharacterCreation {
 
 	public static void restart() {
 		send(CreationAction.RESTART, "", 0);
+	}
+
+	/**
+	 * Takes in who everyone is and makes the names already on screen catch up.
+	 *
+	 * <p>NeoForge caches a player's display name rather than recomputing it per frame, so an
+	 * identity arriving for somebody already in the world has to knock that cache over or their
+	 * old name stays above their head until they're reloaded.
+	 */
+	public static void acceptIdentities(List<CharacterIdentity> identities) {
+		Minecraft minecraft = Minecraft.getInstance();
+		for (CharacterIdentity identity : identities) {
+			CharacterDisplay.accept(identity);
+			if (minecraft.level == null)
+				continue;
+			Player player = minecraft.level.getPlayerByUUID(identity.playerId());
+			if (player != null)
+				CharacterDisplay.refresh(player);
+		}
 	}
 
 	/** The escape hatch, if you need an action this class doesn't wrap. */

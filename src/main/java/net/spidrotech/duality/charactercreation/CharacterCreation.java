@@ -71,6 +71,9 @@ public final class CharacterCreation {
 			return;
 		DRAFTS.put(player.getUUID(), new CharacterDraft());
 		CharacterCreationNetwork.sendCatalog(player);
+		// Whoever they were, they aren't any more - drop the old name off their head before they
+		// start building a new one.
+		CharacterDisplay.publish(player);
 		sync(player, "Let's begin.");
 	}
 
@@ -270,6 +273,9 @@ public final class CharacterCreation {
 
 		applyToPlayer(player, race, skills, abilities);
 		SkinManager.get().onActiveCharacterChanged(player);
+		// Name over their head, in chat, and in the tab list - and the face in tab, which follows
+		// the appearance the line above just reloaded.
+		CharacterDisplay.publish(player);
 
 		DRAFTS.remove(player.getUUID());
 		CharacterCreationNetwork.sendInactive(player);

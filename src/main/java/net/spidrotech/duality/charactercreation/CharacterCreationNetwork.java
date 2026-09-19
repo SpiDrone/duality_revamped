@@ -14,10 +14,12 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * All character-creator networking, in the same shape as SkinNetwork.
@@ -29,6 +31,8 @@ import java.util.List;
  *                            left to spend, which steps are ticked, and a message to show.
  *   CreationActionPayload    C-&gt;S. One packet for every button on every screen. VALIDATED: the
  *                            server re-runs every rule, so this is a request, not an instruction.
+ *   SyncIdentitiesPayload    S-&gt;C. Who each player currently is, so name tags - which are drawn
+ *                            client-side - can say the character's name instead of the account's.
  * </pre>
  *
  * <p>There is deliberately no packet for the skin editor. Screen five uses the existing
@@ -143,6 +147,34 @@ public final class CharacterCreationNetwork {
 		}
 	}
 
+	/** Who other players are, for the name over their head. See {@link CharacterDisplay}. */
+	public record SyncIdentitiesPayload(List<CharacterIdentity> identities) implements CustomPacketPayload {
+		public static final Type<SyncIdentitiesPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath("duality", "sync_character_identities"));
+		public static final StreamCodec<FriendlyByteBuf, SyncIdentitiesPayload> STREAM_CODEC = StreamCodec.of(
+				(FriendlyByteBuf buf, SyncIdentitiesPayload payload) -> {
+					buf.writeVarInt(payload.identities().size());
+					for (CharacterIdentity identity : payload.identities()) {
+						buf.writeUUID(identity.playerId());
+						buf.writeUtf(identity.characterName(), 64);
+						buf.writeUtf(identity.raceId(), 64);
+						buf.writeBoolean(identity.present());
+					}
+				}, (FriendlyByteBuf buf) -> {
+					int count = buf.readVarInt();
+					List<CharacterIdentity> identities = new ArrayList<>(count);
+					for (int i = 0; i < count; i++) {
+						UUID id = buf.readUUID();
+						identities.add(new CharacterIdentity(id, buf.readUtf(64), buf.readUtf(64), buf.readBoolean()));
+					}
+					return new SyncIdentitiesPayload(List.copyOf(identities));
+				});
+
+		@Override
+		public Type<SyncIdentitiesPayload> type() {
+			return TYPE;
+		}
+	}
+
 	// ----------------------------------------------------------------------------- outgoing
 	public static void sendCatalog(ServerPlayer player) {
 		PacketDistributor.sendToPlayer(player, new SyncRaceCatalogPayload(new ArrayList<>(RaceCatalog.all())));
@@ -157,12 +189,25 @@ public final class CharacterCreationNetwork {
 		PacketDistributor.sendToPlayer(player, new SyncDraftPayload(DraftView.INACTIVE));
 	}
 
+	public static void sendIdentities(ServerPlayer player, List<CharacterIdentity> identities) {
+		if (!identities.isEmpty())
+			PacketDistributor.sendToPlayer(player, new SyncIdentitiesPayload(List.copyOf(identities)));
+	}
+
+	/** Everyone needs everyone's name: a name tag is drawn by the client that's looking at it. */
+	public static void broadcastIdentity(MinecraftServer server, List<CharacterIdentity> identities) {
+		if (server == null || identities.isEmpty())
+			return;
+		PacketDistributor.sendToAllPlayers(new SyncIdentitiesPayload(List.copyOf(identities)));
+	}
+
 	// --------------------------------------------------------------------------- registration
 	@SubscribeEvent
 	public static void register(final RegisterPayloadHandlersEvent event) {
 		final PayloadRegistrar registrar = event.registrar("duality");
 		registrar.playToClient(SyncRaceCatalogPayload.TYPE, SyncRaceCatalogPayload.STREAM_CODEC, CharacterCreationNetwork::handleCatalog);
 		registrar.playToClient(SyncDraftPayload.TYPE, SyncDraftPayload.STREAM_CODEC, CharacterCreationNetwork::handleDraft);
+		registrar.playToClient(SyncIdentitiesPayload.TYPE, SyncIdentitiesPayload.STREAM_CODEC, CharacterCreationNetwork::handleIdentities);
 		registrar.playToServer(CreationActionPayload.TYPE, CreationActionPayload.STREAM_CODEC, CharacterCreationNetwork::handleAction);
 	}
 
@@ -172,6 +217,10 @@ public final class CharacterCreationNetwork {
 
 	private static void handleDraft(final SyncDraftPayload payload, final IPayloadContext context) {
 		context.enqueueWork(() -> ClientCharacterCreation.accept(payload.view()));
+	}
+
+	private static void handleIdentities(final SyncIdentitiesPayload payload, final IPayloadContext context) {
+		context.enqueueWork(() -> ClientCharacterCreation.acceptIdentities(payload.identities()));
 	}
 
 	private static void handleAction(final CreationActionPayload payload, final IPayloadContext context) {

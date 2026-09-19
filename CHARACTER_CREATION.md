@@ -189,6 +189,52 @@ In this order, because the order matters:
 6. `SkinManager.onActiveCharacterChanged` — reloads appearance and unlocks **from the sheet**, which
    is why the sheet has to be complete first.
 
+## Looking like your character
+
+Three surfaces, and they don't all come from the same place.
+
+| surface | comes from | handled by |
+|---|---|---|
+| name over the head, chat, death messages | `Player#getDisplayName()` | `PlayerEvent.NameFormat` |
+| tab list name | the player-info packet | `PlayerEvent.TabListNameFormat` |
+| face in the tab list | `PlayerInfo#getSkin()` | `PlayerInfoMixin` |
+
+**The face** needed a second mixin. `AbstractClientPlayerMixin` already routed the player *model*
+through the composited skin, but the tab list doesn't draw from the entity — it walks `PlayerInfo`
+objects, which exist for players whose entity isn't even loaded. So the body in the world wore the
+character's face and tab still showed the Mojang skin. `PlayerInfoMixin` hooks the same cache. The
+two overlap harmlessly: `AbstractClientPlayer#getSkin()` delegates to `PlayerInfo#getSkin()`, and
+because `ClientSkinCache` is keyed on UUID and version, the second call is a cache hit rather than a
+composite of a composite.
+
+**The names** needed syncing. A name tag is drawn by the client *looking at* the player, so every
+client has to know every other player's character name. `CharacterIdentity` is the smallest thing
+worth sending — player id, character name, race — and `CharacterDisplay` keeps the map on both
+sides. In singleplayer both halves share the one map, which is just correct rather than a special
+case.
+
+Two style knobs at the top of `CharacterDisplay`:
+
+```java
+DISPLAY_NAME_STYLE = CHARACTER_ONLY;            // head, chat, death messages
+TAB_LIST_STYLE     = CHARACTER_THEN_ACCOUNT;    // "Mera Holt (Steve)"
+```
+
+Different defaults on purpose. The name over a head is the in-fiction surface and an account name
+floating there is what breaks it. Tab is the out-of-fiction surface — it's where you look to find
+out who you're actually playing with, and an all-character tab list makes moderating a server
+unnecessarily hard. `Style.ACCOUNT_ONLY` turns a surface off without deleting the wiring.
+
+A player with no living character falls back to their account name everywhere — mid-creation, or
+freshly dead. `CharacterDisplay.read` checks the sheet's `status`, so a dead character's name never
+ends up back over someone's head.
+
+`CharacterDisplay.publish(player)` re-reads and pushes. It's already called on login, respawn,
+`begin`, `commit` and `/character switch`; call it after anything else that changes who someone is.
+
+Names are sanitised on the way out — section signs and control characters stripped, length capped —
+because a character sheet is a json file somebody can edit and that string lands in everyone's chat.
+
 ## What a point is worth
 
 `CharacterAttributes` is the only file that knows. Per point above 1:
@@ -224,10 +270,10 @@ Check a change in a couple of seconds, no client launch:
 
     sh tools/creation_sim/run.sh
 
-90 checks: catalog consistency (unique ids, in-range skills, granted powers not double-offered,
+107 checks: catalog consistency (unique ids, in-range skills, granted powers not double-offered,
 nothing priced past the pool), lock enforcement, free stats being genuinely free and genuinely
 unremovable, race costs, the point budget, pick limits, what changing your mind cleans up, name
-rules, and commit gating.
+rules, commit gating, and how a name reads on each surface.
 
 ## Driving it from chat
 
@@ -261,6 +307,19 @@ Three payloads, same shape as `SkinNetwork`:
 One action packet rather than five, so adding a screen doesn't mean adding a payload type. Every
 action is re-validated server-side: a race the player hasn't earned, a sixth point out of five, or a
 power outside the pool gets a refusal and an unchanged draft.
+
+## Worth verifying first
+
+I can't compile against NeoForge here, so these API names are from memory and are the likeliest
+things to need a one-line fix. Each is isolated so a wrong guess is cheap:
+
+- `PlayerEvent.NameFormat#setDisplayname` and `PlayerEvent.TabListNameFormat#setDisplayName` — note
+  the inconsistent capitalisation, which is the API's, not a typo.
+- `Player#refreshDisplayName()` — NeoForge caches the NameFormat result on the player; this is what
+  knocks it over when a character changes. It's called in exactly one place,
+  `CharacterDisplay.refresh`. If it doesn't exist, the fallback is `RenderNameTagEvent` client-side.
+- `PlayerInfo#getSkin()` as a mixin target.
+- `CharacterAttributes` — 1.21 reworked attribute modifiers to be `ResourceLocation`-keyed.
 
 ## Not built
 

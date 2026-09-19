@@ -252,6 +252,36 @@ public class CreationHarness {
 		check("subrace step is satisfied by there being none", CreationStep.SUBRACE.isSatisfiedBy(simple, bare, null));
 		check("and it can be committed", simple.isComplete(bare, null));
 
+		System.out.println("== 10. how a name reads on each surface ==");
+		String account = "Steve";
+		check("character only", CharacterNameFormat.format(CharacterNameFormat.Style.CHARACTER_ONLY, "Mera Holt", account).equals("Mera Holt"));
+		check("character then account",
+				CharacterNameFormat.format(CharacterNameFormat.Style.CHARACTER_THEN_ACCOUNT, "Mera Holt", account).equals("Mera Holt (Steve)"));
+		check("account then character",
+				CharacterNameFormat.format(CharacterNameFormat.Style.ACCOUNT_THEN_CHARACTER, "Mera Holt", account).equals("Steve (Mera Holt)"));
+		check("account only ignores the character", CharacterNameFormat.format(CharacterNameFormat.Style.ACCOUNT_ONLY, "Mera Holt", account).equals("Steve"));
+		check("no character falls back to the account", CharacterNameFormat.format(CharacterNameFormat.Style.CHARACTER_ONLY, "", account).equals("Steve"));
+		check("and so does a blank one", CharacterNameFormat.format(CharacterNameFormat.Style.CHARACTER_THEN_ACCOUNT, "   ", account).equals("Steve"));
+		check("nulls are survivable", CharacterNameFormat.format(null, null, account).equals("Steve"));
+
+		System.out.println("== 10a. a hand-edited sheet can't smuggle formatting into chat ==");
+		String nasty = "\u00a7cRed\u00a7lBold";
+		check("section signs are stripped by the formatter", !CharacterNameFormat.format(CharacterNameFormat.Style.CHARACTER_ONLY, nasty, account).contains("\u00a7"));
+		check("and by the identity record itself", !new CharacterIdentity(java.util.UUID.randomUUID(), nasty, "human", true).characterName().contains("\u00a7"));
+		check("the readable letters survive", CharacterNameFormat.clean(nasty).equals("cRedlBold"));
+		check("control characters go too", CharacterNameFormat.clean("Me\nra\tHolt").equals("MeraHolt"));
+		String silly = "M".repeat(200);
+		check("a silly name can't push the tab list around",
+				CharacterNameFormat.format(CharacterNameFormat.Style.CHARACTER_THEN_ACCOUNT, silly, account).length() <= CharacterNameFormat.MAX_LABEL);
+
+		System.out.println("== 10b. identities ==");
+		java.util.UUID who = java.util.UUID.randomUUID();
+		check("an absent identity has no name", !CharacterIdentity.absent(who).hasName());
+		check("a present one with a name does", new CharacterIdentity(who, "Bryn", "witch", true).hasName());
+		check("present but unnamed does not", !new CharacterIdentity(who, "", "witch", true).hasName());
+		check("a name on a dead character does not", !new CharacterIdentity(who, "Bryn", "witch", false).hasName());
+		check("the race resolves against the catalog", new CharacterIdentity(who, "Bryn", "witch", true).race() == RaceCatalog.get("witch"));
+
 		System.out.println();
 		System.out.println(failures == 0 ? "ALL CHECKS PASSED" : failures + " CHECK(S) FAILED");
 		System.exit(failures == 0 ? 0 : 1);

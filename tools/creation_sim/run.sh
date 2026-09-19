@@ -19,7 +19,9 @@ javac -nowarn -d "$OUT" \
 	src/main/java/net/spidrotech/duality/charactercreation/CharacterDraft.java \
 	src/main/java/net/spidrotech/duality/charactercreation/RaceCatalog.java \
 	src/main/java/net/spidrotech/duality/charactercreation/DraftView.java \
-	src/main/java/net/spidrotech/duality/charactercreation/CreationAction.java
+	src/main/java/net/spidrotech/duality/charactercreation/CreationAction.java \
+	src/main/java/net/spidrotech/duality/charactercreation/CharacterNameFormat.java \
+	src/main/java/net/spidrotech/duality/charactercreation/CharacterIdentity.java
 
 javac -nowarn -cp "$OUT" -d "$OUT" tools/creation_sim/CreationHarness.java
 java -cp "$OUT" CreationHarness
