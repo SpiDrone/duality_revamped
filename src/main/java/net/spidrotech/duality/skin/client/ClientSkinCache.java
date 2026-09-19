@@ -92,7 +92,17 @@ public final class ClientSkinCache {
 	 */
 	@Nullable
 	public static ResourceLocation textureFor(AbstractClientPlayer player, ResourceLocation vanillaTexture) {
-		UUID id = player.getUUID();
+		return textureFor(player.getUUID(), player.getGameProfile().getName(), vanillaTexture);
+	}
+
+	/**
+	 * The same thing for a player we only have an identity for rather than an entity - the tab
+	 * list draws faces from PlayerInfo, which has a GameProfile and no entity behind it. Nothing
+	 * in the composite ever needed the entity; only the UUID keys the cache, and the name is for
+	 * the log line if a part misbehaves.
+	 */
+	@Nullable
+	public static ResourceLocation textureFor(UUID id, String nameForLog, ResourceLocation vanillaTexture) {
 		if (!ClientSkinState.hasAnything(id))
 			return null; // no parts, no augmentations - leave their real skin completely alone
 		Minecraft mc = Minecraft.getInstance();
@@ -106,17 +116,16 @@ public final class ClientSkinCache {
 		if (cached != null && cached.version() == version && cached.animFrame() == animFrame) {
 			return cached.id(); // ---- the fast path, and where nearly every call ends ----
 		}
-		return rebuild(player, vanillaTexture, cached, version, animFrame, temps, gameTime);
+		return rebuild(id, nameForLog, vanillaTexture, cached, version, animFrame, temps, gameTime);
 	}
 
 	@Nullable
-	private static ResourceLocation rebuild(AbstractClientPlayer player, ResourceLocation vanillaTexture, @Nullable Entry existing, int version, int animFrame, List<TempSkinModification> temps, long gameTime) {
+	private static ResourceLocation rebuild(UUID id, String nameForLog, ResourceLocation vanillaTexture, @Nullable Entry existing, int version, int animFrame, List<TempSkinModification> temps, long gameTime) {
 		if (!RenderSystem.isOnRenderThread()) {
 			// Should be impossible from the mixin; bail rather than corrupt GL state if some
 			// future caller gets this wrong.
 			return existing != null ? existing.id() : null;
 		}
-		UUID id = player.getUUID();
 		SkinLoadout loadout = ClientSkinState.loadoutOf(id);
 		NativeImage base = baseImageFor(loadout, vanillaTexture);
 		if (base == null)
@@ -127,7 +136,7 @@ public final class ClientSkinCache {
 		} catch (Exception failure) {
 			// A bad part shouldn't make a player un-renderable. Drop back to vanilla and say so
 			// once, rather than throwing inside a render call.
-			LOGGER.error("[duality] Failed to compose skin for {}", player.getGameProfile().getName(), failure);
+			LOGGER.error("[duality] Failed to compose skin for {}", nameForLog, failure);
 			base.close();
 			return null;
 		} finally {

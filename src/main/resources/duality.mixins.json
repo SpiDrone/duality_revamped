@@ -2,10 +2,11 @@
   "required": true,
   "package": "net.spidrotech.duality.mixin",
   "compatibilityLevel": "JAVA_21",
-  "mixins": [
-    "AbstractClientPlayerMixin"
+  "mixins": [],
+  "client": [
+    "AbstractClientPlayerMixin",
+    "PlayerInfoMixin"
   ],
-  "client": [],
   "injectors": {
     "defaultRequire": 1
   },
