@@ -47,7 +47,6 @@ public class DualityMod {
 		DualityModParticleTypes.REGISTRY.register(modEventBus);
 		DualityModAttributes.REGISTRY.register(modEventBus);
 		// Start of user code block mod init
-		net.spidrotech.duality.abilities.demon.ShimmerEffects.REGISTRY.register(modEventBus);
 		// End of user code block mod init
 	}
 

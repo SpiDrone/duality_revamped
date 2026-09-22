@@ -14,34 +14,32 @@ authors="MCreator"
 # End of user code block mod configuration
 
 [[mixins]]
-config = "duality.mixins.json"
+    config = "duality.mixins.json"
 
 # Start of user code block custom mixins
-[[mixins]]
-config = "duality_custom.mixins.json"
 # End of user code block custom mixins
 
 [[dependencies.duality]]
-modId="neoforge"
-type="required"
-versionRange="[21.1.190,)"
-ordering="AFTER"
-side="BOTH"
+    modId="neoforge"
+    type="required"
+    versionRange="[21.1.190,)"
+    ordering="AFTER"
+    side="BOTH"
 
 [[dependencies.duality]]
-modId="minecraft"
-type="required"
-versionRange="[1.21.1]"
-ordering="AFTER"
-side="BOTH"
+    modId="minecraft"
+    type="required"
+    versionRange="[1.21.1]"
+    ordering="AFTER"
+    side="BOTH"
 
 
 [[dependencies.duality]]
-modId="spis_ui_api"
-type="optional"
-versionRange="[0,)"
-ordering="NONE"
-side="BOTH"
+    modId="spis_ui_api"
+    type="optional"
+    versionRange="[0,)"
+    ordering="NONE"
+    side="BOTH"
 
 
 # Start of user code block dependencies configuration
