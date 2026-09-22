@@ -6,6 +6,8 @@ import net.spidrotech.duality.abilities.teleportation.TeleportGlowStyle;
 import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.api.distmarker.Dist;
 
+import net.minecraft.resources.ResourceLocation;
+
 import javax.annotation.Nullable;
 
 import java.util.function.Function;
@@ -53,6 +55,8 @@ public final class TeleportPickerClientState {
 	}
 
 	private static boolean active = false;
+	@Nullable
+	private static ResourceLocation abilityId = null;
 	private static List<TeleportMarker> markers = new ArrayList<>();
 	private static TeleportGlowStyle glowStyle = TeleportGlowStyle.WHITE;
 	private static final Set<UUID> selectedPassengers = new LinkedHashSet<>();
@@ -77,6 +81,19 @@ public final class TeleportPickerClientState {
 		if (!value) {
 			reset();
 		}
+	}
+
+	/** Which teleport ability opened this picker (Orb, Shimmer, or any future OrbAbility subclass
+	 *  - see TeleportAbilities) - set by client.TeleportBrowsingWatcher before markers are
+	 *  requested, and what client.TeleportPickerInputHandler stamps onto every confirm/cancel/
+	 *  toggle payload so the server knows which charging ability it's acting on. */
+	@Nullable
+	public static ResourceLocation abilityId() {
+		return abilityId;
+	}
+
+	public static void setAbilityId(@Nullable ResourceLocation value) {
+		abilityId = value;
 	}
 
 	public static List<TeleportMarker> markers() {
@@ -154,6 +171,7 @@ public final class TeleportPickerClientState {
 	}
 
 	public static void reset() {
+		abilityId = null;
 		markers = new ArrayList<>();
 		currentlyTargeted = null;
 		selectedMarker = null;

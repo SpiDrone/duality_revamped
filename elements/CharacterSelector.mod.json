@@ -33,54 +33,18 @@
       {
         "type": "label",
         "data": {
-          "sua_max_width": 0,
-          "sua_reveal_speed": 0.0,
-          "sua_rainbow_speed": 0.0,
-          "sua_wave_amplitude": 0.0,
-          "sua_wave_speed": 0.0,
-          "sua_bounce_amplitude": 0.0,
-          "sua_bounce_ms": 0,
-          "sua_outline_enabled": false,
-          "sua_outline_width": 0,
-          "sua_scale_x": 0.0,
-          "sua_scale_y": 0.0,
-          "sua_pulse_speed": 0.0,
-          "name": "label_screentitle",
-          "text": {
-            "fixedValue": "ScreenTitle"
-          },
-          "color": {
-            "value": -6710887,
+          "sua_font": "vanilla",
+          "sua_color_effect": "solid",
+          "sua_motion_effect": "none",
+          "sua_color1": {
+            "value": -16776961,
             "falpha": 0.0
           },
-          "x": 67,
-          "y": 21,
-          "locked": false
-        }
-      },
-      {
-        "type": "image",
-        "data": {
-          "image": "cc_background_circles_empty.png",
-          "use1Xscale": true,
-          "x": 297,
-          "y": 19,
-          "locked": false
-        }
-      },
-      {
-        "type": "image",
-        "data": {
-          "image": "cc_background_circles_full.png",
-          "use1Xscale": true,
-          "x": 297,
-          "y": 19,
-          "locked": false
-        }
-      },
-      {
-        "type": "label",
-        "data": {
+          "sua_color2": {
+            "value": -14336,
+            "falpha": 0.0
+          },
+          "sua_alignment": "LEFT",
           "sua_max_width": 0,
           "sua_reveal_speed": 0.0,
           "sua_rainbow_speed": 0.0,
@@ -88,14 +52,28 @@
           "sua_wave_speed": 0.0,
           "sua_bounce_amplitude": 0.0,
           "sua_bounce_ms": 0,
+          "sua_color3": {
+            "value": -16711936,
+            "falpha": 0.0
+          },
+          "sua_color4": {
+            "value": -65281,
+            "falpha": 0.0
+          },
           "sua_outline_enabled": false,
+          "sua_outline_color": {
+            "value": -16777216,
+            "falpha": 0.0
+          },
           "sua_outline_width": 0,
-          "sua_scale_x": 0.0,
-          "sua_scale_y": 0.0,
+          "sua_scale_x": 1.0,
+          "sua_scale_y": 1.0,
+          "sua_pulse_easing": "easeInOutSine",
           "sua_pulse_speed": 0.0,
           "name": "label_codex",
           "text": {
-            "fixedValue": "Codex"
+            "fixedValue": "Codex",
+            "name": "CodexReturnString"
           },
           "color": {
             "value": -12829636,
@@ -109,44 +87,73 @@
       {
         "type": "label",
         "data": {
-          "sua_max_width": 0,
+          "sua_font": "vanilla",
+          "sua_color_effect": "solid",
+          "sua_motion_effect": "none",
+          "sua_color1": {
+            "value": -16776961,
+            "falpha": 0.0
+          },
+          "sua_color2": {
+            "value": -14336,
+            "falpha": 0.0
+          },
+          "sua_alignment": "LEFT",
+          "sua_max_width": 200,
+          "sua_split_char": "$",
           "sua_reveal_speed": 0.0,
           "sua_rainbow_speed": 0.0,
           "sua_wave_amplitude": 0.0,
           "sua_wave_speed": 0.0,
           "sua_bounce_amplitude": 0.0,
           "sua_bounce_ms": 0,
+          "sua_color3": {
+            "value": -16711936,
+            "falpha": 0.0
+          },
+          "sua_color4": {
+            "value": -65281,
+            "falpha": 0.0
+          },
           "sua_outline_enabled": false,
+          "sua_outline_color": {
+            "value": -16777216,
+            "falpha": 0.0
+          },
           "sua_outline_width": 0,
-          "sua_scale_x": 0.0,
-          "sua_scale_y": 0.0,
+          "sua_scale_x": 1.0,
+          "sua_scale_y": 1.0,
+          "sua_pulse_easing": "easeInOutSine",
           "sua_pulse_speed": 0.0,
           "name": "label_codex_description",
           "text": {
-            "fixedValue": "Codex Description"
+            "fixedValue": "Codex Description",
+            "name": "CodexReturnDescription"
           },
           "color": {
             "value": -12829636,
             "falpha": 0.0
           },
           "x": 257,
-          "y": 63,
-          "locked": false
-        }
-      },
-      {
-        "type": "image",
-        "data": {
-          "image": "cc_foreground_button_0.png",
-          "use1Xscale": true,
-          "x": 65,
-          "y": 59,
+          "y": 62,
           "locked": false
         }
       },
       {
         "type": "label",
         "data": {
+          "sua_font": "duality:boldpixels",
+          "sua_color_effect": "solid",
+          "sua_motion_effect": "none",
+          "sua_color1": {
+            "value": -16776961,
+            "falpha": 0.0
+          },
+          "sua_color2": {
+            "value": -14336,
+            "falpha": 0.0
+          },
+          "sua_alignment": "LEFT",
           "sua_max_width": 0,
           "sua_reveal_speed": 0.0,
           "sua_rainbow_speed": 0.0,
@@ -154,10 +161,23 @@
           "sua_wave_speed": 0.0,
           "sua_bounce_amplitude": 0.0,
           "sua_bounce_ms": 0,
+          "sua_color3": {
+            "value": -16711936,
+            "falpha": 0.0
+          },
+          "sua_color4": {
+            "value": -65281,
+            "falpha": 0.0
+          },
           "sua_outline_enabled": false,
+          "sua_outline_color": {
+            "value": -16777216,
+            "falpha": 0.0
+          },
           "sua_outline_width": 0,
-          "sua_scale_x": 0.0,
-          "sua_scale_y": 0.0,
+          "sua_scale_x": 0.8,
+          "sua_scale_y": 0.8,
+          "sua_pulse_easing": "easeInOutSine",
           "sua_pulse_speed": 0.0,
           "name": "label_choose_starting_race",
           "text": {
@@ -167,8 +187,267 @@
             "value": -6710887,
             "falpha": 0.0
           },
-          "x": 65,
+          "x": 66,
           "y": 40,
+          "locked": false
+        }
+      },
+      {
+        "type": "label",
+        "data": {
+          "sua_font": "duality:boldpixels",
+          "sua_color_effect": "pulse",
+          "sua_motion_effect": "none",
+          "sua_color1": {
+            "value": -1,
+            "falpha": 0.0
+          },
+          "sua_color2": {
+            "value": -6710887,
+            "falpha": 0.0
+          },
+          "sua_alignment": "LEFT",
+          "sua_max_width": 0,
+          "sua_reveal_speed": 0.0,
+          "sua_rainbow_speed": 1.0,
+          "sua_wave_amplitude": 2.0,
+          "sua_wave_speed": 1.0,
+          "sua_bounce_amplitude": 3.0,
+          "sua_bounce_ms": 150,
+          "sua_color3": {
+            "value": -16711936,
+            "falpha": 0.0
+          },
+          "sua_color4": {
+            "value": -65281,
+            "falpha": 0.0
+          },
+          "sua_outline_enabled": false,
+          "sua_outline_color": {
+            "value": -16777216,
+            "falpha": 0.0
+          },
+          "sua_outline_width": 1,
+          "sua_scale_x": 1.0,
+          "sua_scale_y": 1.0,
+          "sua_pulse_easing": "easeInOutSine",
+          "sua_pulse_speed": 1.0,
+          "name": "label_character_creator_15",
+          "text": {
+            "fixedValue": "Character Creator (1/5)"
+          },
+          "color": {
+            "value": -12829636,
+            "falpha": 0.0
+          },
+          "x": 66,
+          "y": 20,
+          "locked": false
+        }
+      },
+      {
+        "type": "scroll_region",
+        "data": {
+          "name": "scrollregion_scroll_region",
+          "members": [
+            {
+              "componentName": "race_scroll",
+              "componentType": "ScrollButton",
+              "contentOffsetX": 0,
+              "contentOffsetY": 0,
+              "attachToList": "",
+              "attachToItem": ""
+            },
+            {
+              "componentName": "label_human",
+              "componentType": "Label",
+              "contentOffsetX": 40,
+              "contentOffsetY": 5,
+              "attachToList": "race_scroll",
+              "attachToItem": "human"
+            },
+            {
+              "componentName": "label_demon",
+              "componentType": "Label",
+              "contentOffsetX": 40,
+              "contentOffsetY": 5,
+              "attachToList": "race_scroll",
+              "attachToItem": "demon"
+            }
+          ],
+          "contentStartX": 0,
+          "contentStartY": 0,
+          "gapPixels": 5,
+          "smoothScroll": true,
+          "pixelsPerNotch": 14,
+          "trackOffsetX": 81,
+          "trackOffsetY": 0,
+          "trackWidth": 5,
+          "trackHeight": 130,
+          "trackColor": {
+            "value": -16777216,
+            "falpha": 0.0
+          },
+          "thumbColor": {
+            "value": -16737895,
+            "falpha": 0.0
+          },
+          "width": 81,
+          "height": 130,
+          "anchorPoint": "CENTER",
+          "x": 65,
+          "y": 59,
+          "locked": false
+        }
+      },
+      {
+        "type": "scroll_button",
+        "data": {
+          "name": "race_scroll",
+          "gapPixels": 2,
+          "defaultNormalTexture": "button0.png",
+          "defaultHoveredTexture": "button1.png",
+          "defaultSelectedTexture": "button2.png",
+          "items": [
+            {
+              "id": "human",
+              "heightOverride": 0,
+              "widthOverride": 0,
+              "itemValue": "race_human",
+              "itemValueProcedure": {
+                "fixedValue": "race_human"
+              },
+              "onSelect": {
+                "name": "SelectRace"
+              }
+            },
+            {
+              "id": "demon",
+              "heightOverride": 0,
+              "widthOverride": 0,
+              "itemValue": "race_demon",
+              "itemValueProcedure": {
+                "fixedValue": "race_demon"
+              },
+              "displayCondition": {
+                "name": "HasDemon"
+              },
+              "onSelect": {
+                "name": "SelectRace"
+              }
+            }
+          ],
+          "width": 81,
+          "height": 16,
+          "anchorPoint": "CENTER",
+          "x": 389,
+          "y": 33,
+          "locked": false
+        }
+      },
+      {
+        "type": "label",
+        "data": {
+          "sua_font": "spis_ui_api:boldpixels",
+          "sua_color_effect": "solid",
+          "sua_motion_effect": "none",
+          "sua_color1": {
+            "value": -16776961,
+            "falpha": 0.0
+          },
+          "sua_color2": {
+            "value": -14336,
+            "falpha": 0.0
+          },
+          "sua_alignment": "CENTER",
+          "sua_max_width": 0,
+          "sua_reveal_speed": 0.0,
+          "sua_rainbow_speed": 1.0,
+          "sua_wave_amplitude": 2.0,
+          "sua_wave_speed": 1.0,
+          "sua_bounce_amplitude": 3.0,
+          "sua_bounce_ms": 150,
+          "sua_color3": {
+            "value": -16711936,
+            "falpha": 0.0
+          },
+          "sua_color4": {
+            "value": -65281,
+            "falpha": 0.0
+          },
+          "sua_outline_enabled": false,
+          "sua_outline_color": {
+            "value": -16777216,
+            "falpha": 0.0
+          },
+          "sua_outline_width": 1,
+          "sua_scale_x": 1.0,
+          "sua_scale_y": 1.0,
+          "sua_pulse_easing": "easeInOutSine",
+          "sua_pulse_speed": 1.0,
+          "name": "label_human",
+          "text": {
+            "fixedValue": "Human"
+          },
+          "color": {
+            "value": -12829636,
+            "falpha": 0.0
+          },
+          "x": 393,
+          "y": 8,
+          "locked": false
+        }
+      },
+      {
+        "type": "label",
+        "data": {
+          "sua_font": "vanilla",
+          "sua_color_effect": "solid",
+          "sua_motion_effect": "none",
+          "sua_color1": {
+            "value": -16776961,
+            "falpha": 0.0
+          },
+          "sua_color2": {
+            "value": -14336,
+            "falpha": 0.0
+          },
+          "sua_alignment": "LEFT",
+          "sua_max_width": 0,
+          "sua_reveal_speed": 0.0,
+          "sua_rainbow_speed": 1.0,
+          "sua_wave_amplitude": 2.0,
+          "sua_wave_speed": 1.0,
+          "sua_bounce_amplitude": 3.0,
+          "sua_bounce_ms": 150,
+          "sua_color3": {
+            "value": -16711936,
+            "falpha": 0.0
+          },
+          "sua_color4": {
+            "value": -65281,
+            "falpha": 0.0
+          },
+          "sua_outline_enabled": false,
+          "sua_outline_color": {
+            "value": -16777216,
+            "falpha": 0.0
+          },
+          "sua_outline_width": 1,
+          "sua_scale_x": 1.0,
+          "sua_scale_y": 1.0,
+          "sua_pulse_easing": "easeInOutSine",
+          "sua_pulse_speed": 1.0,
+          "name": "label_demon",
+          "text": {
+            "fixedValue": "Demon"
+          },
+          "color": {
+            "value": -12829636,
+            "falpha": 0.0
+          },
+          "x": 393,
+          "y": 18,
           "locked": false
         }
       }

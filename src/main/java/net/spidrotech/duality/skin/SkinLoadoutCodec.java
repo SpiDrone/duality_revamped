@@ -17,12 +17,17 @@ import java.util.ArrayList;
  * STORED SHAPE (inside a character sheet):
  *   "char_creator": {
  *     "base": "skins_skin",              // omitted/absent = use the player's real Mojang skin
+ *     "model": "wide",                   // omitted/absent = wide (Steve) - see SkinBodyModel
  *     "parts": [
  *       { "id": "hair_ponytail", "tints": [] },
  *       { "id": "eyes_blue", "tints": [-1] }    // -1 = that subpart's catalog default
  *     ],
  *     "unlocks": [ "duality:royalty" ]   // read by SkinUnlocks, written here for locality
  *   }
+ *
+ * "model" absent reads as wide rather than as the player's account model, so every character sheet
+ * written before this field existed loads as Steve instead of quietly inheriting whatever build the
+ * account has - no migration pass needed.
  *
  * Unknown part ids are kept on read, not dropped - a catalog reload can temporarily retire a
  * part underneath a saved character, and silently deleting it from their sheet would lose the
@@ -32,6 +37,7 @@ import java.util.ArrayList;
 public final class SkinLoadoutCodec {
 	public static final String SECTION = "char_creator";
 	private static final String KEY_BASE = "base";
+	private static final String KEY_MODEL = "model";
 	private static final String KEY_PARTS = "parts";
 	private static final String KEY_TINTS = "tints";
 	private static final String KEY_ID = "id";
@@ -56,13 +62,15 @@ public final class SkinLoadoutCodec {
 				parts.add(new SkinLoadout.Equipped(entry.get(KEY_ID).getAsString(), List.copyOf(tints)));
 			}
 		}
-		return new SkinLoadout(base, List.copyOf(parts));
+		SkinBodyModel bodyModel = SkinBodyModel.parse(charCreator.has(KEY_MODEL) ? charCreator.get(KEY_MODEL).getAsString() : null);
+		return new SkinLoadout(base, List.copyOf(parts), bodyModel);
 	}
 
 	/** Writes the loadout's own fields into the given section object, leaving anything else
 	 *  already in it (e.g. the "unlocks" array SkinUnlocks manages) untouched. */
 	public static void writeInto(JsonObject charCreator, SkinLoadout loadout) {
 		charCreator.addProperty(KEY_BASE, loadout.baseTexturePartId().orElse(""));
+		charCreator.addProperty(KEY_MODEL, loadout.bodyModel().id());
 		JsonArray parts = new JsonArray();
 		for (SkinLoadout.Equipped equipped : loadout.parts()) {
 			JsonObject entry = new JsonObject();

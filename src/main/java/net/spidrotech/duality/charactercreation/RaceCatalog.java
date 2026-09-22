@@ -110,7 +110,8 @@ public final class RaceCatalog {
 	public static void registerDefaults() {
 		RACES.clear();
 
-		register(RaceDefinition.of("human", "Human", "No power of your own, and every road still open. What you become is up to what finds you.",
+		register(RaceDefinition.of("human", "Human", //
+		"No power of your own..$But every path still open.$What will you choose..?",
 				List.of(SubraceDefinition.of("mortal", "Mortal", "Ordinary, and harder to kill than that makes you sound.", List.of(),
 						Map.of(SkillType.FORTUNE, 1, SkillType.ENDURANCE, 1)),
 						SubraceDefinition.of("latent", "Latent", "Something is in the blood. It hasn't woken up yet.", List.of(),

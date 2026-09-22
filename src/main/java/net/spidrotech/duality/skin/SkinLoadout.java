@@ -22,8 +22,21 @@ import java.util.ArrayList;
  * baseTexture is an optional override for the bottom layer. Empty means "use this player's real
  * Mojang skin" (see ClientSkinCache's readback path); present means a builder-chosen base body
  * from the catalog, which is the faster and more reliable path.
+ *
+ * bodyModel is the thick/slim body the character wears, and lives here rather than anywhere else
+ * for three reasons that all fall out of this record already existing: it persists with the
+ * character sheet (SkinLoadoutCodec), it reaches every observer through the appearance packet
+ * (STREAM_CODEC), and a shapeshift copies it along with the rest of the look - taking someone's
+ * form gives you their build, which is the behaviour you want and needs no extra code to get.
+ * Defaults to WIDE, never to the player's Mojang account model - see SkinBodyModel.
  */
-public record SkinLoadout(Optional<String> baseTexturePartId, List<Equipped> parts) {
+public record SkinLoadout(Optional<String> baseTexturePartId, List<Equipped> parts, SkinBodyModel bodyModel) {
+
+	/** Normalises a missing body model to the default, so neither a packet nor a hand-edited
+	 *  character sheet can put a null in here for the renderer to trip over. */
+	public SkinLoadout {
+		bodyModel = bodyModel == null ? SkinBodyModel.DEFAULT : bodyModel;
+	}
 
 	/** One equipped part plus its chosen tints, one per tintable subpart IN ORDER. A tint of -1
 	 *  means "use that subpart's defaultColor" - see SkinPart.SubPart. Non-tintable subparts are
@@ -46,7 +59,7 @@ public record SkinLoadout(Optional<String> baseTexturePartId, List<Equipped> par
 		});
 	}
 
-	public static final SkinLoadout EMPTY = new SkinLoadout(Optional.empty(), List.of());
+	public static final SkinLoadout EMPTY = new SkinLoadout(Optional.empty(), List.of(), SkinBodyModel.DEFAULT);
 
 	public static final StreamCodec<FriendlyByteBuf, SkinLoadout> STREAM_CODEC = StreamCodec.of((FriendlyByteBuf buf, SkinLoadout loadout) -> {
 		buf.writeOptional(loadout.baseTexturePartId(), FriendlyByteBuf::writeUtf);
@@ -54,6 +67,7 @@ public record SkinLoadout(Optional<String> baseTexturePartId, List<Equipped> par
 		for (Equipped eq : loadout.parts()) {
 			Equipped.STREAM_CODEC.encode(buf, eq);
 		}
+		buf.writeEnum(loadout.bodyModel());
 	}, (FriendlyByteBuf buf) -> {
 		Optional<String> base = buf.readOptional(FriendlyByteBuf::readUtf);
 		int count = buf.readVarInt();
@@ -61,7 +75,7 @@ public record SkinLoadout(Optional<String> baseTexturePartId, List<Equipped> par
 		for (int i = 0; i < count; i++) {
 			parts.add(Equipped.STREAM_CODEC.decode(buf));
 		}
-		return new SkinLoadout(base, List.copyOf(parts));
+		return new SkinLoadout(base, List.copyOf(parts), buf.readEnum(SkinBodyModel.class));
 	});
 
 	/** Equip, respecting slot exclusivity - anything already occupying an exclusive target is
@@ -81,19 +95,26 @@ public record SkinLoadout(Optional<String> baseTexturePartId, List<Equipped> par
 			}
 		}
 		next.add(equipped);
-		return new SkinLoadout(baseTexturePartId, List.copyOf(next));
+		return new SkinLoadout(baseTexturePartId, List.copyOf(next), bodyModel);
 	}
 
 	/** Swaps the bottom layer. Pass null to fall back to the player's real Mojang skin - see
 	 *  client.ClientSkinCache's BASE IMAGE note for why both paths exist. */
 	public SkinLoadout withBase(@javax.annotation.Nullable String basePartId) {
-		return new SkinLoadout(Optional.ofNullable(basePartId), parts);
+		return new SkinLoadout(Optional.ofNullable(basePartId), parts, bodyModel);
+	}
+
+	/** Swaps the thick/slim body. Parts and tints are untouched - the same catalog part is drawn on
+	 *  either build, since both bodies share the 64x64 skin layout and differ only in how the arm
+	 *  columns are read. */
+	public SkinLoadout withBodyModel(SkinBodyModel model) {
+		return new SkinLoadout(baseTexturePartId, parts, model);
 	}
 
 	public SkinLoadout without(String partId) {
 		List<Equipped> next = new ArrayList<>(parts);
 		next.removeIf(eq -> eq.partId().equals(partId));
-		return new SkinLoadout(baseTexturePartId, List.copyOf(next));
+		return new SkinLoadout(baseTexturePartId, List.copyOf(next), bodyModel);
 	}
 
 	/** Composite order - see SkinPartTarget's RENDER ORDER note. Parts whose id is no longer in

@@ -12,7 +12,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.Mixin;
 
 /**
- * The single hook that makes composited skins actually appear.
+ * The single hook that makes composited skins - and the character's own thick/slim body - actually
+ * appear.
  *
  * WHY HERE and not RenderPlayerEvent: getSkin() is the one place every consumer of a player's
  * appearance goes through - the body renderer, the second (hat/jacket) layer, first-person
@@ -44,8 +45,15 @@ public abstract class AbstractClientPlayerMixin {
 			return;
 		AbstractClientPlayer self = (AbstractClientPlayer) (Object) this;
 		ResourceLocation composed = ClientSkinCache.textureFor(self, vanilla.texture());
-		if (composed == null)
-			return; // nothing to composite - leave the real skin exactly as it was
-		callback.setReturnValue(new PlayerSkin(composed, vanilla.textureUrl(), vanilla.capeTexture(), vanilla.elytraTexture(), vanilla.model(), vanilla.secure()));
+		// The BODY (thick/slim) is a property of the character, not of the Mojang account, so it is
+		// resolved independently of whether there's a composite texture to apply - a character with
+		// no parts equipped yet still gets its own build. Vanilla reads this back out of getSkin()
+		// to choose between the two registered player renderers, so overriding it here is what
+		// actually swaps the arms.
+		PlayerSkin.Model model = ClientSkinCache.bodyModelFor(self, vanilla.model());
+		if (composed == null && model == vanilla.model())
+			return; // nothing of ours to apply - leave the real skin exactly as it was
+		ResourceLocation texture = composed != null ? composed : vanilla.texture();
+		callback.setReturnValue(new PlayerSkin(texture, vanilla.textureUrl(), vanilla.capeTexture(), vanilla.elytraTexture(), model, vanilla.secure()));
 	}
 }

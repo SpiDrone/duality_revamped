@@ -21,8 +21,11 @@ import java.util.ArrayList;
  *
  * YAW (horizontal): real compass bearing toward the target's raw X/Z, same dimension or not -
  * this is what lets several markers spread out around the player like scattered stars instead of
- * stacking in one spot. Same convention as vanilla's own getYRot()/atan2(dx, dz), so it compares
- * directly against the player's look yaw with no sign conversion needed.
+ * stacking in one spot. NEGATED atan2(dx, dz), matching vanilla's own Entity#lookAt (which
+ * computes -atan2(dx, dz)), so it compares directly against the player's look yaw. The minus sign
+ * is load-bearing, NOT cosmetic: without it every bearing comes out mirrored, and a "what am I
+ * looking at" comparison silently matches the marker on the opposite side of the ring - see
+ * client.TeleportMarkerRenderer#bearingFor, where exactly that was a real selection bug.
  *
  * PITCH (vertical): deliberately NOT based on real relative position at all, not even within the
  * same dimension - see DimensionStackConfig#tier. A target in an equal-or-higher tier (same
@@ -71,7 +74,7 @@ public final class TeleportDirectionUtil {
 		double horizontalDist = Math.sqrt(dx * dx + dz * dz);
 		float yaw = horizontalDist < MIN_HORIZONTAL_DISTANCE_FOR_YAW
 				? 0f // degenerate case: target is essentially where the viewer is standing
-				: (float) (Mth.atan2(dx, dz) * (180.0 / Math.PI));
+				: (float) (-Mth.atan2(dx, dz) * (180.0 / Math.PI));
 		float pitch = (float) verticalPitchForDimensions(viewerDimension, target.dimension());
 		return new Bearing<>(target.value(), yaw, pitch);
 	}

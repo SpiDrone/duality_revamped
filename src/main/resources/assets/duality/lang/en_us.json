@@ -2,10 +2,6 @@
   "attribute.duality.orbchargereduction": "Orb Charge Reduction",
   "attribute.duality.orbing_proficiency": "Orbing Proficiency",
   "entity.duality.ability_projectile": "Ability Projectile",
-  "gui.duality.character_selector.label_choose_starting_race": "Choose Starting Race",
-  "gui.duality.character_selector.label_codex": "Codex",
-  "gui.duality.character_selector.label_codex_description": "Codex Description",
-  "gui.duality.character_selector.label_screentitle": "ScreenTitle",
   "effect.duality.orbing_effect": "Orbing Effect",
   "attribute.duality.blood_max": "Blood Max",
   "attribute.duality.blood_quality": "Blood Quality",
@@ -17,5 +13,12 @@
   "ket.categories.duality": "Duality",
   "attribute.duality.vampire_rank": "Vampire Rank",
   "entity.duality.spider_queen": "Spider Queen",
-  "item.duality.spider_queen_spawn_egg": "Spider Queen Spawn Egg"
+  "item.duality.spider_queen_spawn_egg": "Spider Queen Spawn Egg",
+  "gui.duality.character_selector_2.label_screentitle": "ScreenTitle",
+  "gui.duality.character_selector_2.label_codex": "Codex",
+  "gui.duality.character_selector_2.label_codex_description": "Codex Description",
+  "gui.duality.character_selector.label_choose_starting_race": "Choose Starting Race",
+  "gui.duality.character_selector.label_character_creator_15": "Character Creator (1/5)",
+  "gui.duality.character_selector.label_human": "Human",
+  "gui.duality.character_selector.label_demon": "Demon"
 }

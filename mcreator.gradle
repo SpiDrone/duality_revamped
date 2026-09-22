@@ -1,8 +1,5 @@
-repositories {
-  maven { url 'https://api.modrinth.com/maven' }
-}
 dependencies {
-  implementation 'maven.modrinth:oi1rGz12:CpRysUz6'
+  implementation files('C:/Users/brend/MCreatorWorkspaces/spis_ui_api/build/libs/modid-1.0.jar')
 }
 
 

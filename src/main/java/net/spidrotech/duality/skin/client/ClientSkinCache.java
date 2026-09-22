@@ -4,6 +4,7 @@ import net.spidrotech.duality.skin.TempSkinModification;
 import net.spidrotech.duality.skin.SkinPartCatalog;
 import net.spidrotech.duality.skin.SkinPart;
 import net.spidrotech.duality.skin.SkinLoadout;
+import net.spidrotech.duality.skin.SkinBodyModel;
 
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -12,6 +13,7 @@ import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.api.distmarker.Dist;
 
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.client.resources.PlayerSkin;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.client.player.AbstractClientPlayer;
@@ -117,6 +119,32 @@ public final class ClientSkinCache {
 			return cached.id(); // ---- the fast path, and where nearly every call ends ----
 		}
 		return rebuild(id, nameForLog, vanillaTexture, cached, version, animFrame, temps, gameTime);
+	}
+
+	/**
+	 * The thick/slim body this player's CHARACTER wears, mapped from the loadout's own SkinBodyModel
+	 * to the vanilla type. This is the one place the two enums meet - SkinBodyModel lives in common
+	 * code and cannot name PlayerSkin.Model, which is client-only.
+	 *
+	 * Unlike textureFor above, this deliberately does NOT go through hasAnything(): a character with
+	 * no parts equipped at all still has a body, and it is still supposed to be Steve rather than
+	 * whatever the account is. The gate is only "have we been told anything about this player yet" -
+	 * before their appearance packet lands there is nothing to answer with, so the caller's vanilla
+	 * model stands for those few ticks.
+	 *
+	 * Vanilla reads the returned model back out of getSkin() to pick which of the two registered
+	 * player renderers to use (see EntityRenderDispatcher#getRenderer), so overriding it here is
+	 * what actually changes the arms - and it follows to every surface that goes through the
+	 * dispatcher, the in-world body and any inventory-style preview alike.
+	 */
+	public static PlayerSkin.Model bodyModelFor(AbstractClientPlayer player, PlayerSkin.Model vanillaModel) {
+		return bodyModelFor(player.getUUID(), vanillaModel);
+	}
+
+	public static PlayerSkin.Model bodyModelFor(UUID id, PlayerSkin.Model vanillaModel) {
+		if (!ClientSkinState.has(id))
+			return vanillaModel;
+		return ClientSkinState.loadoutOf(id).bodyModel() == SkinBodyModel.SLIM ? PlayerSkin.Model.SLIM : PlayerSkin.Model.WIDE;
 	}
 
 	@Nullable

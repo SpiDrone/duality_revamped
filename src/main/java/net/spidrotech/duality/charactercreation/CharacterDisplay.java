@@ -159,7 +159,7 @@ public final class CharacterDisplay {
 		CharacterIdentity identity = identityOf(player.getUUID());
 		if (!identity.hasName())
 			return; // no character yet - leave them as their account name
-		event.setDisplayname(Component.literal(CharacterNameFormat.format(DISPLAY_NAME_STYLE, identity.characterName(), event.getUsername())));
+		event.setDisplayname(Component.literal(CharacterNameFormat.format(DISPLAY_NAME_STYLE, identity.characterName(), event.getUsername().getString())));
 	}
 
 	/** The tab list entry. Separate event, separate style - see {@link #TAB_LIST_STYLE}. */

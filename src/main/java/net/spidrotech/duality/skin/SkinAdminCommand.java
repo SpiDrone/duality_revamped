@@ -71,6 +71,14 @@ public final class SkinAdminCommand {
 
 	private static final SuggestionProvider<CommandSourceStack> CATEGORY_SUGGESTIONS = (context, builder) -> SharedSuggestionProvider.suggest(SkinPartCatalog.byCategory().keySet(), builder);
 
+	private static final SuggestionProvider<CommandSourceStack> MODEL_SUGGESTIONS = (context, builder) -> {
+		List<String> ids = new ArrayList<>();
+		for (SkinBodyModel model : SkinBodyModel.values()) {
+			ids.add(model.id());
+		}
+		return SharedSuggestionProvider.suggest(ids, builder);
+	};
+
 	/** This player's own alive character ids. Uses the command SOURCE's player when possible so
 	 *  it suggests the right person's characters even in the "[player]" overload; falls back to
 	 *  no suggestions off-thread rather than guessing. */
@@ -99,6 +107,9 @@ public final class SkinAdminCommand {
 				.then(Commands.literal("base").then(Commands.argument("part", StringArgumentType.word()).suggests(PART_SUGGESTIONS)
 						.executes(ctx -> setBase(ctx.getSource(), ctx.getSource().getPlayerOrException(), StringArgumentType.getString(ctx, "part")))
 						.then(Commands.argument("player", EntityArgument.player()).executes(ctx -> setBase(ctx.getSource(), EntityArgument.getPlayer(ctx, "player"), StringArgumentType.getString(ctx, "part"))))))
+				.then(Commands.literal("model").then(Commands.argument("model", StringArgumentType.word()).suggests(MODEL_SUGGESTIONS)
+						.executes(ctx -> setBodyModel(ctx.getSource(), ctx.getSource().getPlayerOrException(), StringArgumentType.getString(ctx, "model")))
+						.then(Commands.argument("player", EntityArgument.player()).executes(ctx -> setBodyModel(ctx.getSource(), EntityArgument.getPlayer(ctx, "player"), StringArgumentType.getString(ctx, "model"))))))
 				.then(Commands.literal("clear").executes(ctx -> clear(ctx.getSource(), ctx.getSource().getPlayerOrException()))
 						.then(Commands.argument("player", EntityArgument.player()).executes(ctx -> clear(ctx.getSource(), EntityArgument.getPlayer(ctx, "player")))))
 				.then(Commands.literal("list").executes(ctx -> list(ctx.getSource(), ctx.getSource().getPlayerOrException()))
@@ -165,6 +176,17 @@ public final class SkinAdminCommand {
 		return 1;
 	}
 
+	/** Thick/slim body for the target's ACTIVE CHARACTER - it saves onto that character's sheet, so
+	 *  swapping characters swaps the build back. An unrecognised name lands on wide rather than
+	 *  failing (see SkinBodyModel#parse), so the reply states what it actually set. */
+	private static int setBodyModel(CommandSourceStack source, ServerPlayer target, String rawModel) {
+		SkinBodyModel model = SkinBodyModel.parse(rawModel);
+		SkinManager manager = SkinManager.get();
+		manager.setLoadout(target, manager.loadoutOf(target.getUUID()).withBodyModel(model));
+		source.sendSuccess(() -> Component.literal("Body model set to " + model.id() + " for " + target.getGameProfile().getName()).withStyle(ChatFormatting.GREEN), true);
+		return 1;
+	}
+
 	/** Wipes the loadout AND every augmentation - back to the player's real Mojang skin, which
 	 *  is also the fastest way to confirm the system is genuinely getting out of the way when
 	 *  it has nothing to do. */
@@ -204,6 +226,7 @@ public final class SkinAdminCommand {
 		SkinLoadout loadout = SkinManager.get().loadoutOf(target.getUUID());
 		source.sendSuccess(() -> Component.literal("--- " + target.getGameProfile().getName() + " ---").withStyle(ChatFormatting.AQUA), false);
 		source.sendSuccess(() -> Component.literal("base: " + loadout.baseTexturePartId().orElse("(vanilla skin)")), false);
+		source.sendSuccess(() -> Component.literal("body: " + loadout.bodyModel().id()), false);
 		if (loadout.parts().isEmpty()) {
 			source.sendSuccess(() -> Component.literal("parts: none"), false);
 		} else {

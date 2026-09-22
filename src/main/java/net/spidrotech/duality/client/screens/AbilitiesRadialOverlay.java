@@ -75,6 +75,13 @@ public class AbilitiesRadialOverlay {
 						AbilitiesRadialSelectProcedure.execute(entity, radial_value);
 					}
 				}
+				case "shimmer" -> {
+					if (RetShimmerProcedure.execute(entity)) {
+						String radial_value = "shimmer";
+
+						AbilitiesRadialSelectProcedure.execute(entity, radial_value);
+					}
+				}
 				default -> {
 				}
 			}
@@ -121,6 +128,9 @@ public class AbilitiesRadialOverlay {
 				if (RetDemLightningHProcedure.execute(entity))
 					wheel.add("lightning_hands_demonic", net.spidrone.uiapi.UIColorEffects.holographic(-8355712, -12566464), net.spidrone.uiapi.UIColorEffects.holographic(-1, -65536),
 							net.minecraft.resources.ResourceLocation.parse("duality:textures/screens/icon_ability_lightning_hands_1.png"), net.spidrone.uiapi.UIColorEffects.solid(0xFFFFFFFF), net.spidrone.uiapi.UIColorEffects.solid(0xFFFFFFFF));
+				if (RetShimmerProcedure.execute(entity))
+					wheel.add("shimmer", net.spidrone.uiapi.UIColorEffects.holographic(-8355712, -12566464), net.spidrone.uiapi.UIColorEffects.holographic(-65281, -16777012),
+							net.minecraft.resources.ResourceLocation.parse("duality:textures/screens/icon_ability_vampire_eye.png"), net.spidrone.uiapi.UIColorEffects.solid(0xFFFFFFFF), net.spidrone.uiapi.UIColorEffects.solid(0xFFFFFFFF));
 				if (!wheel.getButtons().isEmpty()) {
 					net.spidrone.uiapi.UIRadialMenuElement.openRadialMenu(wheel, wheel.getButtons().size());
 					sua_radial_abilities_radial_wheel = wheel;
@@ -200,6 +210,14 @@ public class AbilitiesRadialOverlay {
 							net.spidrone.uiapi.UIRadialMenuElement.wedgeHoveredShowTooltip(event.getGuiGraphics(), sua_radial_abilities_radial_wheel, sua_radial_abilities_radial_wheel.getButtons().size(),
 									w / 2 + -60 + sua_radial_abilities_radial_radius, h / 2 + -60 + sua_radial_abilities_radial_radius, sua_radial_abilities_radial_radius + 0, net.minecraft.resources.ResourceLocation.parse("minecraft:default"), null,
 									-268304368, ((net.spidrone.uiapi.UIColorEffects.holographic(-65536, -1).colorAt(0, 1, 0f, sua_tt_time) & 0x00FFFFFF) | (-65536 & 0xFF000000)), -1);
+						}
+						case "shimmer" -> {
+							long sua_tt_time = System.currentTimeMillis();
+							sua_radial_abilities_radial_wheel.setTooltipLines("shimmer", net.spidrone.uiapi.UIRadialMenuElement.TooltipLine.of("Shimmer", net.minecraft.resources.ResourceLocation.parse("spis_ui_api:boldpixels"),
+									((net.spidrone.uiapi.UIColorEffects.pulse(-10092442, -3407668, 1f, net.spidrone.uiapi.UIEasing.easeInOutSine()).colorAt(0, 1, 0f, sua_tt_time) & 0x00FFFFFF) | (-10092442 & 0xFF000000))));
+							net.spidrone.uiapi.UIRadialMenuElement.wedgeHoveredShowTooltip(event.getGuiGraphics(), sua_radial_abilities_radial_wheel, sua_radial_abilities_radial_wheel.getButtons().size(),
+									w / 2 + -60 + sua_radial_abilities_radial_radius, h / 2 + -60 + sua_radial_abilities_radial_radius, sua_radial_abilities_radial_radius + 0, net.minecraft.resources.ResourceLocation.parse("minecraft:default"), null,
+									-13421773, -39169, -1);
 						}
 						default -> {
 						}

@@ -6,6 +6,8 @@ import net.spidrotech.duality.abilities.teleportation.TeleportMarker;
 import net.spidrotech.duality.abilities.teleportation.TeleportDirectionUtil;
 import net.spidrotech.duality.DimensionStackConfig;
 
+import javax.annotation.Nullable;
+
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -147,6 +149,12 @@ public final class TeleportMarkerRenderer {
 	private static final float SMOOTHING_FACTOR = 0.2f;
 	private static final Map<String, Float> smoothedYaw = new HashMap<>();
 	private static final Map<String, Float> smoothedPitch = new HashMap<>();
+	// Which dimension the smoothing state above was last computed FROM - not which dimension a
+	// marker points TO. A marker's ring slot (see computeRadialPlacements/isSkyBand) depends on
+	// the VIEWER's own current dimension, not just on which markers exist, so the same marker set
+	// can legitimately need a totally different slot after the viewer travels - see onRenderLevel.
+	@Nullable
+	private static ResourceKey<Level> lastViewerDimension = null;
 
 	/** One marker's fixed ring slot, resolved to a real world position for this frame - the
 	 *  position only depends on the player's OWN current position/eye height and the marker's
@@ -189,6 +197,7 @@ public final class TeleportMarkerRenderer {
 			// angle the next time the picker opens with a different set of destinations.
 			smoothedYaw.clear();
 			smoothedPitch.clear();
+			lastViewerDimension = null;
 			return;
 		}
 		Minecraft mc = Minecraft.getInstance();
@@ -200,6 +209,22 @@ public final class TeleportMarkerRenderer {
 		Vec3 eyePos = mc.player.getEyePosition(partialTick);
 		Vec3 feetPos = mc.player.getPosition(partialTick);
 		Level viewerLevel = mc.player.level();
+		if (viewerLevel.dimension() != lastViewerDimension) {
+			// The VIEWER changed dimension (e.g. just orbed/shimmered out of Hell) - every
+			// marker's sky/ground band (see isSkyBand) is computed relative to the viewer's OWN
+			// current dimension, so the same marker set can need a completely different ring
+			// layout here than it did a moment ago. Without this, a marker's smoothed bearing
+			// keeps slowly EASING from its old dimension's slot toward its new one (see
+			// SMOOTHING_FACTOR) instead of snapping - for a few frames right after arriving
+			// somewhere new, that stale bearing can sit closer to a DIFFERENT marker's new slot
+			// than to its own, so a click in that window can lock in the wrong destination
+			// entirely. A hard reset here means every marker's slot is correct again the very
+			// first frame after a dimension change, at the cost of that one marker doing a single
+			// visible snap instead of a smooth ease-in - a fair trade for never mis-selecting.
+			smoothedYaw.clear();
+			smoothedPitch.clear();
+			lastViewerDimension = viewerLevel.dimension();
+		}
 		float gameTimeSeconds = (mc.level.getGameTime() + partialTick) / 20f;
 		PoseStack poseStack = event.getPoseStack();
 		MultiBufferSource.BufferSource bufferSource = mc.renderBuffers().bufferSource();
@@ -207,13 +232,23 @@ public final class TeleportMarkerRenderer {
 		int packedLight = 0xF000F0; // full-bright - a magical destination marker shouldn't dim in the dark
 		if (TeleportPickerClientState.isLocked()) {
 			TeleportMarker locked = TeleportPickerClientState.selectedMarker();
-			List<RadialPlacement> placements = computeRadialPlacements(List.of(locked), viewerLevel.dimension(), eyePos, feetPos);
+			// Slot comes from the FULL marker set, sorted exactly like BROWSING does - not a
+			// fresh ring built from just this one marker. A ring's slot angle is (360/count)*index,
+			// so a singleton ring always placed this marker at angle 0 (world-north) the instant it
+			// locked, regardless of wherever it actually sat while browsing - a marker you locked
+			// in at, say, 120 degrees would visibly jump to a completely different spot the moment
+			// you selected it. Recomputing the same full-set placement and then picking out just
+			// this one marker keeps its on-screen slot identical before and after locking; only
+			// which markers get RENDERED changes (all of them vs. just this one), never where they'd
+			// sit if they were.
+			List<TeleportMarker> allSorted = TeleportPickerClientState.markers().stream().sorted(Comparator.comparing(TeleportMarker::selectionId)).toList();
+			List<RadialPlacement> allPlacements = computeRadialPlacements(allSorted, viewerLevel.dimension(), eyePos, feetPos);
+			RadialPlacement placement = allPlacements.stream().filter(p -> p.marker().selectionId().equals(locked.selectionId())).findFirst().orElse(null);
 			pruneSmoothingState(Set.of(locked.selectionId()));
-			if (placements.isEmpty()) {
+			if (placement == null) {
 				bufferSource.endBatch();
 				return;
 			}
-			RadialPlacement placement = placements.get(0);
 			int glowColor = TeleportPickerClientState.glowStyle().colorAt(gameTimeSeconds);
 			renderMarker(poseStack, bufferSource, camera, camPos, placement, true, glowColor);
 			renderTooltip(poseStack, bufferSource, camera, camPos, font, placement, packedLight);
@@ -278,9 +313,12 @@ public final class TeleportMarkerRenderer {
 	}
 
 	/** Evenly spaces every marker in one ring around its center point at RADIAL_RADIUS. Angle 0
-	 *  is world-north on purpose (not relative to the player's facing) - this is a stable ring
-	 *  anchored to the world, not a menu that spins to face you; turning your own view is what
-	 *  brings different slots into sight, exactly like a compass rose painted on the ground. */
+	 *  points along +Z (world SOUTH, i.e. the direction of player yaw 0) on purpose, and is fixed
+	 *  to the world rather than to the player's facing - this is a stable ring anchored to the
+	 *  world, not a menu that spins to face you; turning your own view is what brings different
+	 *  slots into sight, exactly like a compass rose painted on the ground. A ring angle of A puts
+	 *  a marker where the player's own yaw reads -A, which is why bearingFor has to negate - see
+	 *  its YAW SIGN note. */
 	private static void placeRing(List<TeleportMarker> ring, Vec3 center, List<RadialPlacement> out) {
 		int count = ring.size();
 		if (count == 0)
@@ -298,13 +336,24 @@ public final class TeleportMarkerRenderer {
 	 *  closestToLook. Horizontal distance here is always exactly RADIAL_RADIUS by construction
 	 *  (never near zero), so unlike the old real-target bearing this has no near-target
 	 *  numerical instability to begin with - smoothedBearing below only has to smooth the
-	 *  occasional ring-reflow case (see class doc SLOT ASSIGNMENT), not per-frame jitter. */
+	 *  occasional ring-reflow case (see class doc SLOT ASSIGNMENT), not per-frame jitter.
+	 *
+	 *  YAW SIGN (was a real bug - "clicking one marker selects a different one"): Minecraft's own
+	 *  yaw is NEGATIVE-atan2(dx, dz), not atan2(dx, dz) - see Entity#lookAt, which computes
+	 *  -atan2(dx, dz) for exactly this. Without that minus sign, the yaw reported for a marker is
+	 *  the MIRROR of the direction you actually have to face to look at it, so closestToLook
+	 *  compares the player's real yaw against mirrored bearings. A marker sitting at ring angle A
+	 *  is on screen where the player's yaw is -A, but was being matched as if it were at +A: the
+	 *  marker at ring angle 0 worked (0 == -0), and every other pair swapped with its mirror
+	 *  image. With three markers at 0/120/240, aiming at the one drawn at 120 selected the one
+	 *  stored at 240 instead - which is why clicking the fireball icon confirmed and teleported to
+	 *  the orb waypoint. */
 	private static TeleportDirectionUtil.Bearing<RadialPlacement> bearingFor(Vec3 eyePos, RadialPlacement placement) {
 		double dx = placement.worldPos().x - eyePos.x;
 		double dz = placement.worldPos().z - eyePos.z;
 		double dy = placement.worldPos().y - eyePos.y;
 		double horizontalDist = Math.sqrt(dx * dx + dz * dz);
-		float yaw = (float) (Mth.atan2(dx, dz) * (180.0 / Math.PI));
+		float yaw = (float) (-Mth.atan2(dx, dz) * (180.0 / Math.PI));
 		float pitch = (float) (Mth.atan2(dy, horizontalDist) * (180.0 / Math.PI));
 		return new TeleportDirectionUtil.Bearing<>(placement, yaw, pitch);
 	}

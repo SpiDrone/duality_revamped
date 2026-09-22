@@ -87,23 +87,28 @@ public final class TeleportNetwork {
 	}
 
 	/** C->S - "I've picked this destination, with these passengers." selectionId matches a
-	 *  TeleportMarker's own selectionId. */
-	public record ConfirmTeleportSelectionPayload(String selectionId, List<UUID> passengerIds) implements CustomPacketPayload {
+	 *  TeleportMarker's own selectionId. abilityId is whichever teleport ability's picker this
+	 *  came from (TeleportPickerClientState#abilityId, stamped by client.TeleportBrowsingWatcher
+	 *  when the picker opened) - Orb, Shimmer, or any future OrbAbility subclass, see
+	 *  TeleportAbilities. */
+	public record ConfirmTeleportSelectionPayload(ResourceLocation abilityId, String selectionId, List<UUID> passengerIds) implements CustomPacketPayload {
 		public static final Type<ConfirmTeleportSelectionPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath("duality", "confirm_teleport_selection"));
 		public static final StreamCodec<FriendlyByteBuf, ConfirmTeleportSelectionPayload> STREAM_CODEC = StreamCodec.of((FriendlyByteBuf buf, ConfirmTeleportSelectionPayload payload) -> {
+			buf.writeResourceLocation(payload.abilityId());
 			buf.writeUtf(payload.selectionId());
 			buf.writeVarInt(payload.passengerIds().size());
 			for (UUID id : payload.passengerIds()) {
 				buf.writeUUID(id);
 			}
 		}, (FriendlyByteBuf buf) -> {
+			ResourceLocation abilityId = buf.readResourceLocation();
 			String selectionId = buf.readUtf();
 			int count = buf.readVarInt();
 			List<UUID> ids = new ArrayList<>(count);
 			for (int i = 0; i < count; i++) {
 				ids.add(buf.readUUID());
 			}
-			return new ConfirmTeleportSelectionPayload(selectionId, ids);
+			return new ConfirmTeleportSelectionPayload(abilityId, selectionId, ids);
 		});
 
 		@Override
@@ -112,14 +117,14 @@ public final class TeleportNetwork {
 		}
 	}
 
-	/** C->S, empty - "actually, never mind that destination." Sent when the player right-clicks
-	 *  empty air again while LOCKED (see client.TeleportPickerInputHandler). Cancels whatever
-	 *  charging Orb instance the earlier confirm started, so a second click reliably backs the
+	/** C->S - "actually, never mind that destination." Sent when the player right-clicks empty
+	 *  air again while LOCKED (see client.TeleportPickerInputHandler). Cancels whatever charging
+	 *  instance of abilityId the earlier confirm started, so a second click reliably backs the
 	 *  player back out to picking a new destination instead of leaving a stuck charge running. */
-	public record CancelTeleportSelectionPayload() implements CustomPacketPayload {
+	public record CancelTeleportSelectionPayload(ResourceLocation abilityId) implements CustomPacketPayload {
 		public static final Type<CancelTeleportSelectionPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath("duality", "cancel_teleport_selection"));
-		public static final StreamCodec<FriendlyByteBuf, CancelTeleportSelectionPayload> STREAM_CODEC = StreamCodec.of((buf, msg) -> {
-		}, buf -> new CancelTeleportSelectionPayload());
+		public static final StreamCodec<FriendlyByteBuf, CancelTeleportSelectionPayload> STREAM_CODEC = StreamCodec.of((FriendlyByteBuf buf, CancelTeleportSelectionPayload payload) -> buf.writeResourceLocation(payload.abilityId()),
+				(FriendlyByteBuf buf) -> new CancelTeleportSelectionPayload(buf.readResourceLocation()));
 
 		@Override
 		public Type<CancelTeleportSelectionPayload> type() {
@@ -129,12 +134,14 @@ public final class TeleportNetwork {
 
 	/** C->S - "add or remove this entity as a passenger," sent from
 	 *  client.TeleportPickerInputHandler when the player right-clicks a LivingEntity WHILE
-	 *  LOCKED (i.e. Orb is already charging). See handleTogglePassenger for what happens if the
-	 *  addition would exceed the caster's passenger capacity. */
-	public record ToggleTeleportPassengerPayload(UUID targetId) implements CustomPacketPayload {
+	 *  LOCKED (i.e. abilityId is already charging). See handleTogglePassenger for what happens
+	 *  if the addition would exceed the caster's passenger capacity. */
+	public record ToggleTeleportPassengerPayload(ResourceLocation abilityId, UUID targetId) implements CustomPacketPayload {
 		public static final Type<ToggleTeleportPassengerPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath("duality", "toggle_teleport_passenger"));
-		public static final StreamCodec<FriendlyByteBuf, ToggleTeleportPassengerPayload> STREAM_CODEC = StreamCodec.of((FriendlyByteBuf buf, ToggleTeleportPassengerPayload payload) -> buf.writeUUID(payload.targetId()),
-				(FriendlyByteBuf buf) -> new ToggleTeleportPassengerPayload(buf.readUUID()));
+		public static final StreamCodec<FriendlyByteBuf, ToggleTeleportPassengerPayload> STREAM_CODEC = StreamCodec.of((FriendlyByteBuf buf, ToggleTeleportPassengerPayload payload) -> {
+			buf.writeResourceLocation(payload.abilityId());
+			buf.writeUUID(payload.targetId());
+		}, (FriendlyByteBuf buf) -> new ToggleTeleportPassengerPayload(buf.readResourceLocation(), buf.readUUID()));
 
 		@Override
 		public Type<ToggleTeleportPassengerPayload> type() {
@@ -232,6 +239,13 @@ public final class TeleportNetwork {
 		context.enqueueWork(() -> {
 			if (!(context.player() instanceof ServerPlayer player))
 				return;
+			// Never trust the client's abilityId at face value - only ever act on it once it's
+			// confirmed to actually be a teleport ability (see TeleportAbilities). Everything
+			// else in this handler already re-validates against the caster (range, passenger
+			// capacity, Heaven) via that ability's own cast conditions, so this check exists
+			// purely to stop an arbitrary/forged id from reaching tryActivate at all.
+			if (TeleportAbilities.get(payload.abilityId()).isEmpty())
+				return;
 			OrbDestinationResolver.Destination destination = OrbDestinationResolver.resolve(player, payload.selectionId());
 			if (destination == null)
 				return; // TODO: feedback for "that destination no longer exists" (waypoint deleted, call expired)
@@ -240,7 +254,7 @@ public final class TeleportNetwork {
 			// different dimensions. ServerLevel#getEntity(UUID) finds any entity (not just
 			// online players), matching the same lookup handleTogglePassenger uses.
 			ServerLevel casterLevel = player.level() instanceof ServerLevel lvl ? lvl : null;
-			AbilityManager.get().tryActivate(player, OrbAbility.ID, ctx -> {
+			AbilityManager.get().tryActivate(player, payload.abilityId(), ctx -> {
 				ctx.setTargetPos(destination.position());
 				ctx.set("destinationLevel", destination.level());
 				if (casterLevel != null) {
@@ -259,7 +273,9 @@ public final class TeleportNetwork {
 		context.enqueueWork(() -> {
 			if (!(context.player() instanceof ServerPlayer player))
 				return;
-			AbilityManager.get().cancel(player, OrbAbility.ID);
+			if (TeleportAbilities.get(payload.abilityId()).isEmpty())
+				return;
+			AbilityManager.get().cancel(player, payload.abilityId());
 		});
 	}
 
@@ -269,7 +285,9 @@ public final class TeleportNetwork {
 				return;
 			if (!(player.level() instanceof ServerLevel serverLevel))
 				return;
-			Optional<AbilityContext> maybeCtx = AbilityManager.get().runningContext(player, OrbAbility.ID);
+			if (TeleportAbilities.get(payload.abilityId()).isEmpty())
+				return;
+			Optional<AbilityContext> maybeCtx = AbilityManager.get().runningContext(player, payload.abilityId());
 			if (maybeCtx.isEmpty())
 				return; // not currently charging/active - nothing to toggle, silently ignore
 			AbilityContext ctx = maybeCtx.get();
@@ -283,8 +301,8 @@ public final class TeleportNetwork {
 			ServerLevel destLevel = ctx.get("destinationLevel", serverLevel);
 			int prospectiveCount = ctx.targets().size() + 1;
 			if (!OrbAbility.canBringPassengers(player, destLevel.dimension(), prospectiveCount)) {
-				AbilityManager.get().cancel(player, OrbAbility.ID);
-				player.displayClientMessage(Component.literal("You can't carry that many passengers - orb cancelled.").withStyle(ChatFormatting.RED), true);
+				AbilityManager.get().cancel(player, payload.abilityId());
+				player.displayClientMessage(Component.literal("You can't carry that many passengers - teleport cancelled.").withStyle(ChatFormatting.RED), true);
 				PacketDistributor.sendToPlayer(player, new OrbCancelledPayload());
 				return;
 			}

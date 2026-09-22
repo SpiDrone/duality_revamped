@@ -169,7 +169,13 @@ public class OrbAbility extends Ability {
 		Vec3 destination = resolveDestination(ctx, caster, level);
 		ServerLevel destLevel = ctx.get("destinationLevel", currentLevel);
 		LOGGER.info("[duality] Orb ACTIVATING (teleport) for {} - destination={} destDim={} passengers={}", caster.getName().getString(), destination, destLevel.dimension().location(), ctx.targets().size());
-		if (!isDestinationInRange(caster, destLevel.dimension(), destination)) {
+		// Explicit allowHeaven arg, NOT the ambient 3-arg overload below (which is hardcoded
+		// true) - an unqualified call here would silently resolve to that static overload
+		// instead of consulting this.allowHeaven, since Java never dispatches a static method
+		// virtually. That would let ShimmerAbility's own recheck here wave through a Heaven
+		// destination it should still refuse post-charge, even though the pre-charge cast
+		// condition (which DOES use this.allowHeaven, via the inRange field) already caught it.
+		if (!isDestinationInRange(caster, destLevel.dimension(), destination, this.allowHeaven)) {
 			LOGGER.info("[duality] Orb BLOCKED for {}: destination unreachable", caster.getName().getString());
 			notifyOrbFinished(caster);
 			return;
@@ -203,6 +209,23 @@ public class OrbAbility extends Ability {
 	@Override
 	public void onDeactivate(AbilityContext ctx) {
 		notifyOrbFinished(ctx.caster());
+	}
+
+	// ================================================================== per-ability policy
+	/** Whether THIS ability (Orb, or a subclass like ShimmerAbility) is allowed anywhere near
+	 *  Heaven, regardless of level - see canCross. Exposed so ability-agnostic callers (the
+	 *  teleport picker, TeleportNetwork) can ask the right question about whichever teleport
+	 *  ability is actually selected instead of assuming Orb's own answer. */
+	public final boolean allowsHeaven() {
+		return allowHeaven;
+	}
+
+	/** The LOCKED marker's glow once a destination is confirmed - Orb's own whitelighter pulse by
+	 *  default. ShimmerAbility overrides this rather than reusing "whitelighter" styling for a
+	 *  demon power. See client.TeleportBrowsingWatcher, which reads this once per ability
+	 *  selection. */
+	public TeleportGlowStyle glowStyle() {
+		return TeleportGlowStyle.PULSE_WHITELIGHTER;
 	}
 
 	private static void notifyOrbFinished(LivingEntity caster) {
@@ -276,10 +299,12 @@ public class OrbAbility extends Ability {
 		return 100 * Math.pow(2, level - 1);
 	}
 
-	/** Angelic Orb's own external callers (the client teleport picker) only ever need to ask
-	 *  this about Orb specifically, so this stays a 3-arg static method - always allowHeaven=true.
-	 *  The instance-aware 4-arg overload below is what this class's own cast conditions use, so
-	 *  ShimmerAbility gets a correct answer for itself instead of Orb's. */
+	/** Orb-specific convenience (always allowHeaven=true) for callers that genuinely mean Orb and
+	 *  nothing else. The generalized teleport picker (client.TeleportBrowsingWatcher) does NOT use
+	 *  this any more - it holds the actual ability instance for whichever teleport ability is
+	 *  selected and calls the 4-arg overload below with that instance's own allowsHeaven(), so a
+	 *  demon's Shimmer picker correctly shows Heaven as unreachable instead of borrowing Orb's
+	 *  always-true policy. */
 	public static boolean isDestinationInRange(LivingEntity caster, ResourceKey<Level> destDimension, Vec3 destPosition) {
 		return isDestinationInRange(caster, destDimension, destPosition, true);
 	}

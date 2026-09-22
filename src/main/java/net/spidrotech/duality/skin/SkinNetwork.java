@@ -116,12 +116,28 @@ public final class SkinNetwork {
 		}
 	}
 
+	/** C->S - "my character's body is this build." Send from the builder GUI's thick/slim toggle.
+	 *  Needs no ownership check the way parts do: a body isn't an unlockable, every character may
+	 *  be either build, and the enum itself is the whole validation (an unknown value can't survive
+	 *  readEnum). */
+	public record SetBodyModelPayload(SkinBodyModel bodyModel) implements CustomPacketPayload {
+		public static final Type<SetBodyModelPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath("duality", "set_skin_body_model"));
+		public static final StreamCodec<FriendlyByteBuf, SetBodyModelPayload> STREAM_CODEC = StreamCodec.of((FriendlyByteBuf buf, SetBodyModelPayload payload) -> buf.writeEnum(payload.bodyModel()),
+				(FriendlyByteBuf buf) -> new SetBodyModelPayload(buf.readEnum(SkinBodyModel.class)));
+
+		@Override
+		public Type<SetBodyModelPayload> type() {
+			return TYPE;
+		}
+	}
+
 	@SubscribeEvent
 	public static void register(final RegisterPayloadHandlersEvent event) {
 		final PayloadRegistrar registrar = event.registrar("duality");
 		registrar.playToClient(SyncSkinCatalogPayload.TYPE, SyncSkinCatalogPayload.STREAM_CODEC, SkinNetwork::handleSyncCatalog);
 		registrar.playToClient(SyncAppearancePayload.TYPE, SyncAppearancePayload.STREAM_CODEC, SkinNetwork::handleSyncAppearance);
 		registrar.playToServer(EquipPartPayload.TYPE, EquipPartPayload.STREAM_CODEC, SkinNetwork::handleEquip);
+		registrar.playToServer(SetBodyModelPayload.TYPE, SetBodyModelPayload.STREAM_CODEC, SkinNetwork::handleSetBodyModel);
 	}
 
 	// Client-only handlers - same pattern as TeleportNetwork's S2C handlers referencing
@@ -148,6 +164,14 @@ public final class SkinNetwork {
 			if (!ownsPart(player, part))
 				return; // client asked for something it hasn't unlocked - ignore, don't trust
 			SkinManager.get().setLoadout(player, SkinManager.get().loadoutOf(player.getUUID()).with(new SkinLoadout.Equipped(part.id(), payload.tints())));
+		});
+	}
+
+	private static void handleSetBodyModel(final SetBodyModelPayload payload, final IPayloadContext context) {
+		context.enqueueWork(() -> {
+			if (!(context.player() instanceof ServerPlayer player))
+				return;
+			SkinManager.get().setLoadout(player, SkinManager.get().loadoutOf(player.getUUID()).withBodyModel(payload.bodyModel()));
 		});
 	}
 

@@ -40,11 +40,13 @@ import com.mojang.logging.LogUtils;
  *     above is optimistic; the server remains authoritative and will cancel the whole charge
  *     (see TeleportNetwork#handleTogglePassenger / OrbCancelledPayload) if an addition doesn't
  *     actually fit, correcting our guess.
- *   Empty air, BROWSING - confirms whatever's currently targeted, but ONLY if
+ *   Right-click anywhere else (empty air OR a block - see onRightClickBlock for why both are
+ *     handled), BROWSING - confirms whatever's currently targeted, but ONLY if
  *     TeleportPickerClientState#reachabilityOf says REACHABLE; otherwise refuses and explains
  *     why (out of range, or blocked by current passengers).
- *   Empty air, LOCKED - cancels the confirmed selection and backs out to BROWSING, telling the
- *     server to cancel the in-progress charge. Passengers and markers stay intact.
+ *   Right-click anywhere else, LOCKED - cancels the confirmed selection and backs out to
+ *     BROWSING, telling the server to cancel the in-progress charge. Passengers and markers stay
+ *     intact.
  * No-ops entirely once INACTIVE - normal interaction behaves exactly as vanilla then.
  *
  * DOUBLE-FIRING (two separate causes, both filtered below):
@@ -121,7 +123,7 @@ public final class TeleportPickerInputHandler {
 			// Mid-charge: the server is authoritative here and will cancel the whole cast (and
 			// tell us via OrbCancelledPayload) if this addition doesn't actually fit - our
 			// local mirror above is a best guess for instant visual feedback, not the final word.
-			PacketDistributor.sendToServer(new TeleportNetwork.ToggleTeleportPassengerPayload(targetId));
+			PacketDistributor.sendToServer(new TeleportNetwork.ToggleTeleportPassengerPayload(TeleportPickerClientState.abilityId(), targetId));
 		}
 		event.setCanceled(true);
 	}
@@ -129,20 +131,48 @@ public final class TeleportPickerInputHandler {
 	@SubscribeEvent
 	public static void onRightClickEmpty(PlayerInteractEvent.RightClickEmpty event) {
 		if (!event.getEntity().level().isClientSide())
-			return; // see class doc SIDE - RightClickEmpty is client-only in practice, but this
-					// costs nothing and keeps both handlers consistent if that ever changes
+			return; // see class doc SIDE
 		if (event.getHand() != InteractionHand.MAIN_HAND)
-			return; // see class doc HAND - this event fires once per hand per click
+			return; // see class doc HAND
 		if (!TeleportPickerClientState.isActive())
 			return;
-		Player player = event.getEntity();
+		confirmOrCancel(event.getEntity());
+	}
+
+	/** Same picker confirm/cancel as onRightClickEmpty above, for the other half of vanilla's
+	 *  right-click split: RightClickEmpty ONLY fires when the crosshair ray hits nothing at all
+	 *  within reach - the moment so much as a block is in front of the player (however far off,
+	 *  and regardless of how far away the marker itself is drawn), vanilla reclassifies the same
+	 *  physical click as RightClickBlock instead, which nothing here used to listen for. That was
+	 *  the actual cause of "can't select a waypoint with a block in the way": every marker's
+	 *  world position is a purely cosmetic billboard slot (see TeleportMarkerRenderer's own LAYOUT
+	 *  doc), never real block geometry, so real-world blocks were never supposed to matter here in
+	 *  the first place. Cancelled outright (not just left unconsumed) so a block in the way while
+	 *  the picker is active never ALSO opens/places/interacts, matching onEntityInteract's own
+	 *  unconditional hijack of entity right-clicks while the picker is up. */
+	@SubscribeEvent
+	public static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
+		if (!event.getEntity().level().isClientSide())
+			return; // see class doc SIDE
+		if (event.getHand() != InteractionHand.MAIN_HAND)
+			return; // see class doc HAND
+		if (!TeleportPickerClientState.isActive())
+			return;
+		confirmOrCancel(event.getEntity());
+		event.setCanceled(true);
+	}
+
+	/** Shared body for both right-click flavors above:
+	 *   LOCKED   - backs out to BROWSING and tells the server to cancel whatever charging
+	 *              instance the earlier confirm started. Passengers, their orbit visuals, and
+	 *              markers stay intact - only the locked destination itself clears.
+	 *   BROWSING - confirms whatever's currently targeted, but ONLY if reachabilityOf says
+	 *              REACHABLE; otherwise refuses and explains why (out of range, or blocked by
+	 *              current passengers). */
+	private static void confirmOrCancel(Player player) {
 		if (TeleportPickerClientState.isLocked()) {
-			// Second right-click while LOCKED: back out to BROWSING and tell the server to
-			// cancel whatever charging Orb instance the earlier confirm started. Passengers,
-			// their orbit visuals, and markers stay intact - only the locked destination itself
-			// clears.
 			TeleportPickerClientState.cancelSelection();
-			PacketDistributor.sendToServer(new TeleportNetwork.CancelTeleportSelectionPayload());
+			PacketDistributor.sendToServer(new TeleportNetwork.CancelTeleportSelectionPayload(TeleportPickerClientState.abilityId()));
 			return;
 		}
 		TeleportMarker targeted = TeleportPickerClientState.currentlyTargeted();
@@ -155,7 +185,8 @@ public final class TeleportPickerInputHandler {
 			return;
 		}
 		TeleportPickerClientState.confirmSelection(targeted);
-		PacketDistributor.sendToServer(new TeleportNetwork.ConfirmTeleportSelectionPayload(targeted.selectionId(), List.copyOf(TeleportPickerClientState.selectedPassengers())));
+		PacketDistributor.sendToServer(
+				new TeleportNetwork.ConfirmTeleportSelectionPayload(TeleportPickerClientState.abilityId(), targeted.selectionId(), List.copyOf(TeleportPickerClientState.selectedPassengers())));
 	}
 
 	@SubscribeEvent

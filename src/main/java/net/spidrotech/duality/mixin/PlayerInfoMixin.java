@@ -40,8 +40,10 @@ public abstract class PlayerInfoMixin {
 		if (profile == null || profile.getId() == null)
 			return;
 		ResourceLocation composed = ClientSkinCache.textureFor(profile.getId(), profile.getName(), vanilla.texture());
-		if (composed == null)
-			return; // nothing to composite - leave the real skin exactly as it was
-		callback.setReturnValue(new PlayerSkin(composed, vanilla.textureUrl(), vanilla.capeTexture(), vanilla.elytraTexture(), vanilla.model(), vanilla.secure()));
+		PlayerSkin.Model model = ClientSkinCache.bodyModelFor(profile.getId(), vanilla.model());
+		if (composed == null && model == vanilla.model())
+			return; // nothing of ours to apply - leave the real skin exactly as it was
+		ResourceLocation texture = composed != null ? composed : vanilla.texture();
+		callback.setReturnValue(new PlayerSkin(texture, vanilla.textureUrl(), vanilla.capeTexture(), vanilla.elytraTexture(), model, vanilla.secure()));
 	}
 }

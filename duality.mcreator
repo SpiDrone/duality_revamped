@@ -335,20 +335,6 @@
       "path": "~/ClaudeProjectile"
     },
     {
-      "name": "CharacterSelector",
-      "type": "gui",
-      "compiles": true,
-      "locked_code": true,
-      "registry_name": "character_selector",
-      "metadata": {
-        "files": [
-          "src/main/java/net/spidrotech/duality/client/gui/CharacterSelectorScreen.java",
-          "src/main/java/net/spidrotech/duality/world/inventory/CharacterSelectorMenu.java"
-        ]
-      },
-      "path": "~/NewCharacter"
-    },
-    {
       "name": "OrbingEffect",
       "type": "potioneffect",
       "compiles": true,
@@ -374,8 +360,24 @@
             "type": "entity"
           },
           {
+            "name": "x",
+            "type": "number"
+          },
+          {
+            "name": "y",
+            "type": "number"
+          },
+          {
+            "name": "z",
+            "type": "number"
+          },
+          {
             "name": "text",
             "type": "string"
+          },
+          {
+            "name": "world",
+            "type": "world"
           }
         ],
         "files": [
@@ -1061,6 +1063,124 @@
           "src/main/java/net/spidrotech/duality/procedures/AbilitiesRadialSelectProcedure.java"
         ]
       }
+    },
+    {
+      "name": "CodexReturnString",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "codex_return_string",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          }
+        ],
+        "return_type": "string",
+        "files": [
+          "src/main/java/net/spidrotech/duality/procedures/CodexReturnStringProcedure.java"
+        ]
+      },
+      "path": "~/NewCharacter"
+    },
+    {
+      "name": "CodexReturnDescription",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "codex_return_description",
+      "metadata": {
+        "dependencies": [],
+        "return_type": "string",
+        "files": [
+          "src/main/java/net/spidrotech/duality/procedures/CodexReturnDescriptionProcedure.java"
+        ]
+      },
+      "path": "~/NewCharacter"
+    },
+    {
+      "name": "HasDemon",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "has_demon",
+      "metadata": {
+        "dependencies": [],
+        "return_type": "logic",
+        "files": [
+          "src/main/java/net/spidrotech/duality/procedures/HasDemonProcedure.java"
+        ]
+      },
+      "path": "~/NewCharacter/CS_Races"
+    },
+    {
+      "name": "HasVampire",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "has_vampire",
+      "metadata": {
+        "dependencies": [],
+        "return_type": "logic",
+        "files": [
+          "src/main/java/net/spidrotech/duality/procedures/HasVampireProcedure.java"
+        ]
+      },
+      "path": "~/NewCharacter/CS_Races/Subrace"
+    },
+    {
+      "name": "SelectRace",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "select_race",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "item_value",
+            "type": "string"
+          }
+        ],
+        "files": [
+          "src/main/java/net/spidrotech/duality/procedures/SelectRaceProcedure.java"
+        ]
+      },
+      "path": "~/NewCharacter"
+    },
+    {
+      "name": "RetShimmer",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "ret_shimmer",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          }
+        ],
+        "return_type": "logic",
+        "files": [
+          "src/main/java/net/spidrotech/duality/procedures/RetShimmerProcedure.java"
+        ]
+      },
+      "path": "~/Radial Menu/Ability Returns"
+    },
+    {
+      "name": "CharacterSelector",
+      "type": "gui",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "character_selector",
+      "metadata": {
+        "files": [
+          "src/main/java/net/spidrotech/duality/client/gui/CharacterSelectorScreen.java",
+          "src/main/java/net/spidrotech/duality/world/inventory/CharacterSelectorMenu.java"
+        ]
+      },
+      "path": "~/NewCharacter"
     }
   ],
   "variable_elements": [
@@ -1119,10 +1239,6 @@
       "attribute.duality.orbchargereduction": "Orb Charge Reduction",
       "attribute.duality.orbing_proficiency": "Orbing Proficiency",
       "entity.duality.ability_projectile": "Ability Projectile",
-      "gui.duality.character_selector.label_choose_starting_race": "Choose Starting Race",
-      "gui.duality.character_selector.label_codex": "Codex",
-      "gui.duality.character_selector.label_codex_description": "Codex Description",
-      "gui.duality.character_selector.label_screentitle": "ScreenTitle",
       "effect.duality.orbing_effect": "Orbing Effect",
       "attribute.duality.blood_max": "Blood Max",
       "attribute.duality.blood_quality": "Blood Quality",
@@ -1134,7 +1250,14 @@
       "ket.categories.duality": "Duality",
       "attribute.duality.vampire_rank": "Vampire Rank",
       "entity.duality.spider_queen": "Spider Queen",
-      "item.duality.spider_queen_spawn_egg": "Spider Queen Spawn Egg"
+      "item.duality.spider_queen_spawn_egg": "Spider Queen Spawn Egg",
+      "gui.duality.character_selector_2.label_screentitle": "ScreenTitle",
+      "gui.duality.character_selector_2.label_codex": "Codex",
+      "gui.duality.character_selector_2.label_codex_description": "Codex Description",
+      "gui.duality.character_selector.label_choose_starting_race": "Choose Starting Race",
+      "gui.duality.character_selector.label_character_creator_15": "Character Creator (1/5)",
+      "gui.duality.character_selector.label_human": "Human",
+      "gui.duality.character_selector.label_demon": "Demon"
     }
   },
   "metadata": {
@@ -1185,7 +1308,17 @@
       },
       {
         "name": "NewCharacter",
-        "children": []
+        "children": [
+          {
+            "name": "CS_Races",
+            "children": [
+              {
+                "name": "Subrace",
+                "children": []
+              }
+            ]
+          }
+        ]
       },
       {
         "name": "ClaudeProjectile",

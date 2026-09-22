@@ -1193,6 +1193,163 @@
                 "speed": 1.0,
                 "easing": "easeInOutSine"
               }
+            },
+            {
+              "id": "shimmer",
+              "icon": "icon_ability_vampire_eye.png",
+              "unselectedEffect": "holographic",
+              "selectedEffect": "holographic",
+              "unselectedColor1": {
+                "value": -8355712,
+                "falpha": 0.0
+              },
+              "unselectedColor2": {
+                "value": -12566464,
+                "falpha": 0.0
+              },
+              "selectedColor1": {
+                "value": -65281,
+                "falpha": 0.0
+              },
+              "selectedColor2": {
+                "value": -16777012,
+                "falpha": 0.0
+              },
+              "onSelect": {
+                "name": "AbilitiesRadialSelect"
+              },
+              "radialValue": "shimmer",
+              "radialValueProcedure": {
+                "fixedValue": "shimmer"
+              },
+              "displayCondition": {
+                "name": "RetShimmer"
+              },
+              "iconTintEnabled": false,
+              "unselectedIconTint": {
+                "value": -1,
+                "falpha": 0.0
+              },
+              "selectedIconTint": {
+                "value": -1,
+                "falpha": 0.0
+              },
+              "tooltip": [
+                {
+                  "text": {
+                    "fixedValue": "Shimmer"
+                  },
+                  "font": "spis_ui_api:boldpixels",
+                  "overrideColor": true,
+                  "color": {
+                    "value": -10092442,
+                    "falpha": 0.0
+                  },
+                  "colorEffect": {
+                    "type": "pulse",
+                    "color2": {
+                      "value": -3407668,
+                      "falpha": 0.0
+                    },
+                    "color3": {
+                      "value": -8355712,
+                      "falpha": 0.0
+                    },
+                    "color4": {
+                      "value": -4144960,
+                      "falpha": 0.0
+                    },
+                    "speed": 1.0,
+                    "easing": "easeInOutSine"
+                  }
+                }
+              ],
+              "tooltipLines": [],
+              "tooltipFont": "vanilla",
+              "tooltipBackgroundColor": {
+                "value": -13421773,
+                "falpha": 0.0
+              },
+              "tooltipBorderColor": {
+                "value": -39169,
+                "falpha": 0.0
+              },
+              "tooltipTextColor": {
+                "value": -1,
+                "falpha": 0.0
+              },
+              "tooltipBackgroundTint": {
+                "value": -1,
+                "falpha": 0.0
+              },
+              "tooltipTextEffect": {
+                "type": "solid",
+                "color2": {
+                  "value": -12566464,
+                  "falpha": 0.0
+                },
+                "color3": {
+                  "value": -8355712,
+                  "falpha": 0.0
+                },
+                "color4": {
+                  "value": -4144960,
+                  "falpha": 0.0
+                },
+                "speed": 1.0,
+                "easing": "easeInOutSine"
+              },
+              "tooltipBackgroundEffect": {
+                "type": "solid",
+                "color2": {
+                  "value": -12566464,
+                  "falpha": 0.0
+                },
+                "color3": {
+                  "value": -8355712,
+                  "falpha": 0.0
+                },
+                "color4": {
+                  "value": -4144960,
+                  "falpha": 0.0
+                },
+                "speed": 1.0,
+                "easing": "easeInOutSine"
+              },
+              "tooltipBorderEffect": {
+                "type": "solid",
+                "color2": {
+                  "value": -12566464,
+                  "falpha": 0.0
+                },
+                "color3": {
+                  "value": -8355712,
+                  "falpha": 0.0
+                },
+                "color4": {
+                  "value": -4144960,
+                  "falpha": 0.0
+                },
+                "speed": 1.0,
+                "easing": "easeInOutSine"
+              },
+              "tooltipBackgroundTintEffect": {
+                "type": "solid",
+                "color2": {
+                  "value": -12566464,
+                  "falpha": 0.0
+                },
+                "color3": {
+                  "value": -8355712,
+                  "falpha": 0.0
+                },
+                "color4": {
+                  "value": -4144960,
+                  "falpha": 0.0
+                },
+                "speed": 1.0,
+                "easing": "easeInOutSine"
+              }
             }
           ],
           "width": 120,
