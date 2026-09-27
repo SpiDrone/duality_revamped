@@ -223,6 +223,7 @@ public final class VillageSimulator {
 			case TURNING -> {
 				npc.setStatus(NpcStatus.TURNED);
 				npc.setSpecies(captor.faction() == VillageFaction.VAMPIRE_CLAN ? "Vampire" : "Thrall");
+				Villages.notifyRaceChanged(npc);
 				npc.setCombatValue(npc.combatValue() * 2.5 + 2.0);
 				npc.setHomeVillageId(captor.villageId());
 				npc.clearFate();

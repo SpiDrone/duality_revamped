@@ -24,6 +24,8 @@ public class DualityModTabs {
 			tabData.accept(DualityModItems.LIGHTNING_VISUAL_SPAWN_EGG.get());
 			tabData.accept(DualityModItems.STAGNANT_VISUAL_SPAWN_EGG.get());
 			tabData.accept(DualityModItems.SPIDER_QUEEN_SPAWN_EGG.get());
+		} else if (tabData.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES) {
+			tabData.accept(DualityModItems.ATHAME.get());
 		}
 	}
 }

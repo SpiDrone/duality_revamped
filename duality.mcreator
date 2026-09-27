@@ -1172,7 +1172,7 @@
       "name": "CharacterSelector",
       "type": "gui",
       "compiles": true,
-      "locked_code": false,
+      "locked_code": true,
       "registry_name": "character_selector",
       "metadata": {
         "files": [
@@ -1181,6 +1181,181 @@
         ]
       },
       "path": "~/NewCharacter"
+    },
+    {
+      "name": "PointsReturn",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "points_return",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          }
+        ],
+        "return_type": "string",
+        "files": [
+          "src/main/java/net/spidrotech/duality/procedures/PointsReturnProcedure.java"
+        ]
+      },
+      "path": "~/NewCharacter"
+    },
+    {
+      "name": "ShowRightButton",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "show_right_button",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          }
+        ],
+        "return_type": "logic",
+        "files": [
+          "src/main/java/net/spidrotech/duality/procedures/ShowRightButtonProcedure.java"
+        ]
+      },
+      "path": "~/NewCharacter"
+    },
+    {
+      "name": "HasAngel",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "has_angel",
+      "metadata": {
+        "dependencies": [],
+        "return_type": "logic",
+        "files": [
+          "src/main/java/net/spidrotech/duality/procedures/HasAngelProcedure.java"
+        ]
+      },
+      "path": "~/NewCharacter/CS_Races"
+    },
+    {
+      "name": "CharacterSelectorPage2",
+      "type": "gui",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "character_selector_page_2",
+      "metadata": {
+        "files": [
+          "src/main/java/net/spidrotech/duality/client/gui/CharacterSelectorPage2Screen.java",
+          "src/main/java/net/spidrotech/duality/world/inventory/CharacterSelectorPage2Menu.java"
+        ]
+      },
+      "path": "~/NewCharacter"
+    },
+    {
+      "name": "CharacterSelectorPage3",
+      "type": "gui",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "character_selector_page_3",
+      "metadata": {
+        "files": [
+          "src/main/java/net/spidrotech/duality/client/gui/CharacterSelectorPage3Screen.java",
+          "src/main/java/net/spidrotech/duality/world/inventory/CharacterSelectorPage3Menu.java"
+        ]
+      },
+      "path": "~/NewCharacter"
+    },
+    {
+      "name": "CharacterSelectorPage4",
+      "type": "gui",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "character_selector_page_4",
+      "metadata": {
+        "files": [
+          "src/main/java/net/spidrotech/duality/client/gui/CharacterSelectorPage4Screen.java",
+          "src/main/java/net/spidrotech/duality/world/inventory/CharacterSelectorPage4Menu.java"
+        ]
+      },
+      "path": "~/NewCharacter"
+    },
+    {
+      "name": "CharacterSelectorPage5",
+      "type": "gui",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "character_selector_page_5",
+      "metadata": {
+        "files": [
+          "src/main/java/net/spidrotech/duality/world/inventory/CharacterSelectorPage5Menu.java",
+          "src/main/java/net/spidrotech/duality/client/gui/CharacterSelectorPage5Screen.java"
+        ]
+      },
+      "path": "~/NewCharacter"
+    },
+    {
+      "name": "ReturnAthameBloodLevel",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "return_athame_blood_level",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "itemstack",
+            "type": "itemstack"
+          }
+        ],
+        "return_type": "number",
+        "files": [
+          "src/main/java/net/spidrotech/duality/procedures/ReturnAthameBloodLevelProcedure.java"
+        ]
+      },
+      "path": "~/Weapons"
+    },
+    {
+      "name": "Athame",
+      "type": "item",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "athame",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/duality/models/item/athame_2.json",
+          "src/main/resources/assets/duality/models/item/athame_0.json",
+          "src/main/resources/assets/duality/models/item/athame.json",
+          "src/main/resources/assets/duality/models/item/athame_1.json",
+          "src/main/java/net/spidrotech/duality/item/AthameItem.java"
+        ]
+      },
+      "path": "~/Weapons"
+    },
+    {
+      "name": "AthameOnHit",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "athame_on_hit",
+      "metadata": {
+        "dependencies": [],
+        "files": [
+          "src/main/java/net/spidrotech/duality/procedures/AthameOnHitProcedure.java"
+        ]
+      },
+      "path": "~/Weapons"
+    },
+    {
+      "name": "AbilityItem",
+      "type": "item",
+      "compiles": true,
+      "locked_code": true,
+      "registry_name": "ability_item",
+      "metadata": {
+        "files": [
+          "src/main/resources/assets/duality/models/item/ability_item.json",
+          "src/main/java/net/spidrotech/duality/item/AbilityItemItem.java"
+        ]
+      }
     }
   ],
   "variable_elements": [
@@ -1257,7 +1432,31 @@
       "gui.duality.character_selector.label_choose_starting_race": "Choose Starting Race",
       "gui.duality.character_selector.label_character_creator_15": "Character Creator (1/5)",
       "gui.duality.character_selector.label_human": "Human",
-      "gui.duality.character_selector.label_demon": "Demon"
+      "gui.duality.character_selector.label_demon": "Demon",
+      "gui.duality.character_selector.label_character_points_remaining": "Character Points Remaining",
+      "gui.duality.character_selector.label_angelic": "Angelic",
+      "gui.duality.character_selector_page_2.label_demon": "Demon",
+      "gui.duality.character_selector_page_2.label_human": "Human",
+      "gui.duality.character_selector_page_2.label_character_creator_15": "Character Creator (2/5)",
+      "gui.duality.character_selector_page_2.label_angelic": "Angelic",
+      "gui.duality.character_selector_page_2.label_choose_starting_race": "Choose Sub-Race",
+      "gui.duality.character_selector_page_3.label_choose_starting_race": "Choose Sub-Race",
+      "gui.duality.character_selector_page_3.label_character_creator_15": "Character Creator (2/5)",
+      "gui.duality.character_selector_page_3.label_demon": "Demon",
+      "gui.duality.character_selector_page_3.label_human": "Human",
+      "gui.duality.character_selector_page_3.label_angelic": "Angelic",
+      "gui.duality.character_selector_page_4.label_character_creator_15": "Character Creator (2/5)",
+      "gui.duality.character_selector_page_4.label_choose_starting_race": "Choose Sub-Race",
+      "gui.duality.character_selector_page_4.label_angelic": "Angelic",
+      "gui.duality.character_selector_page_4.label_human": "Human",
+      "gui.duality.character_selector_page_4.label_demon": "Demon",
+      "gui.duality.character_selector_page_5.label_character_creator_15": "Character Creator",
+      "gui.duality.character_selector_page_5.label_demon": "Demon",
+      "gui.duality.character_selector_page_5.label_angelic": "Angelic",
+      "gui.duality.character_selector_page_5.label_human": "Human",
+      "gui.duality.character_selector_page_5.label_choose_starting_race": "Choose Sub-Race",
+      "item.duality.athame": "Athame",
+      "item.duality.ability_item": "Ability Item"
     }
   },
   "metadata": {
@@ -1357,6 +1556,10 @@
             "children": []
           }
         ]
+      },
+      {
+        "name": "Weapons",
+        "children": []
       }
     ]
   },

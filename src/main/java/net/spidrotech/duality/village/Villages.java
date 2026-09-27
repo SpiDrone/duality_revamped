@@ -233,6 +233,7 @@ public final class Villages {
 		String name = entity.hasCustomName() ? entity.getCustomName().getString() : VillageNames.person(RANDOM);
 		NpcRecord npc = NpcRecord.create(name, village.villageId());
 		npc.setSpecies(VillageEconomy.speciesFor(village));
+		notifyRaceChanged(npc);
 		npc.setJob(job != null ? job : VillageEconomy.neededJob(store, village, RANDOM));
 		npc.setEntityType(EntityType.getKey(entity.getType()).toString());
 		npc.setEntityUuid(entity.getUUID().toString());
@@ -261,6 +262,7 @@ public final class Villages {
 		for (int i = 0; i < namedResidents; i++) {
 			NpcRecord npc = NpcRecord.create(VillageNames.person(RANDOM), village.villageId());
 			npc.setSpecies(VillageEconomy.speciesFor(village));
+			notifyRaceChanged(npc);
 			npc.setJob(VillageEconomy.neededJob(store, village, RANDOM));
 			npc.addLogEntry(currentDay(), "A founding resident of " + village.name() + ".");
 			store.add(npc);
@@ -275,6 +277,17 @@ public final class Villages {
 	}
 
 	// ----------------------------------------------------------------------------------- lookup
+	/** Call right after NpcRecord#setSpecies - lets the faction system recheck this NPC's
+	 *  membership if their new species no longer fits it (see faction.Factions#onRaceChanged). A
+	 *  no-op for a brand new record with no faction ties yet, which is most call sites; the one
+	 *  that actually matters today is an existing NPC being turned (VillageSimulator). Village
+	 *  code doesn't need to know or care which - this is cheap enough to call every time species
+	 *  changes, full stop. */
+	public static void notifyRaceChanged(NpcRecord npc) {
+		if (npc != null)
+			net.spidrotech.duality.faction.Factions.onRaceChanged(npc.npcId());
+	}
+
 	public static WorldPoint pointOf(ServerLevel level, BlockPos pos) {
 		return new WorldPoint(level.dimension().location().toString(), pos.getX(), pos.getY(), pos.getZ());
 	}

@@ -140,8 +140,7 @@ public final class CharacterCommand {
 		SubraceDefinition subrace = view.subrace();
 		reply(ctx, "§6On " + view.step().name() + " - " + view.step().title());
 		reply(ctx, "  §7race §f" + (race == null ? "-" : race.displayName()) + "§7, lineage §f" + (subrace == null ? "-" : subrace.displayName()));
-		reply(ctx, "  §7powers §f" + (view.allAbilities().isEmpty() ? "-" : String.join(", ", view.allAbilities())) + " §8(" + view.abilityPicksRemaining()
-				+ " pick(s) left)");
+		reply(ctx, "  §7powers §f" + (view.allAbilities().isEmpty() ? "-" : String.join(", ", view.allAbilities())));
 		StringBuilder line = new StringBuilder();
 		for (SkillType skill : SkillType.values()) {
 			line.append(line.isEmpty() ? "" : "  ").append(skill.displayName(), 0, 3).append(" §f").append(view.skill(skill)).append("§7");
@@ -166,8 +165,8 @@ public final class CharacterCommand {
 		reply(ctx, "§6Races (what screen one would draw):");
 		for (RaceDefinition race : RaceCatalog.all()) {
 			boolean open = view.active() ? view.canSelectRace(race.id()) : RaceCatalog.isSelectableFor(CharacterCreation.unlockedSpecies(player), race.id());
-			reply(ctx, "  " + (open ? "§f" : "§8") + race.displayName() + " §8" + race.id() + (open ? "" : " (locked)") + " §7- "
-					+ race.subraces().size() + " lineage(s), " + race.abilityPicks() + " pick(s)");
+			reply(ctx, "  " + (open ? "§f" : "§8") + race.displayName() + " §8" + race.id() + (open ? "" : " (locked)") + " §7- " + race.subraces().size()
+					+ " lineage(s)");
 		}
 		return 1;
 	}
@@ -200,13 +199,16 @@ public final class CharacterCommand {
 			return 0;
 		DraftView view = CharacterCreation.view(player, "");
 		RaceDefinition race = view.race();
-		if (race == null) {
-			reply(ctx, "§cPick a race first.");
+		SubraceDefinition subrace = view.subrace();
+		if (race == null || subrace == null) {
+			reply(ctx, "§cPick a race and lineage first.");
 			return 0;
 		}
-		reply(ctx, "§6Powers on offer (" + view.abilityPicksRemaining() + " pick(s) left):");
-		for (String ability : race.selectableAbilities(view.subrace())) {
-			reply(ctx, "  " + (view.hasChosen(ability) ? "§a[x] " : "§7[ ] ") + ability);
+		reply(ctx, "§6Powers on offer (" + view.pointsRemaining() + " point(s) left):");
+		for (AbilityDefinition ability : AbilityCatalog.selectableFor(AbilityBracket.forSubrace(subrace.id()))) {
+			if (subrace.grantedAbilities().contains(ability.abilityId()))
+				continue;
+			reply(ctx, "  " + (view.hasChosen(ability.id()) ? "§a[x] " : "§7[ ] ") + ability.displayName() + " §8(" + ability.pointCost() + ")");
 		}
 		if (!view.grantedAbilityIds().isEmpty())
 			reply(ctx, "§7Granted by your lineage: §f" + String.join(", ", view.grantedAbilityIds()));

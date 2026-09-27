@@ -39,9 +39,12 @@ import java.util.Map;
  *                        strong should charge for it: a vampire at cost 4 walks into screen four
  *                        with one point to spend, on top of whatever its base stats already gave.
  *                        0 for a race that's free to be.
+ * @param requirementId   a pure id naming a real-world condition this race needs before it can be
+ *                        chosen (e.g. "not_previously_evil"), or "" for none - same idea as
+ *                        {@link SubraceDefinition#requirementId()}, checked the same way.
  */
 public record RaceDefinition(String id, String displayName, String description, String iconHint, List<SubraceDefinition> subraces, List<String> abilityPool,
-		int abilityPicks, List<Integer> freeStats, boolean startsUnlocked, String equippedTag, int pointCost) {
+		int abilityPicks, List<Integer> freeStats, boolean startsUnlocked, String equippedTag, int pointCost, String requirementId) {
 
 	public RaceDefinition {
 		subraces = List.copyOf(subraces);
@@ -49,6 +52,7 @@ public record RaceDefinition(String id, String displayName, String description, 
 		freeStats = normalizeFree(freeStats);
 		abilityPicks = Math.max(0, abilityPicks);
 		pointCost = Math.max(0, pointCost);
+		requirementId = requirementId == null ? "" : requirementId;
 	}
 
 	public SubraceDefinition subrace(String subraceId) {
@@ -128,7 +132,6 @@ public record RaceDefinition(String id, String displayName, String description, 
 		return map;
 	}
 
-	/** Builder-ish helper so the catalog reads as a table rather than a wall of arguments. */
 	/**
 	 * Builder-ish helper so the catalog reads as a table rather than a wall of arguments.
 	 *
@@ -137,8 +140,15 @@ public record RaceDefinition(String id, String displayName, String description, 
 	 */
 	public static RaceDefinition of(String id, String displayName, String description, List<SubraceDefinition> subraces, List<String> abilityPool, int abilityPicks,
 			Map<SkillType, Integer> freeStats, boolean startsUnlocked, String equippedTag, int pointCost) {
+		return of(id, displayName, description, subraces, abilityPool, abilityPicks, freeStats, startsUnlocked, equippedTag, pointCost, "");
+	}
+
+	/** As above, for a race gated behind a real-world requirement beyond the usual unlocked-species
+	 *  check - see {@link #requirementId()}. */
+	public static RaceDefinition of(String id, String displayName, String description, List<SubraceDefinition> subraces, List<String> abilityPool, int abilityPicks,
+			Map<SkillType, Integer> freeStats, boolean startsUnlocked, String equippedTag, int pointCost, String requirementId) {
 		return new RaceDefinition(id, displayName, description, "", subraces, abilityPool, abilityPicks, SubraceDefinition.toList(freeStats), startsUnlocked,
-				equippedTag, pointCost);
+				equippedTag, pointCost, requirementId);
 	}
 
 	/** A skill nobody listed grants nothing. Clamped to what the floor can actually absorb, so a

@@ -14,12 +14,13 @@ import java.util.List;
  * picture, not the truth: acting on a stale one is safe, because the server re-checks.
  */
 public record DraftView(boolean active, CreationStep step, String raceId, String subraceId, List<String> abilityIds, List<String> grantedAbilityIds,
-		List<Integer> skillValues, List<Integer> allocatedPoints, int pointsRemaining, int pointsBudget, int raceCost, int abilityPicksRemaining, String name,
-		boolean nameUsable, List<CreationStep> completedSteps, boolean complete, List<String> selectableRaceIds, String statusMessage) {
+		List<Integer> skillValues, List<Integer> allocatedPoints, int pointsRemaining, int pointsBudget, int raceCost, String name, boolean nameUsable,
+		List<CreationStep> completedSteps, boolean complete, List<String> selectableRaceIds, List<String> selectableSubraceIds, List<String> unlockedRaceIds,
+		List<String> unlockedSubraceIds, List<String> unlockedAbilityIds, List<String> availableCosmeticIds, String statusMessage) {
 
 	/** What the client holds when the player isn't in the creator. */
 	public static final DraftView INACTIVE = new DraftView(false, CreationStep.RACE, "", "", List.of(), List.of(), zeroes(), zeroes(), CharacterDraft.STARTING_POINTS,
-			CharacterDraft.STARTING_POINTS, 0, 0, "", false, List.of(), false, List.of(), "");
+			CharacterDraft.STARTING_POINTS, 0, "", false, List.of(), false, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), "");
 
 	public DraftView {
 		abilityIds = List.copyOf(abilityIds);
@@ -28,16 +29,35 @@ public record DraftView(boolean active, CreationStep step, String raceId, String
 		allocatedPoints = List.copyOf(allocatedPoints);
 		completedSteps = List.copyOf(completedSteps);
 		selectableRaceIds = List.copyOf(selectableRaceIds);
+		selectableSubraceIds = List.copyOf(selectableSubraceIds);
+		unlockedRaceIds = List.copyOf(unlockedRaceIds);
+		unlockedSubraceIds = List.copyOf(unlockedSubraceIds);
+		unlockedAbilityIds = List.copyOf(unlockedAbilityIds);
+		availableCosmeticIds = List.copyOf(availableCosmeticIds);
 	}
 
 	/**
 	 * Snapshots a live draft. The only place a view is made on the server.
 	 *
-	 * @param selectableRaceIds which races this player may actually pick. The client gets the whole
-	 *                          catalog so screen one can show locked races greyed out rather than
-	 *                          hiding them - knowing what you haven't earned is half the draw.
+	 * @param selectableRaceIds    which races this player may actually pick right now - unlocked AND
+	 *                             meeting any requirement. The client gets the whole catalog so screen
+	 *                             one can show locked races rather than hiding them.
+	 * @param selectableSubraceIds the same idea for the CURRENT race's lineages - unambiguous despite
+	 *                             carrying only bare ids, since a view is always scoped to one race.
+	 * @param unlockedRaceIds      races this PLAYER has unlocked, requirement met or not - what tells
+	 *                             "not discovered yet" apart from "discovered, conditions not met".
+	 * @param unlockedSubraceIds   the current race's lineages this player has unlocked - the only ones
+	 *                             screen two shows at all.
+	 * @param unlockedAbilityIds   AbilityCatalog ids this player may buy at creation - the only ones
+	 *                             screen three offers. Not the same as what any character owns.
+	 * @param nameTaken            a living character (anyone's) already has the draft's name - makes it unusable
+	 * @param appearanceReady      the required parts are worn (see AppearanceRequirements) - part of {@link #complete()}
+	 * @param availableCosmeticIds SkinPart ids screen five may offer - free parts plus those whose
+	 *                             unlock is on this player's profile (see CharacterCreation#cosmeticAvailable).
 	 */
-	public static DraftView of(CharacterDraft draft, RaceDefinition race, SubraceDefinition subrace, List<String> selectableRaceIds, String statusMessage) {
+	public static DraftView of(CharacterDraft draft, RaceDefinition race, SubraceDefinition subrace, boolean nameTaken, boolean appearanceReady, List<String> selectableRaceIds,
+			List<String> selectableSubraceIds, List<String> unlockedRaceIds, List<String> unlockedSubraceIds, List<String> unlockedAbilityIds,
+			List<String> availableCosmeticIds, String statusMessage) {
 		List<Integer> values = new ArrayList<>();
 		List<Integer> allocated = new ArrayList<>();
 		for (SkillType skill : SkillType.values()) {
@@ -46,8 +66,8 @@ public record DraftView(boolean active, CreationStep step, String raceId, String
 		}
 		return new DraftView(true, draft.step(), draft.raceId(), draft.subraceId(), List.copyOf(draft.abilityIds()),
 				subrace == null ? List.of() : subrace.grantedAbilities(), values, allocated, draft.pointsRemaining(race, subrace), draft.pointsBudget(race, subrace),
-				draft.raceCost(race, subrace), draft.abilityPicksRemaining(race, subrace), draft.name(), CharacterDraft.isNameUsable(draft.name()),
-				draft.completedSteps(race, subrace), draft.isComplete(race, subrace), selectableRaceIds, statusMessage);
+				draft.raceCost(race, subrace), draft.name(), CharacterDraft.isNameUsable(draft.name()) && !nameTaken, draft.completedSteps(race, subrace),
+				draft.isComplete(race, subrace) && !nameTaken && appearanceReady, selectableRaceIds, selectableSubraceIds, unlockedRaceIds, unlockedSubraceIds, unlockedAbilityIds, availableCosmeticIds, statusMessage);
 	}
 
 	/** The race this draft is on, resolved against whichever catalog copy is local. */
@@ -94,23 +114,52 @@ public record DraftView(boolean active, CreationStep step, String raceId, String
 		return selectableRaceIds.contains(candidateRaceId);
 	}
 
+	/** Whether screen two should let this lineage of the CURRENT race be clicked - see
+	 *  {@link #of}'s note on why the id alone is enough to ask this. */
+	public boolean canSelectSubrace(String candidateSubraceId) {
+		return selectableSubraceIds.contains(candidateSubraceId);
+	}
+
+	public boolean isRaceUnlocked(String candidateRaceId) {
+		return unlockedRaceIds.contains(candidateRaceId);
+	}
+
+	public boolean isSubraceUnlocked(String candidateSubraceId) {
+		return unlockedSubraceIds.contains(candidateSubraceId);
+	}
+
+	/** candidateAbilityId is an AbilityCatalog entry's id. */
+	public boolean isAbilityUnlocked(String candidateAbilityId) {
+		return unlockedAbilityIds.contains(candidateAbilityId);
+	}
+
+	/** Whether screen five may offer this SkinPart id. */
+	public boolean isCosmeticAvailable(String partId) {
+		return availableCosmeticIds.contains(partId);
+	}
+
 	/** Every race in the catalog, with the ones this player can't pick still in the list - use
 	 *  {@link #canSelectRace} to decide how to draw each. */
 	public List<RaceDefinition> allRaces() {
 		return List.copyOf(RaceCatalog.all());
 	}
 
+	/** abilityId here is an {@link AbilityCatalog} entry's own id, not the power string it grants -
+	 *  see {@link AbilityDefinition#id()} vs {@link AbilityDefinition#abilityId()}. */
 	public boolean hasChosen(String abilityId) {
 		return abilityIds.contains(abilityId);
 	}
 
-	/** Chosen powers and the ones the lineage hands over, together - what the character will
-	 *  actually start with, and what a summary panel should list. */
+	/** Chosen powers and the ones the lineage hands over, together, as the actual power strings the
+	 *  character will start with (not catalog ids) - what a summary panel should list. Resolves each
+	 *  chosen catalog id through {@link AbilityCatalog}; one with no catalog entry (a stale id from
+	 *  before a catalog edit) is skipped rather than shown as a raw internal key. */
 	public List<String> allAbilities() {
 		List<String> combined = new ArrayList<>(grantedAbilityIds);
-		for (String chosen : abilityIds) {
-			if (!combined.contains(chosen))
-				combined.add(chosen);
+		for (String chosenId : abilityIds) {
+			AbilityDefinition ability = AbilityCatalog.get(chosenId);
+			if (ability != null && !combined.contains(ability.abilityId()))
+				combined.add(ability.abilityId());
 		}
 		return List.copyOf(combined);
 	}

@@ -161,6 +161,7 @@ public final class VillageEconomy {
 					NpcRecord child = NpcRecord.create(VillageNames.person(random), village.villageId());
 					child.setJob(NpcJob.CHILD);
 					child.setSpecies(speciesFor(village));
+					Villages.notifyRaceChanged(child);
 					child.addLogEntry(day, "Born in " + village.name() + ".");
 					store.add(child);
 					village.residents().add(child.npcId());

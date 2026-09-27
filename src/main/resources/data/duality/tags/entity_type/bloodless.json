@@ -1,0 +1,24 @@
+{
+  "replace": false,
+  "values": [
+    "minecraft:skeleton",
+    "minecraft:stray",
+    "minecraft:wither_skeleton",
+    "minecraft:bogged",
+    "minecraft:skeleton_horse",
+    "minecraft:wither",
+    "minecraft:iron_golem",
+    "minecraft:snow_golem",
+    "minecraft:blaze",
+    "minecraft:breeze",
+    "minecraft:vex",
+    "minecraft:allay",
+    "minecraft:shulker",
+    "minecraft:slime",
+    "minecraft:magma_cube",
+    "minecraft:armor_stand",
+    "minecraft:ender_dragon",
+    "minecraft:enderman",
+    "minecraft:endermite"
+  ]
+}

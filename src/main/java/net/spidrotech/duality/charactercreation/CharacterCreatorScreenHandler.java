@@ -45,6 +45,20 @@ public final class CharacterCreatorScreenHandler {
 	/** Button group the creator's race list sends under - must match the id the screen's scroll
 	 *  region uses (see CharacterSelectorScreen's UIButtonElement calls). */
 	public static final String RACE_GROUP = "duality:race_scroll";
+	/** Button group screen two's lineage list sends under - see CharacterSelectorPage2Screen's
+	 *  init(), which builds one of these per RaceCatalog subrace of whichever race the player picked
+	 *  rather than a fixed slot per race, so the group carries the bare subrace id with no prefix to
+	 *  strip (there's no fixed-name-per-screen-slot problem to solve here the way "race_human" had). */
+	public static final String SUBRACE_GROUP = "duality:subrace_scroll";
+	/** Button group screen three's power list sends under - same shape as SUBRACE_GROUP: built and
+	 *  wired straight to this group in hand-written Java (see CharacterSelectorPage3Screen#init), one
+	 *  button per AbilityCatalog entry the chosen lineage's bracket can see, carrying that entry's
+	 *  bare catalog id. */
+	public static final String ABILITY_GROUP = "duality:ability_scroll";
+	/** Screen four's per-skill arrows (see CharacterSelectorPage4Screen#init). Two groups rather than
+	 *  one because each row carries both a minus and a plus under the same skill id. */
+	public static final String SKILL_MINUS_GROUP = "duality:skill_minus";
+	public static final String SKILL_PLUS_GROUP = "duality:skill_plus";
 	/** MCreator's screen editor sends the row's id, which is prefixed to keep button ids unique
 	 *  within the screen ("race_human"), while RaceCatalog and SelectRaceProcedure both speak the
 	 *  bare race id ("human"). Stripped in one place so either spelling works and neither side has
@@ -56,7 +70,13 @@ public final class CharacterCreatorScreenHandler {
 
 	@SubscribeEvent
 	public static void commonSetup(FMLCommonSetupEvent event) {
-		event.enqueueWork(() -> UIButtonElement.registerServerHandler(RACE_GROUP, CharacterCreatorScreenHandler::selectRace));
+		event.enqueueWork(() -> {
+			UIButtonElement.registerServerHandler(RACE_GROUP, CharacterCreatorScreenHandler::selectRace);
+			UIButtonElement.registerServerHandler(SUBRACE_GROUP, CharacterCreatorScreenHandler::selectSubrace);
+			UIButtonElement.registerServerHandler(ABILITY_GROUP, CharacterCreatorScreenHandler::selectAbility);
+			UIButtonElement.registerServerHandler(SKILL_MINUS_GROUP, (player, skillId) -> applySkill(player, skillId, -1));
+			UIButtonElement.registerServerHandler(SKILL_PLUS_GROUP, (player, skillId) -> applySkill(player, skillId, 1));
+		});
 	}
 
 	/** Click callback. Deliberately does no work of its own beyond handing off: SelectRaceProcedure
@@ -89,13 +109,66 @@ public final class CharacterCreatorScreenHandler {
 		ensureDraft(player);
 		// act() is the authority: it re-checks that this player has actually earned the race (see
 		// CharacterCreation#selectRace / RaceCatalog#isSelectableFor) and resets the downstream
-		// lineage/ability/point choices that belonged to the old race. Its own message is what the
-		// player sees, refusal or not, so a locked race explains itself.
+		// lineage/ability/point choices that belonged to the old race. Nothing here goes to the action
+		// bar - the creator screen sits directly over it, so nothing sent there is ever actually seen.
+		// A refusal shows in the codex instead, in red, right on the row the player just clicked; a
+		// success is already visible as the row's own highlight and the codex updating to match.
 		DraftResult result = CharacterCreation.act(player, CreationAction.SELECT_RACE, raceId, 0);
-		if (!result.message().isEmpty()) {
-			player.displayClientMessage(Component.literal(result.message()).withStyle(result.ok() ? ChatFormatting.GREEN : ChatFormatting.RED), true);
-		}
 		return result.ok();
+	}
+
+	/** Click callback for screen two's lineage list - the SELECT_SUBRACE mirror of selectRace above. */
+	private static void selectSubrace(ServerPlayer player, String selectionId) {
+		if (player == null || selectionId == null)
+			return;
+		applySubrace(player, selectionId);
+	}
+
+	/**
+	 * The actual lineage selection. No procedure to forward through here, unlike race - nothing else
+	 * (no MCreator element) currently needs to call this, since screen two's buttons are built and
+	 * wired straight to this group in hand-written Java (see CharacterSelectorPage2Screen#init),
+	 * rather than through MCreator's fixed-item-list screen editor the way the race buttons are.
+	 *
+	 * <p>Returns whether the lineage was accepted, same reason as applyRace: a caller advancing the
+	 * screen wants to tell a real pick from a refused one.
+	 */
+	public static boolean applySubrace(ServerPlayer player, String subraceId) {
+		if (player == null || subraceId == null)
+			return false;
+		if (!CharacterCreation.isCreating(player))
+			return false;
+		// Same reasoning as applyRace above: nothing here goes to the action bar, since the creator
+		// screen hides it completely. The codex covers both outcomes on its own.
+		DraftResult result = CharacterCreation.act(player, CreationAction.SELECT_SUBRACE, subraceId, 0);
+		return result.ok();
+	}
+
+	/** Click callback for screen three's power list - toggles it on the draft, same as the others. */
+	private static void selectAbility(ServerPlayer player, String selectionId) {
+		if (player == null || selectionId == null)
+			return;
+		applyAbility(player, selectionId);
+	}
+
+	/** Toggles one power on or off. Affordability, availability and everything else live in
+	 *  CharacterDraft#toggleAbility; this is just the "get a live player onto that call" layer, same
+	 *  as applySubrace above. */
+	public static boolean applyAbility(ServerPlayer player, String abilityCatalogId) {
+		if (player == null || abilityCatalogId == null)
+			return false;
+		if (!CharacterCreation.isCreating(player))
+			return false;
+		DraftResult result = CharacterCreation.act(player, CreationAction.TOGGLE_ABILITY, abilityCatalogId, 0);
+		return result.ok();
+	}
+
+	/** Spends (delta +1) or refunds (delta -1) one point on a skill. The floor, the cap and the
+	 *  budget are all CharacterDraft#allocate's to enforce. */
+	public static boolean applySkill(ServerPlayer player, String skillId, int delta) {
+		if (player == null || skillId == null || !CharacterCreation.isCreating(player))
+			return false;
+		return CharacterCreation.act(player, CreationAction.ALLOCATE_SKILL, skillId, delta).ok();
 	}
 
 	/**

@@ -83,6 +83,22 @@ public final class RaceCatalog {
 		return race.startsUnlocked() || containsIgnoreCase(unlockedSpecies, race.id()) || containsIgnoreCase(unlockedSpecies, race.displayName());
 	}
 
+	/**
+	 * Lineages every player can pick without unlocking them first - one base lineage per race, so a
+	 * race that's unlocked always has something to choose on screen two. Everything else has to be
+	 * unlocked on the player's profile (see CharacterCreation#subraceUnlocked) and is hidden from
+	 * screen two until it is. Edit freely.
+	 */
+	private static final Set<String> STARTER_SUBRACES = Set.of("mundane", "lower_level", "whitelighter");
+
+	public static Set<String> starterSubraces() {
+		return STARTER_SUBRACES;
+	}
+
+	public static boolean isStarterSubrace(String subraceId) {
+		return subraceId != null && STARTER_SUBRACES.contains(subraceId.toLowerCase());
+	}
+
 	private static boolean containsIgnoreCase(Set<String> values, String candidate) {
 		if (values == null)
 			return false;
@@ -111,50 +127,39 @@ public final class RaceCatalog {
 		RACES.clear();
 
 		register(RaceDefinition.of("human", "Human", //
-		"No power of your own..$But every path still open.$What will you choose..?",
-				List.of(SubraceDefinition.of("mortal", "Mortal", "Ordinary, and harder to kill than that makes you sound.", List.of(),
-						Map.of(SkillType.FORTUNE, 1, SkillType.ENDURANCE, 1)),
-						SubraceDefinition.of("latent", "Latent", "Something is in the blood. It hasn't woken up yet.", List.of(),
-								Map.of(SkillType.ATTUNEMENT, 1, SkillType.INSIGHT, 1)),
-						SubraceDefinition.of("hunter", "Hunter", "You were taught what's out there, and what to do about it.", List.of("dash"),
-								Map.of(SkillType.AGILITY, 1, SkillType.INSIGHT, 1), 1)),
-				List.of("orb_normal", "dash", "deflect"), 1, Map.of(SkillType.ENDURANCE, 1, SkillType.PRESENCE, 1), true, "", 0));
+		"No power of your own..\nBut every choice still yours to make..\nWhat will you choose..?",
+				List.of(SubraceDefinition.of("mundane", "Mundane",
+						"An ordinary person, free from destinys hand.. \nOr maybe not so Ordinary..\n- Nobody's checked yet.",
+						List.of(), Map.of(SkillType.ENDURANCE, 1)),
+						SubraceDefinition.of("wiccan", "Wiccan", "Born to magic, some call you a natural...\nOthers call you unnatural..",
+								List.of(), List.of("fireball", "fireball_greater", "lightning_hands_normal", "shimmer"),
+								Map.of(SkillType.ATTUNEMENT, 2, SkillType.ENDURANCE, -1), 2),
+						SubraceDefinition.of("hemovoid", "Hemovoid", "Your blood runs void of magic\nYou may not be able to wield it so easily...\nBut others struggle to use it against you just as much as you struggle to use it..",
+								List.of(), Map.of(SkillType.ENDURANCE, 1), 2)),
+				List.of("dash", "deflect"), 1, Map.of(SkillType.ENDURANCE, 1, SkillType.CHARISMA, 1), true, "", 0));
 
-		register(RaceDefinition.of("witch", "Witch", "Power through craft and will. The strongest hands in the world and the frailest body holding them.",
-				List.of(SubraceDefinition.of("elemental", "Elemental", "Fire and storm answer you first.", List.of("fireball"),
-						Map.of(SkillType.ATTUNEMENT, 2, SkillType.ENDURANCE, -1)),
-						SubraceDefinition.of("seer", "Seer", "You see it coming. Whether you can stop it is another question.", List.of(),
-								Map.of(SkillType.INSIGHT, 3, SkillType.STRENGTH, -1)),
-						SubraceDefinition.of("warlock_touched", "Warlock-Touched", "You took something you shouldn't have, and it took back.", List.of("shimmer"),
-								Map.of(SkillType.ATTUNEMENT, 2, SkillType.PRESENCE, -2), 1)),
-				List.of("fireball", "fireball_greater", "lightning_hands_normal", "orb_normal", "shimmer"), 2, Map.of(SkillType.ATTUNEMENT, 3, SkillType.INSIGHT, 1),
-				false, "", 2));
+		register(RaceDefinition.of("demon", "Demon", "Born of the underworld, or remade there...",
+				List.of(SubraceDefinition.of("lower_level", "Lower-Level", "Expendable, numerous, and underestimated.", List.of("firebolt"),
+						Map.of(SkillType.ENDURANCE, 2, SkillType.CHARISMA, -2)),
+						SubraceDefinition.of("vampire", "Vampire",
+								"Fast, strong, and on a clock. Everything you are runs on somebody else's blood, and somebody else's bloodline.",
+								List.of("leap", "dash", "deflect"), Map.of(SkillType.STRENGTH, 1, SkillType.AGILITY, 1, SkillType.CHARISMA, 1), 1, "vampire",
+								"vampire_lineage"),
+						SubraceDefinition.of("vampiric_queen", "Vampiric Queen",
+								"The first of a line..\nThe villages would run red if you left any blood behind...",
+								List.of("leap", "dash", "deflect", "vampire_mode"), Map.of(SkillType.STRENGTH, 1, SkillType.AGILITY, 1, SkillType.CHARISMA, 3), 4,
+								"vampire", ""),
+						SubraceDefinition.of("scabber_demon", "Scabber Demon",
+								"Vile, acidic, and powerful\nConsidered to be a bottom feeder by some", List.of("blink"),
+								List.of("screech", "acid_spit"), Map.of(SkillType.AGILITY, 2, SkillType.INSIGHT, 1, SkillType.CHARISMA, -2), 2)),
+				List.of("blink", "flame", "screech", "shimmer", "vanish", "levitate", "anti_gravity", "flight", "lightning_hands_demonic", "acid_spit"), 2,
+				Map.of(SkillType.STRENGTH, 2, SkillType.ATTUNEMENT, 1, SkillType.ENDURANCE, 1), false, "", 2));
 
-		register(RaceDefinition.of("vampire", "Vampire", "Fast, strong, and on a clock. Everything you are runs on somebody else's blood.",
-				List.of(SubraceDefinition.of("fledgling_line", "Fledgling Line", "Turned recently, and still mostly who you were.", List.of("leap"),
-						Map.of(SkillType.AGILITY, 1, SkillType.PRESENCE, 1)),
-						SubraceDefinition.of("ashen_line", "Ashen Line", "An old, quiet bloodline that has outlasted better ones.", List.of("deflect"),
-								Map.of(SkillType.ENDURANCE, 2, SkillType.FORTUNE, -1)),
-						SubraceDefinition.of("crimson_court", "Crimson Court", "Highborn, and it shows. Everyone in the room knows what you are.",
-								List.of("vampire_mode"), Map.of(SkillType.PRESENCE, 3, SkillType.INSIGHT, -1))),
-				List.of("leap", "dash", "deflect", "vampire_mode", "shapeshift"), 2, Map.of(SkillType.STRENGTH, 2, SkillType.AGILITY, 2, SkillType.PRESENCE, 1),
-				false, "vampire", 4));
-
-		register(RaceDefinition.of("demon", "Demon", "Born of the underworld, or made there. Either way the surface is not yours.",
-				List.of(SubraceDefinition.of("lower_level", "Lower-Level", "Expendable, numerous, and underestimated.", List.of("shimmer"),
-						Map.of(SkillType.ENDURANCE, 2, SkillType.PRESENCE, -2)),
-						SubraceDefinition.of("upper_level", "Upper-Level", "You give the orders down there. Up here that means less than you think.",
-								List.of("flame", "blink"), Map.of(SkillType.ATTUNEMENT, 2, SkillType.PRESENCE, 2, SkillType.FORTUNE, -1)),
-						SubraceDefinition.of("shapeshifter", "Shapeshifter", "No face of your own worth keeping.", List.of("shapeshift", "vanish"),
-								Map.of(SkillType.INSIGHT, 2, SkillType.STRENGTH, -1))),
-				List.of("blink", "flame", "screech", "shimmer", "vanish", "levitate", "anti_gravity", "flight", "lightning_hands_demonic", "acid_spit"), 3,
-				Map.of(SkillType.STRENGTH, 3, SkillType.ATTUNEMENT, 2, SkillType.ENDURANCE, 1), false, "", 4));
-
-		register(RaceDefinition.of("whitelighter", "Whitelighter", "You died well enough that they gave you a job. You cannot hurt anyone, and you can save everyone.",
-				List.of(SubraceDefinition.of("guardian", "Guardian", "Assigned to someone, and answerable for them.", List.of("orb_normal"),
-						Map.of(SkillType.PRESENCE, 2, SkillType.STRENGTH, -2)),
-						SubraceDefinition.of("elder_touched", "Elder-Touched", "They have plans for you, and they don't explain them.", List.of("orb_normal"),
-								Map.of(SkillType.ATTUNEMENT, 2, SkillType.INSIGHT, 2, SkillType.STRENGTH, -2))),
-				List.of("orb_normal", "shimmer"), 1, Map.of(SkillType.ATTUNEMENT, 2, SkillType.PRESENCE, 2, SkillType.FORTUNE, 1), false, "", 3));
+		register(RaceDefinition.of("angelic", "Angelic",
+				"Death isnt always the end..\nFor some its a chance to prove they could be more..",
+				List.of(SubraceDefinition.of("whitelighter", "Whitelighter",
+						"Assigned to someone, and answerable for them. You cannot hurt anyone, and you can save everyone.", List.of("orb_normal"),
+						Map.of(SkillType.ATTUNEMENT, 2, SkillType.CHARISMA, 2))),
+				List.of("orb_normal"), 1, Map.of(SkillType.ATTUNEMENT, 1, SkillType.CHARISMA, 1), false, "", 2, "not_previously_evil"));
 	}
 }

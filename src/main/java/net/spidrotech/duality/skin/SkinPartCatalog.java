@@ -124,6 +124,15 @@ public final class SkinPartCatalog {
 		replaceAll(loaded);
 	}
 
+	/** A texture named *_greyscale.png or *_tintable.png is authored for tinting, so it's tintable
+	 *  whatever its json says - the generated jsons all say false, and they're write-once, so a
+	 *  naming convention is the only rule that reaches parts whose json already exists. Pupils and
+	 *  skins are always tintable too (see parse) - a skin's tint is the skin-tone picker. */
+	private static boolean isTintableByName(ResourceLocation texture) {
+		String path = texture.getPath().toLowerCase();
+		return path.endsWith("_greyscale.png") || path.endsWith("_tintable.png");
+	}
+
 	private static SkinPart parse(JsonObject json) {
 		String id = json.get("id").getAsString();
 		SkinPartTarget target = SkinPartTarget.valueOf(json.get("target").getAsString().toUpperCase());
@@ -135,7 +144,9 @@ public final class SkinPartCatalog {
 		JsonArray array = json.getAsJsonArray("subparts");
 		for (JsonElement element : array) {
 			JsonObject sub = element.getAsJsonObject();
-			subs.add(new SkinPart.SubPart(sub.get("id").getAsString(), ResourceLocation.parse(sub.get("texture").getAsString()), sub.has("tintable") && sub.get("tintable").getAsBoolean(),
+			ResourceLocation texture = ResourceLocation.parse(sub.get("texture").getAsString());
+			boolean tintable = (sub.has("tintable") && sub.get("tintable").getAsBoolean()) || isTintableByName(texture) || target == SkinPartTarget.PUPIL || target == SkinPartTarget.SKIN_TONE;
+			subs.add(new SkinPart.SubPart(sub.get("id").getAsString(), texture, tintable,
 					sub.has("default_color") ? (int) Long.parseLong(sub.get("default_color").getAsString(), 16) : 0xFFFFFFFF));
 		}
 		return new SkinPart(id, target, free, unlock, category, icon, List.copyOf(subs));

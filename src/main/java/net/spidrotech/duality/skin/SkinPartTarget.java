@@ -50,9 +50,6 @@ public enum SkinPartTarget {
 	 *  exclusive slots, not one that they'd have to share. */
 	EYEBROWS(true, Rect.EYEBROWS),
 	LIPS(true, Rect.LIPS),
-	HAIR(true, Rect.HEAD_ALL, Rect.HAT_ALL),
-	/** Skeleton_Skull, masks, helmets - anything that replaces or covers the head silhouette. */
-	HEAD(true, Rect.HEAD_ALL, Rect.HAT_ALL),
 	TORSO(true, Rect.BODY, Rect.JACKET),
 	/** Shirts cover the body AND both arms, which is why this is its own target rather than
 	 *  TORSO: a sleeve is part of the same garment and has to be displaced with it. */
@@ -64,6 +61,12 @@ public enum SkinPartTarget {
 	ARM_LEFT(true, Rect.ARM_LEFT, Rect.SLEEVE_LEFT),
 	LEG_RIGHT(true, Rect.LEG_RIGHT, Rect.PANTS_RIGHT),
 	LEG_LEFT(true, Rect.LEG_LEFT, Rect.PANTS_LEFT),
+	/** After every garment, so long hair falls over a shirt's collar and shoulders instead of
+	 *  being painted under it. */
+	HAIR(true, Rect.HEAD_ALL, Rect.HAT_ALL),
+	/** Skeleton_Skull, masks, helmets - anything that replaces or covers the head silhouette.
+	 *  After HAIR so a helmet sits over it. */
+	HEAD(true, Rect.HEAD_ALL, Rect.HAT_ALL),
 	/** Non-exclusive on purpose - wings, tattoos, belts can stack. */
 	ACCESSORY(false, Rect.WHOLE),
 	/** Drawn last, over everything. Reserved for effects and full-body overlays. */

@@ -43,7 +43,12 @@ public final class AbilitySublet {
 		if (abilityId == null || abilityId.isBlank()) {
 			return AbilityManager.ActivationResult.fail(Component.literal("No ability selected."));
 		}
-		ResourceLocation id = abilityId.indexOf(':') >= 0 ? ResourceLocation.parse(abilityId) : ResourceLocation.fromNamespaceAndPath("duality", abilityId);
+		// tryParse/tryBuild rather than parse: selected_ability's MCreator default is the two literal
+		// characters "" (not an empty string), which isn't a legal id and would otherwise throw.
+		ResourceLocation id = abilityId.indexOf(':') >= 0 ? ResourceLocation.tryParse(abilityId) : ResourceLocation.tryBuild("duality", abilityId);
+		if (id == null) {
+			return AbilityManager.ActivationResult.fail(Component.literal("No ability selected."));
+		}
 		AbilityManager.ActivationResult result = AbilityManager.get().tryActivate(caster, id);
 		if (!result.succeeded()) {
 			LOGGER.info("[duality] Ability cast failed for {} ({}): {}", caster.getName().getString(), id, result.message() != null ? result.message().getString() : "unknown reason");

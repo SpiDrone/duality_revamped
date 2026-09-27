@@ -128,7 +128,7 @@ public class CreationHarness {
 		trim.selectRace(human);
 		trim.selectSubrace(human, mortal);
 		for (int i = 0; i < CharacterDraft.STARTING_POINTS; i++) {
-			trim.allocate(SkillType.FORTUNE, 1, human, mortal);
+			trim.allocate(SkillType.INSIGHT, 1, human, mortal);
 		}
 		check("all five spent on the free lineage", trim.pointsSpent() == CharacterDraft.STARTING_POINTS);
 		trim.selectSubrace(human, hunter);
@@ -238,7 +238,7 @@ public class CreationHarness {
 		check("it is active", view.active());
 		check("race and lineage carry", view.raceId().equals("vampire") && view.subraceId().equals("crimson_court"));
 		check("granted powers are listed separately", view.grantedAbilityIds().equals(court.grantedAbilities()));
-		check("skill values match the draft", view.skill(SkillType.PRESENCE) == gate.skillValue(SkillType.PRESENCE, vampire, court));
+		check("skill values match the draft", view.skill(SkillType.CHARISMA) == gate.skillValue(SkillType.CHARISMA, vampire, court));
 		check("selectable races carry", view.canSelectRace("vampire") && !view.canSelectRace("demon"));
 		check("completion carries", view.complete());
 		check("the message carries", view.statusMessage().equals("hello"));

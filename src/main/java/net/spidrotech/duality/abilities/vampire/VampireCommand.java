@@ -23,8 +23,9 @@ import java.util.function.Consumer;
 /**
  * Test hooks for the vampire kit, so it can be exercised before the radials exist. Op only.
  *
- *   /vampire become | cure        add/remove the "vampire" marker (VampireRank#isVampire)
- *   /vampire rank 0-3             0 Thrall, 1 Fledgling, 2 Zealot, 3 Queen
+ *   /vampire become | cure        add/remove the "vampire" marker (VampireRank#isVampire) - become
+ *                                 also runs VampireBloodlines#onVampireSpawned (see that class)
+ *   /vampire rank 0-4             0 not a rank, 1 Thrall, 2 Fledgling, 3 Lord, 4 Queen
  *   /vampire mode on | off        vampire mode vs humanized (skips the toggle cooldown)
  *   /vampire status               everything above plus toggles, form, unlocked forms, concealment
  */
@@ -63,8 +64,11 @@ public final class VampireCommand {
 		String others = vars.EquippedAbilities.replace(VAMPIRE_TAG, "").trim();
 		vars.EquippedAbilities = vampire ? (others.isEmpty() ? VAMPIRE_TAG : others + " " + VAMPIRE_TAG) : others;
 		vars.markSyncDirty();
-		if (!vampire)
+		if (!vampire) {
 			VampireMode.setActive(player, false);
+		} else {
+			VampireBloodlines.onVampireSpawned(player);
+		}
 	}
 
 	private static void setRank(ServerPlayer player, int rank) {
@@ -83,7 +87,10 @@ public final class VampireCommand {
 				+ "\ntoggled=" + AbilityToggles.all(player) //
 				+ "\nform=" + Shapeshift.current(player).map(form -> form.id().toString()).orElse("none") //
 				+ "  unlocked=" + Shapeshift.unlockedForms(player) //
-				+ "\nconcealment=" + VampireMode.concealmentEffectiveness(player);
+				+ "\nconcealment=" + VampireMode.concealmentEffectiveness(player) //
+				+ "\nfaction=" + java.util.Optional.ofNullable(net.spidrotech.duality.faction.Factions.factionOfPlayer(player))
+						.map(f -> f.name() + (VampireBloodlines.isBloodline(f) ? " (bloodline)" : "")).orElse("none") //
+				+ "  bloodlines_in_world=" + VampireBloodlines.countBloodlines();
 		source.sendSuccess(() -> Component.literal(report), false);
 	}
 }

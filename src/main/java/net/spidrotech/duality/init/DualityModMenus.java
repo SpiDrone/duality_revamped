@@ -3,6 +3,10 @@
  */
 package net.spidrotech.duality.init;
 
+import net.spidrotech.duality.world.inventory.CharacterSelectorPage5Menu;
+import net.spidrotech.duality.world.inventory.CharacterSelectorPage4Menu;
+import net.spidrotech.duality.world.inventory.CharacterSelectorPage3Menu;
+import net.spidrotech.duality.world.inventory.CharacterSelectorPage2Menu;
 import net.spidrotech.duality.world.inventory.CharacterSelectorMenu;
 import net.spidrotech.duality.network.MenuStateUpdateMessage;
 import net.spidrotech.duality.DualityMod;
@@ -24,6 +28,10 @@ import java.util.Map;
 public class DualityModMenus {
 	public static final DeferredRegister<MenuType<?>> REGISTRY = DeferredRegister.create(Registries.MENU, DualityMod.MODID);
 	public static final DeferredHolder<MenuType<?>, MenuType<CharacterSelectorMenu>> CHARACTER_SELECTOR = REGISTRY.register("character_selector", () -> IMenuTypeExtension.create(CharacterSelectorMenu::new));
+	public static final DeferredHolder<MenuType<?>, MenuType<CharacterSelectorPage2Menu>> CHARACTER_SELECTOR_PAGE_2 = REGISTRY.register("character_selector_page_2", () -> IMenuTypeExtension.create(CharacterSelectorPage2Menu::new));
+	public static final DeferredHolder<MenuType<?>, MenuType<CharacterSelectorPage3Menu>> CHARACTER_SELECTOR_PAGE_3 = REGISTRY.register("character_selector_page_3", () -> IMenuTypeExtension.create(CharacterSelectorPage3Menu::new));
+	public static final DeferredHolder<MenuType<?>, MenuType<CharacterSelectorPage4Menu>> CHARACTER_SELECTOR_PAGE_4 = REGISTRY.register("character_selector_page_4", () -> IMenuTypeExtension.create(CharacterSelectorPage4Menu::new));
+	public static final DeferredHolder<MenuType<?>, MenuType<CharacterSelectorPage5Menu>> CHARACTER_SELECTOR_PAGE_5 = REGISTRY.register("character_selector_page_5", () -> IMenuTypeExtension.create(CharacterSelectorPage5Menu::new));
 
 	public interface MenuAccessor {
 		Map<String, Object> getMenuState();

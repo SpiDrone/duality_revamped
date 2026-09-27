@@ -1,0 +1,8 @@
+{
+  "_fv": 79,
+  "_type": "procedure",
+  "definition": {
+    "procedurexml": "<xml xmlns=\"https://developers.google.com/blockly/xml\"><variables><variable type=\"String\" id=\"holder\">holder</variable></variables><block type=\"text\" x=\"295\" y=\"-118\"><field name=\"TEXT\">selectedClass</field></block><block type=\"variables_set_string\" x=\"156\" y=\"-77\"><mutation xmlns=\"http://www.w3.org/1999/xhtml\" is_player_var=\"false\" has_entity=\"false\"></mutation><field name=\"VAR\">local:holder</field></block><block type=\"variables_get_string\" x=\"427\" y=\"-75\"><mutation xmlns=\"http://www.w3.org/1999/xhtml\" is_player_var=\"false\" has_entity=\"false\"></mutation><field name=\"VAR\">local:holder</field></block><block type=\"event_trigger\" deletable=\"false\" x=\"-58\" y=\"-14\"><field name=\"trigger\">no_ext_trigger</field><next><block type=\"controls_if\"><value name=\"IF0\"><block type=\"logic_boolean\"><field name=\"BOOL\">FALSE</field></block></value><statement name=\"DO0\"><block type=\"text_print\"><value name=\"TEXT\"><block type=\"entity_from_deps\"></block></value></block></statement><next><block type=\"return_logic\"><value name=\"return\"><block type=\"logic_boolean\"><field name=\"BOOL\">TRUE</field></block></value></block></next></block></next></block></xml>",
+    "skipDependencyNullCheck": false
+  }
+}

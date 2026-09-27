@@ -21,15 +21,25 @@ import java.util.Map;
  * @param pointCost        points this lineage takes out of the budget on top of the race's own cost.
  *                         Usually 0 - a race pays for what it is, and a lineage only charges when it
  *                         is a real step up from its siblings.
+ * @param equippedTag      marker written into the player's EquippedAbilities string on top of the
+ *                         race's own {@link RaceDefinition#equippedTag()} - for a lineage like Vampire
+ *                         that needs the marker even though it lives under a race (Demon) that
+ *                         doesn't wear one itself. Empty for a lineage with no marker of its own.
+ * @param requirementId    a pure id naming a real-world condition this lineage needs before it can be
+ *                         chosen (e.g. "vampire_lineage" - an existing vampire faction one of the
+ *                         player's other characters was in), or "" for none. This file can't check
+ *                         it - see CharacterCreation's requirementMessage for what each id means.
  */
 public record SubraceDefinition(String id, String displayName, String description, String iconHint, List<String> grantedAbilities, List<String> extraAbilityPool,
-		List<Integer> skillBonuses, int pointCost) {
+		List<Integer> skillBonuses, int pointCost, String equippedTag, String requirementId) {
 
 	public SubraceDefinition {
 		grantedAbilities = List.copyOf(grantedAbilities);
 		extraAbilityPool = List.copyOf(extraAbilityPool);
 		skillBonuses = normalize(skillBonuses);
 		pointCost = Math.max(0, pointCost);
+		equippedTag = equippedTag == null ? "" : equippedTag;
+		requirementId = requirementId == null ? "" : requirementId;
 	}
 
 	/** The common case: a lineage that grants one power, nudges two stats and costs nothing extra. */
@@ -40,7 +50,21 @@ public record SubraceDefinition(String id, String displayName, String descriptio
 	/** As above, for a lineage that charges for itself. */
 	public static SubraceDefinition of(String id, String displayName, String description, List<String> grantedAbilities, Map<SkillType, Integer> bonuses,
 			int pointCost) {
-		return new SubraceDefinition(id, displayName, description, "", grantedAbilities, List.of(), toList(bonuses), pointCost);
+		return new SubraceDefinition(id, displayName, description, "", grantedAbilities, List.of(), toList(bonuses), pointCost, "", "");
+	}
+
+	/** As above, for a lineage that also carries its own EquippedAbilities marker and/or a
+	 *  real-world requirement gating it - see the class doc for both. */
+	public static SubraceDefinition of(String id, String displayName, String description, List<String> grantedAbilities, Map<SkillType, Integer> bonuses,
+			int pointCost, String equippedTag, String requirementId) {
+		return new SubraceDefinition(id, displayName, description, "", grantedAbilities, List.of(), toList(bonuses), pointCost, equippedTag, requirementId);
+	}
+
+	/** As {@link #of(String, String, String, List, Map, int)}, for a lineage that also widens
+	 *  screen three's pool rather than only granting powers outright. */
+	public static SubraceDefinition of(String id, String displayName, String description, List<String> grantedAbilities, List<String> extraAbilityPool,
+			Map<SkillType, Integer> bonuses, int pointCost) {
+		return new SubraceDefinition(id, displayName, description, "", grantedAbilities, extraAbilityPool, toList(bonuses), pointCost, "", "");
 	}
 
 	public int skillBonus(SkillType skill) {

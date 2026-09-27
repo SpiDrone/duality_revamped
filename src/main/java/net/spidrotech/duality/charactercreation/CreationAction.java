@@ -22,10 +22,17 @@ public enum CreationAction {
 	SET_NAME,
 	/** Move the player's place in the flow. arg = step name; blank means "the next one". */
 	GOTO_STEP,
+	/** The "back" button: undoes whatever the current step answered (the lineage, the powers, the
+	 *  spent points - whichever belongs to the step being left) and steps back one, rather than just
+	 *  moving the cursor and leaving a stale answer behind it. A no-op on screen one. */
+	GO_BACK,
 	/** Finish: build the character, link it to the player, and apply what they chose. */
 	COMMIT,
 	/** Throw the draft away and start over at screen one. */
-	RESTART;
+	RESTART,
+	/** Sent by the client whenever the creator is off screen mid-creation (closed, or back from the
+	 *  pause menu) - puts the current step's screen back up. See CharacterCreatorNavigation#reopen. */
+	REOPEN;
 
 	public static CreationAction parse(String raw) {
 		if (raw == null)

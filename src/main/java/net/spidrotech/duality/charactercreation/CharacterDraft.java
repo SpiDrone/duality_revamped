@@ -29,7 +29,7 @@ public class CharacterDraft {
 	 * later from the stat screen, so walking away with points in hand is a real choice rather than
 	 * a mistake to block on.
 	 */
-	public static final int STARTING_POINTS = 5;
+	public static final int STARTING_POINTS = 10;
 	/** Longest name a character may have. */
 	public static final int NAME_MAX = 24;
 
@@ -94,6 +94,23 @@ public class CharacterDraft {
 		return DraftResult.ok("Race set to " + race.displayName() + ".");
 	}
 
+	/**
+	 * Clears the race choice entirely - used when a click lands on a race this player can't have, so
+	 * the last VALID pick doesn't linger as the answer just because it was the most recent one to
+	 * actually go through. Without this, clicking a locked race left the draft on whatever race was
+	 * already chosen, which let "next" stay live and the creator move on as if the locked click had
+	 * never happened.
+	 */
+	public DraftResult clearRace() {
+		if (raceId.isEmpty())
+			return DraftResult.OK;
+		raceId = "";
+		subraceId = "";
+		abilityIds.clear();
+		allocated.clear();
+		return DraftResult.ok("Race unset.");
+	}
+
 	// ------------------------------------------------------------------------------ screen two
 	public DraftResult selectSubrace(RaceDefinition race, SubraceDefinition subrace) {
 		if (race == null)
@@ -103,9 +120,9 @@ public class CharacterDraft {
 		if (subrace.id().equals(subraceId))
 			return DraftResult.OK;
 		subraceId = subrace.id();
-		// The pool just changed shape; drop anything that isn't in the new one rather than
-		// carrying a pick the new lineage doesn't offer.
-		abilityIds.retainAll(race.selectableAbilities(subrace));
+		// The bracket just changed; drop anything the new lineage's own choices() list (see below)
+		// doesn't offer rather than carrying a pick that belonged to the old one.
+		retainOnlyValidAbilities(race, subrace);
 		// And the stat line moved under the allocation, so re-clamp it.
 		clampAllocations(race, subrace);
 		// A dearer lineage can shrink the budget out from under what's already spent; refund the
@@ -114,35 +131,97 @@ public class CharacterDraft {
 		return DraftResult.ok("Lineage set to " + subrace.displayName() + ".");
 	}
 
+	/**
+	 * Undoes the lineage choice - the "go back" answer for screen two. Drops any ability picks the
+	 * old lineage's pool doesn't share with a bare race pick and re-clamps the stat allocation, same
+	 * as choosing a different lineage would, since the pool and stat floor both come from it.
+	 */
+	public DraftResult clearSubrace(RaceDefinition race) {
+		if (subraceId.isEmpty())
+			return DraftResult.OK;
+		subraceId = "";
+		// No subrace means no bracket, and no bracket means nothing purchasable can still be valid.
+		abilityIds.clear();
+		clampAllocations(race, null);
+		trimToBudget(race, null);
+		return DraftResult.ok("Lineage unset.");
+	}
+
 	// ---------------------------------------------------------------------------- screen three
-	/** How many powers this race and lineage let a character start with. */
-	public int abilityPickLimit(RaceDefinition race, SubraceDefinition subrace) {
-		return race == null ? 0 : race.abilityPicks();
+	/**
+	 * Everything this lineage's {@link AbilityBracket} can see and doesn't already get for free -
+	 * what screen three should offer as purchasable. Empty (rather than every ability in the
+	 * catalog) with no subrace chosen yet, same as {@link RaceDefinition#subraces()} being empty
+	 * means "nothing to choose from" elsewhere in this class.
+	 */
+	public List<AbilityDefinition> abilityChoices(RaceDefinition race, SubraceDefinition subrace) {
+		if (subrace == null)
+			return List.of();
+		List<AbilityDefinition> pool = new ArrayList<>();
+		for (AbilityDefinition ability : AbilityCatalog.selectableFor(AbilityBracket.forSubrace(subrace.id()))) {
+			if (!subrace.grantedAbilities().contains(ability.abilityId()))
+				pool.add(ability);
+		}
+		return pool;
 	}
 
-	public int abilityPicksRemaining(RaceDefinition race, SubraceDefinition subrace) {
-		return Math.max(0, abilityPickLimit(race, subrace) - abilityIds.size());
+	/** Drops the subset of what's currently chosen not in {@link #abilityChoices} any more - used
+	 *  whenever the lineage changes shape under an existing pick (see {@link #selectSubrace}). */
+	private void retainOnlyValidAbilities(RaceDefinition race, SubraceDefinition subrace) {
+		List<String> validIds = new ArrayList<>();
+		for (AbilityDefinition ability : abilityChoices(race, subrace)) {
+			validIds.add(ability.id());
+		}
+		abilityIds.retainAll(validIds);
 	}
 
-	/** Adds the power if it's on offer and there's room, removes it if it's already taken. */
+	/** What every currently-chosen power costs, added up - counts against the exact same budget
+	 *  spending a skill point does; see {@link #pointsSpent}. */
+	public int abilitiesCost() {
+		int total = 0;
+		for (String id : abilityIds) {
+			AbilityDefinition ability = AbilityCatalog.get(id);
+			if (ability != null)
+				total += ability.pointCost();
+		}
+		return total;
+	}
+
+	/**
+	 * Adds the power if it's on offer and affordable, removes it (refunding its cost) if it's already
+	 * taken. There is deliberately no separate "pick limit" any more: a power costs points out of the
+	 * same pool a stat point does, so how many a character ends up with is just however many they
+	 * could afford - including none at all, which is a perfectly good answer.
+	 */
 	public DraftResult toggleAbility(String abilityId, RaceDefinition race, SubraceDefinition subrace) {
-		if (race == null)
-			return DraftResult.no("Choose a race first.");
+		if (race == null || subrace == null)
+			return DraftResult.no("Choose your lineage first.");
 		if (abilityId == null || abilityId.isBlank())
 			return DraftResult.no("No power named.");
 		if (abilityIds.remove(abilityId))
 			return DraftResult.ok("Dropped " + abilityId + ".");
-		if (!race.selectableAbilities(subrace).contains(abilityId))
-			return DraftResult.no("A " + race.displayName() + " can't start with that.");
-		if (abilityIds.size() >= abilityPickLimit(race, subrace))
-			return DraftResult.no("That's all " + abilityPickLimit(race, subrace) + " of your picks. Drop one first.");
+		AbilityDefinition ability = AbilityCatalog.get(abilityId);
+		if (ability == null || !abilityChoices(race, subrace).contains(ability))
+			return DraftResult.no("That power isn't available to you.");
+		if (ability.pointCost() > pointsRemaining(race, subrace))
+			return DraftResult.no("Only " + pointsRemaining(race, subrace) + " point(s) left.");
 		abilityIds.add(abilityId);
-		return DraftResult.ok("Took " + abilityId + ".");
+		return DraftResult.ok("Took " + ability.displayName() + ".");
+	}
+
+	/** Undoes every power pick - the "go back" answer for screen three. */
+	public DraftResult clearAbilities() {
+		if (abilityIds.isEmpty())
+			return DraftResult.OK;
+		abilityIds.clear();
+		return DraftResult.ok("Powers unset.");
 	}
 
 	// ----------------------------------------------------------------------------- screen four
+	/** Skill points spent plus every chosen power's cost - one shared pool, so buying a power leaves
+	 *  less to put into stats and the other way around. */
 	public int pointsSpent() {
-		int total = 0;
+		int total = abilitiesCost();
 		for (int spent : allocated.values()) {
 			total += spent;
 		}
@@ -220,9 +299,13 @@ public class CharacterDraft {
 	// ----------------------------------------------------------------------------- screen five
 	public DraftResult setName(String candidate) {
 		String trimmed = candidate == null ? "" : candidate.trim();
-		if (!isNameUsable(trimmed))
+		// Kept even when unusable, so the draft always mirrors the name box: an emptied or invalid box
+		// must not leave a previous valid name standing in for it. An unusable name can't be
+		// committed (see CreationStep.APPEARANCE) and is never shown to anyone. Capped only so a
+		// modified client can't park an enormous string here.
+		name = trimmed.length() > NAME_MAX * 2 ? trimmed.substring(0, NAME_MAX * 2) : trimmed;
+		if (!isNameUsable(name))
 			return DraftResult.no("Names are 1 to " + NAME_MAX + " characters, letters, digits, spaces, apostrophes and hyphens.");
-		name = trimmed;
 		return DraftResult.OK;
 	}
 

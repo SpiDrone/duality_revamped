@@ -14,25 +14,25 @@ package net.spidrotech.duality.charactercreation;
  */
 public enum SkillType {
 	/** Carrying, hitting, and holding a door shut. Attack damage. */
-	STRENGTH("Strength", "How hard you hit and how much you can shift."),
+	STRENGTH("Strength", "Some say the Strength of man lies in his wit\nI say it lies in their muscles."),
 	/** Speed and reflexes. Movement speed. */
-	AGILITY("Agility", "How fast you move and how quickly you react."),
+	AGILITY("Agility", "Speed and Reaction\nControl the battlefield\nBe the slightly fastest man alive"),
 	/** Staying up. Maximum health. */
-	ENDURANCE("Endurance", "How much you can take before you go down."),
+	ENDURANCE("Endurance", "Not everyone in this world can take a beating\nMost will fail to get up\n\nWill you?"),
 	/** The channel powers run through. Mana pool and how fast orbing charges. */
-	ATTUNEMENT("Attunement", "How much power you can hold and how fast you can draw on it."),
+	ATTUNEMENT("Attunement", "A body can only hold so much Energy\nPerhaps yours can hold more than others.."),
 	/** How the living react to you. Feeds village standing and NPC disposition. */
-	PRESENCE("Presence", "How people take to you, and whether a village trusts you."),
+	CHARISMA("Charisma", "How people take to you, and whether a village blindly trusts you."),
 	/** Noticing things - wards, lies, what a place has been through. */
-	INSIGHT("Insight", "What you notice that others miss."),
-	/** Luck, in the vanilla sense and the other one. */
-	FORTUNE("Fortune", "Whether things happen to go your way.");
+	INSIGHT("Insight", "How well you see what others might miss\nAnd how fast youre able to discover new things");
 
 	/** Where every skill starts before a single point is spent. */
 	public static final int MIN = 1;
-	/** Ceiling at character creation. Growth past this is the stat screen's business, not the
-	 *  creator's. */
-	public static final int MAX = 10;
+	/** Ceiling at character creation - one per chunk of the creator's stat bar art. Growth past this
+	 *  is the stat screen's business, not the creator's; see {@link #CEILING}. */
+	public static final int MAX = 5;
+	/** Ceiling for points spent after creation, from the in-game stat screen. */
+	public static final int CEILING = 10;
 
 	private final String displayName;
 	private final String description;

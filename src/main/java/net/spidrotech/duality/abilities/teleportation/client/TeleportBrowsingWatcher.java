@@ -51,8 +51,18 @@ public final class TeleportBrowsingWatcher {
 	@SubscribeEvent
 	public static void onClientTick(ClientTickEvent.Post event) {
 		Minecraft mc = Minecraft.getInstance();
-		if (mc.player == null)
+		if (mc.player == null) {
+			// Left the world: this class's state is static and outlives the session, so close any
+			// picker the old world left open and forget its selection - the next world starts clean.
+			if (!lastSelectedAbility.isEmpty()) {
+				if (TeleportAbilities.getByPath(lastSelectedAbility).isPresent()) {
+					TeleportPickerClientState.setActive(false);
+					ClientOrbitVisualManager.clearAll();
+				}
+				lastSelectedAbility = "";
+			}
 			return;
+		}
 		String current = mc.player.getData(DualityModVariables.PLAYER_VARIABLES).selected_ability;
 		if (current == null)
 			current = "";

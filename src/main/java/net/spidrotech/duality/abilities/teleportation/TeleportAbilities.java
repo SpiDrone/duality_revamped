@@ -30,13 +30,14 @@ public final class TeleportAbilities {
 	}
 
 	/** Convenience for callers that only have the bare path a la DualityModVariables#selected_ability
-	 *  (e.g. TeleportBrowsingWatcher) - selected_ability starts out "" (nothing selected yet), and
-	 *  ResourceLocation rejects an empty path outright, so that case is short-circuited here rather
-	 *  than left to throw. */
+	 *  (e.g. TeleportBrowsingWatcher). Anything that isn't a legal id path reads as "not a teleport
+	 *  ability" rather than throwing - including selected_ability's MCreator default, which is the
+	 *  two literal characters "" rather than an empty string. */
 	public static Optional<OrbAbility> getByPath(String path) {
 		if (path == null || path.isEmpty())
 			return Optional.empty();
-		return get(ResourceLocation.fromNamespaceAndPath("duality", path));
+		ResourceLocation id = ResourceLocation.tryBuild("duality", path);
+		return id == null ? Optional.empty() : get(id);
 	}
 
 	public static boolean isTeleportAbility(ResourceLocation id) {

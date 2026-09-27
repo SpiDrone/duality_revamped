@@ -157,14 +157,79 @@ public final class SkinNetwork {
 			SkinPart part = SkinPartCatalog.get(payload.partId());
 			if (part == null)
 				return;
+			SkinLoadout loadout = SkinManager.get().loadoutOf(player.getUUID());
 			if (!payload.equip()) {
-				SkinManager.get().setLoadout(player, SkinManager.get().loadoutOf(player.getUUID()).without(payload.partId()));
+				// There's no "no skin" - a skin is swapped for another, never taken off.
+				if (part.target() == SkinPartTarget.SKIN_TONE)
+					return;
+				loadout = loadout.without(payload.partId());
+				// Eyes and their pupils come and go together - see companionPupil.
+				if (part.target() == SkinPartTarget.EYES)
+					loadout = withoutTarget(loadout, SkinPartTarget.PUPIL);
+				SkinManager.get().setLoadout(player, loadout);
+				resyncCreator(player);
 				return;
 			}
 			if (!ownsPart(player, part))
 				return; // client asked for something it hasn't unlocked - ignore, don't trust
-			SkinManager.get().setLoadout(player, SkinManager.get().loadoutOf(player.getUUID()).with(new SkinLoadout.Equipped(part.id(), payload.tints())));
+			if (part.target() == SkinPartTarget.PUPIL && !payload.tints().stream().allMatch(PupilColors::isAllowed))
+				return; // a pupil colour the picker would never offer - see PupilColors
+			loadout = loadout.with(new SkinLoadout.Equipped(part.id(), payload.tints()));
+			// A skin is also the base, so nothing of the player's real Mojang skin (its hat layer
+			// especially) can show through under it. The tinted part then paints over that base.
+			if (part.target() == SkinPartTarget.SKIN_TONE)
+				loadout = loadout.withBase(part.id());
+			if (part.target() == SkinPartTarget.EYES) {
+				SkinPart pupil = companionPupil(part);
+				if (pupil != null && ownsPart(player, pupil))
+					loadout = loadout.with(new SkinLoadout.Equipped(pupil.id(), currentTints(loadout, SkinPartTarget.PUPIL, pupil)));
+			}
+			SkinManager.get().setLoadout(player, loadout);
+			resyncCreator(player);
 		});
+	}
+
+	/** Mid-creation, what's worn decides whether the confirm button is live (see
+	 *  CharacterCreation#appearanceMissing), so the draft view has to follow every change here. */
+	private static void resyncCreator(ServerPlayer player) {
+		if (net.spidrotech.duality.charactercreation.CharacterCreation.isCreating(player))
+			net.spidrotech.duality.charactercreation.CharacterCreation.sync(player, "");
+	}
+
+	/**
+	 * The pupil that belongs with an eye texture: charcreator/eyes/eyes_u_1.png pairs with
+	 * charcreator/pupils/u_1.png, and eyes/cyclops.png with pupils/cyclops.png - the eye's own name
+	 * with any leading "eyes_" dropped. Null if no such pupil exists.
+	 */
+	private static SkinPart companionPupil(SkinPart eyes) {
+		String name = eyes.id().startsWith(eyes.category() + "_") ? eyes.id().substring(eyes.category().length() + 1) : eyes.id();
+		if (name.startsWith("eyes_"))
+			name = name.substring("eyes_".length());
+		return SkinPartCatalog.get("pupils_" + name);
+	}
+
+	/** The tints already worn in that slot, carried over to the new part so switching eyes keeps
+	 *  the pupil colour the player chose - or all defaults if nothing's worn there yet. */
+	private static List<Integer> currentTints(SkinLoadout loadout, SkinPartTarget target, SkinPart incoming) {
+		for (SkinLoadout.Equipped equipped : loadout.parts()) {
+			SkinPart worn = SkinPartCatalog.get(equipped.partId());
+			if (worn != null && worn.target() == target && equipped.tints().size() == incoming.tintableCount())
+				return equipped.tints();
+		}
+		List<Integer> defaults = new ArrayList<>();
+		for (int i = 0; i < incoming.tintableCount(); i++) {
+			defaults.add(-1);
+		}
+		return defaults;
+	}
+
+	private static SkinLoadout withoutTarget(SkinLoadout loadout, SkinPartTarget target) {
+		for (SkinLoadout.Equipped equipped : loadout.parts()) {
+			SkinPart worn = SkinPartCatalog.get(equipped.partId());
+			if (worn != null && worn.target() == target)
+				loadout = loadout.without(equipped.partId());
+		}
+		return loadout;
 	}
 
 	private static void handleSetBodyModel(final SetBodyModelPayload payload, final IPayloadContext context) {
@@ -175,7 +240,11 @@ public final class SkinNetwork {
 		});
 	}
 
+	/** Mid-creation there's no character yet, so what's on offer is the PLAYER's creator unlocks
+	 *  (see CharacterCreation#cosmeticAvailable); once playing, it's the active character's own. */
 	private static boolean ownsPart(ServerPlayer player, SkinPart part) {
+		if (net.spidrotech.duality.charactercreation.CharacterCreation.isCreating(player))
+			return net.spidrotech.duality.charactercreation.CharacterCreation.cosmeticAvailable(player, part);
 		return SkinUnlocks.get().owns(player, part);
 	}
 

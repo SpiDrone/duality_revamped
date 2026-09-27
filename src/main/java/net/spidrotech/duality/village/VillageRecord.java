@@ -49,6 +49,12 @@ public class VillageRecord {
 	private final String villageId;
 	private String name;
 	private VillageFaction faction;
+	/** The dynamic org that owns this settlement, if any - a faction id (see
+	 *  net.spidrotech.duality.faction.FactionRecord), NOT the same thing as {@link #faction}, which
+	 *  is this settlement's fixed archetype. Set/cleared only through Factions#claimVillage /
+	 *  #unclaimVillage, which keep this and the faction's own owned-village set in sync - don't
+	 *  write it directly. Empty string means unclaimed. */
+	private String ownerFactionId = "";
 	private WorldPoint center = WorldPoint.ORIGIN;
 	private int radius = 48;
 	private long foundedDay = 0;
@@ -179,6 +185,21 @@ public class VillageRecord {
 
 	public void setFaction(VillageFaction faction) {
 		this.faction = faction;
+	}
+
+	public String ownerFactionId() {
+		return ownerFactionId;
+	}
+
+	public boolean isClaimed() {
+		return !ownerFactionId.isEmpty();
+	}
+
+	/** Not package-private only because Factions lives in a different package - go through
+	 *  Factions#claimVillage/#unclaimVillage instead of calling this directly anywhere else, or the
+	 *  faction's own owned-village set drifts out of sync with this field. */
+	public void setOwnerFactionId(String ownerFactionId) {
+		this.ownerFactionId = ownerFactionId == null ? "" : ownerFactionId;
 	}
 
 	public WorldPoint center() {
@@ -539,6 +560,7 @@ public class VillageRecord {
 		json.addProperty("village_id", villageId);
 		json.addProperty("name", name);
 		json.addProperty("faction", faction.name());
+		json.addProperty("owner_faction_id", ownerFactionId);
 		json.add("center", center.toJson());
 		json.addProperty("radius", radius);
 		json.addProperty("founded_day", foundedDay);
@@ -582,6 +604,8 @@ public class VillageRecord {
 	public static VillageRecord fromJson(JsonObject json) {
 		VillageRecord village = new VillageRecord(json.get("village_id").getAsString(), json.has("name") ? json.get("name").getAsString() : "Unnamed",
 				VillageFaction.parse(json.has("faction") ? json.get("faction").getAsString() : null));
+		if (json.has("owner_faction_id"))
+			village.ownerFactionId = json.get("owner_faction_id").getAsString();
 		if (json.has("center"))
 			village.center = WorldPoint.fromJson(json.getAsJsonObject("center"));
 		if (json.has("radius"))

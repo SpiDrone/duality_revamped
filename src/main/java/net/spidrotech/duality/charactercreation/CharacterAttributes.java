@@ -28,10 +28,10 @@ import java.util.Map;
  * old modifier is removed and replaced rather than stacked. That matters because this runs on every
  * login and on every character switch, not just once at creation.
  *
- * <p>Not every skill moves an attribute. PRESENCE and INSIGHT have nothing to hang on yet and live
+ * <p>Not every skill moves an attribute. CHARISMA and INSIGHT have nothing to hang on yet and live
  * on the character sheet only; read them with {@link #skillOf}. That's deliberate - a skill that
  * isn't wired to anything is still a number other systems can start using (village standing is the
- * obvious first customer for PRESENCE).
+ * obvious first customer for CHARISMA).
  */
 public final class CharacterAttributes {
 	/** Where the stat line is stored on a character sheet. */
@@ -55,8 +55,16 @@ public final class CharacterAttributes {
 	private static final double ATTUNEMENT_PROFICIENCY = 1.0;
 	/** Orb charge time cut per point of Attunement; the attribute is capped 0-1. */
 	private static final double ATTUNEMENT_CHARGE = 0.04;
-	/** Vanilla luck per point of Fortune. */
-	private static final double FORTUNE_LUCK = 0.5;
+	/** Extra max mana per point of Attunement above the floor, on top of Mana.BASE_MAX. */
+	private static final double ATTUNEMENT_MANA = 20;
+	/** Blood quality per point of Endurance above the floor, on top of the attribute's base 25: a
+	 *  hardier character's blood is worth more to whoever drinks it (see BloodDrinking). */
+	private static final double ENDURANCE_BLOOD = 4;
+	/** The luck modifier the removed Fortune skill used to add. Stripped on every apply/clear so a
+	 *  player who had one saved on them doesn't keep the bonus forever. */
+	private static final ResourceLocation LEGACY_FORTUNE_MODIFIER = ResourceLocation.fromNamespaceAndPath("duality", "skill_fortune");
+	/** Charisma was called Presence, and older character sheets still store it under that id. */
+	private static final String LEGACY_CHARISMA_ID = "presence";
 
 	/**
 	 * Applies a stat line to a player, replacing whatever was there.
@@ -71,11 +79,13 @@ public final class CharacterAttributes {
 		set(player, Attributes.ATTACK_DAMAGE, SkillType.STRENGTH, above(skills, SkillType.STRENGTH) * STRENGTH_DAMAGE, AttributeModifier.Operation.ADD_VALUE);
 		set(player, Attributes.MOVEMENT_SPEED, SkillType.AGILITY, above(skills, SkillType.AGILITY) * AGILITY_SPEED, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
 		set(player, Attributes.MAX_HEALTH, SkillType.ENDURANCE, above(skills, SkillType.ENDURANCE) * ENDURANCE_HEALTH, AttributeModifier.Operation.ADD_VALUE);
-		set(player, Attributes.LUCK, SkillType.FORTUNE, above(skills, SkillType.FORTUNE) * FORTUNE_LUCK, AttributeModifier.Operation.ADD_VALUE);
+		removeLegacyFortune(player);
 		set(player, DualityModAttributes.ORBING_PROFICIENCY, SkillType.ATTUNEMENT, above(skills, SkillType.ATTUNEMENT) * ATTUNEMENT_PROFICIENCY,
 				AttributeModifier.Operation.ADD_VALUE);
 		set(player, DualityModAttributes.ORBCHARGEREDUCTION, SkillType.ATTUNEMENT, above(skills, SkillType.ATTUNEMENT) * ATTUNEMENT_CHARGE,
 				AttributeModifier.Operation.ADD_VALUE);
+		set(player, net.spidrotech.duality.mana.Mana.MAX_MANA, SkillType.ATTUNEMENT, above(skills, SkillType.ATTUNEMENT) * ATTUNEMENT_MANA, AttributeModifier.Operation.ADD_VALUE);
+		set(player, DualityModAttributes.BLOOD_QUALITY, SkillType.ENDURANCE, above(skills, SkillType.ENDURANCE) * ENDURANCE_BLOOD, AttributeModifier.Operation.ADD_VALUE);
 		// Raising max health leaves the player on their old total; lowering it can leave them above
 		// the new one, which the client renders as an overfull bar until something else touches it.
 		if (player.getMaxHealth() > previousMaxHealth)
@@ -93,10 +103,12 @@ public final class CharacterAttributes {
 			remove(player, Attributes.ATTACK_DAMAGE, skill);
 			remove(player, Attributes.MOVEMENT_SPEED, skill);
 			remove(player, Attributes.MAX_HEALTH, skill);
-			remove(player, Attributes.LUCK, skill);
 			remove(player, DualityModAttributes.ORBING_PROFICIENCY, skill);
 			remove(player, DualityModAttributes.ORBCHARGEREDUCTION, skill);
+			remove(player, net.spidrotech.duality.mana.Mana.MAX_MANA, skill);
+			remove(player, DualityModAttributes.BLOOD_QUALITY, skill);
 		}
+		removeLegacyFortune(player);
 		if (player.getHealth() > player.getMaxHealth())
 			player.setHealth(player.getMaxHealth());
 	}
@@ -107,7 +119,10 @@ public final class CharacterAttributes {
 		Map<SkillType, Integer> skills = new EnumMap<>(SkillType.class);
 		JsonObject stored = sheet != null && sheet.has(SHEET_SKILLS) ? sheet.getAsJsonObject(SHEET_SKILLS) : null;
 		for (SkillType skill : SkillType.values()) {
-			skills.put(skill, stored != null && stored.has(skill.id()) ? stored.get(skill.id()).getAsInt() : SkillType.MIN);
+			String key = skill.id();
+			if (skill == SkillType.CHARISMA && stored != null && !stored.has(key) && stored.has(LEGACY_CHARISMA_ID))
+				key = LEGACY_CHARISMA_ID;
+			skills.put(skill, stored != null && stored.has(key) ? stored.get(key).getAsInt() : SkillType.MIN);
 		}
 		return skills;
 	}
@@ -173,7 +188,7 @@ public final class CharacterAttributes {
 		if (unspent <= 0)
 			return false;
 		Map<SkillType, Integer> skills = readSkills(sheet);
-		if (skills.get(skill) >= SkillType.MAX)
+		if (skills.get(skill) >= SkillType.CEILING)
 			return false;
 		skills.put(skill, skills.get(skill) + 1);
 		writeSkills(sheet, skills);
@@ -200,6 +215,12 @@ public final class CharacterAttributes {
 		instance.removeModifier(id);
 		if (amount != 0)
 			instance.addPermanentModifier(new AttributeModifier(id, amount, operation));
+	}
+
+	private static void removeLegacyFortune(ServerPlayer player) {
+		AttributeInstance luck = player.getAttribute(Attributes.LUCK);
+		if (luck != null)
+			luck.removeModifier(LEGACY_FORTUNE_MODIFIER);
 	}
 
 	private static void remove(ServerPlayer player, Holder<Attribute> attribute, SkillType skill) {

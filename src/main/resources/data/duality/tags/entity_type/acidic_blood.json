@@ -1,0 +1,13 @@
+{
+  "replace": false,
+  "values": [
+    {
+      "id": "duality:demon_spider",
+      "required": false
+    },
+    {
+      "id": "duality:spider_queen",
+      "required": false
+    }
+  ]
+}

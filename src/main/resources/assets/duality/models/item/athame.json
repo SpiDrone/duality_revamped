@@ -1,0 +1,26 @@
+{
+  "parent": "item/handheld",
+  "textures": {
+    "layer0": "duality:item/athame0"
+  },
+  "overrides": [
+    {
+      "predicate": {
+        "duality:athame_blood": 0
+      },
+      "model": "duality:item/athame_0"
+    },
+    {
+      "predicate": {
+        "duality:athame_blood": 1
+      },
+      "model": "duality:item/athame_1"
+    },
+    {
+      "predicate": {
+        "duality:athame_blood": 2
+      },
+      "model": "duality:item/athame_2"
+    }
+  ]
+}

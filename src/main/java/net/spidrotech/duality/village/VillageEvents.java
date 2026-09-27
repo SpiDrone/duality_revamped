@@ -447,6 +447,7 @@ public final class VillageEvents {
 		if (random.nextBoolean()) {
 			newcomer = NpcRecord.create(VillageNames.person(random), village.villageId());
 			newcomer.setSpecies(VillageEconomy.speciesFor(village));
+			Villages.notifyRaceChanged(newcomer);
 			// Newcomers take whatever the village is short of, so a raided village fills up with
 			// guards and a hungry one with farmers.
 			newcomer.setJob(VillageEconomy.neededJob(store, village, random));

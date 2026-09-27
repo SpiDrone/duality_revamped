@@ -89,6 +89,11 @@ public final class AbilityManager {
 				return ActivationResult.fail(condition.failureMessage(ctx));
 			}
 		}
+		// Paid last, so a cast refused for any other reason costs nothing. Switching a toggle off
+		// returned above and never reaches here.
+		if (!net.spidrotech.duality.mana.AbilityCosts.pay(caster, id)) {
+			return ActivationResult.fail(Component.literal("Not enough mana."));
+		}
 		if (ability.type() == AbilityType.CHANNELED) {
 			AbilityInstance instance = new AbilityInstance(ctx, AbilityInstance.State.CHARGING, now);
 			casterRunning.put(id, instance);

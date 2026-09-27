@@ -205,10 +205,24 @@ public class DualityDatabaseManager {
 		if (shouldStartCreateCharacter(player)) {
 			JsonObject profile = getPlayerProfile(player);
 			if (profile != null) {
+				// Captured before it's cleared, so a requirement like "your last character wasn't
+				// evil" (see charactercreation.RaceCatalog's Angelic race) can still be answered once
+				// the new draft has begun and active_character_id no longer points at them.
+				String outgoing = profile.has("active_character_id") ? profile.get("active_character_id").getAsString() : "";
+				profile.addProperty("last_character_id", outgoing);
 				profile.addProperty("active_character_id", "");
 				savePlayerProfile(player, profile);
 			}
 		}
+	}
+
+	/** The character who was active right before their current draft began - dead or still alive,
+	 *  whichever it was. "" if this is the player's first character ever. See {@link #startCreateCharacter}. */
+	public static String getLastCharacterId(Player player) {
+		JsonObject profile = getPlayerProfile(player);
+		if (profile == null || !profile.has("last_character_id"))
+			return "";
+		return profile.get("last_character_id").getAsString();
 	}
 
 	/**
@@ -238,6 +252,29 @@ public class DualityDatabaseManager {
 		return true;
 	}
 
+	/** Whether any LIVING character on this server - anyone's, not just this player's - already
+	 *  goes by this name (case-insensitive). Dead characters' names are free to reuse. Reads every
+	 *  character sheet, so call it on a name change or a commit, not every tick. */
+	public static boolean isLivingCharacterName(Player player, String name) {
+		if (name == null || name.isBlank())
+			return false;
+		File dataDir = getDataDirectory(player);
+		if (dataDir == null)
+			return false;
+		File[] sheets = new File(dataDir, "characters").listFiles((dir, file) -> file.endsWith(".json"));
+		if (sheets == null)
+			return false;
+		String wanted = name.trim();
+		for (File sheetFile : sheets) {
+			JsonObject sheet = loadOrCreateJson(sheetFile);
+			if (sheet == null || !sheet.has("name") || !sheet.get("name").getAsString().trim().equalsIgnoreCase(wanted))
+				continue;
+			if (!sheet.has("status") || !"DEAD".equalsIgnoreCase(sheet.get("status").getAsString()))
+				return true;
+		}
+		return false;
+	}
+
 	/** This player's alive character ids, in order - for a "switch character" picker/command. */
 	public static List<String> getAliveCharacterIds(Player player) {
 		JsonObject profile = getPlayerProfile(player);
@@ -247,6 +284,19 @@ public class DualityDatabaseManager {
 		JsonArray aliveList = profile.getAsJsonObject("character_history").getAsJsonArray("alive");
 		for (int i = 0; i < aliveList.size(); i++) {
 			ids.add(aliveList.get(i).getAsString());
+		}
+		return ids;
+	}
+
+	/** This player's dead character ids, in the order they died. */
+	public static List<String> getDeadCharacterIds(Player player) {
+		JsonObject profile = getPlayerProfile(player);
+		List<String> ids = new ArrayList<>();
+		if (profile == null)
+			return ids;
+		JsonArray deadList = profile.getAsJsonObject("character_history").getAsJsonArray("dead");
+		for (int i = 0; i < deadList.size(); i++) {
+			ids.add(deadList.get(i).getAsString());
 		}
 		return ids;
 	}
