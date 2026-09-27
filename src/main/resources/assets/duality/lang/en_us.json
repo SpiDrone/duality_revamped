@@ -44,5 +44,7 @@
   "gui.duality.character_selector_page_5.label_human": "Human",
   "gui.duality.character_selector_page_5.label_choose_starting_race": "Choose Sub-Race",
   "item.duality.athame": "Athame",
-  "item.duality.ability_item": "Ability Item"
+  "item.duality.ability_item": "Ability Item",
+  "painting.duality.painting_0.title": "Painting 0",
+  "painting.duality.painting_0.author": "SpiDrone"
 }

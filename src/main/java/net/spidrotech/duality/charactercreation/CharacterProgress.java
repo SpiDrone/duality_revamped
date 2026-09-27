@@ -39,6 +39,8 @@ public final class CharacterProgress {
 	public static final String VEGAN = "vegan";
 	/** A vampire who has killed a person to feed. */
 	public static final String SOULLESS = "soulless";
+	/** Blood that burns whoever drinks it or spills it - see abilities.AcidicBlood. */
+	public static final String ACIDIC_BLOOD = "acidic_blood";
 
 	private CharacterProgress() {
 	}
@@ -92,16 +94,20 @@ public final class CharacterProgress {
 		if (sheet == null)
 			return false;
 		boolean owned = hasAbility(sheet, abilityId);
-		if (owned && proficiency(sheet, abilityId) >= clamp(level))
+		int oldLevel = proficiency(sheet, abilityId);
+		if (owned && oldLevel >= clamp(level))
 			return false;
 		if (!owned) {
 			JsonArray list = sheet.has(CharacterAttributes.SHEET_ABILITIES) ? sheet.getAsJsonArray(CharacterAttributes.SHEET_ABILITIES) : new JsonArray();
 			list.add(abilityId);
 			sheet.add(CharacterAttributes.SHEET_ABILITIES, list);
 		}
-		setProficiency(sheet, abilityId, Math.max(level, proficiency(sheet, abilityId)));
+		int newLevel = Math.max(clamp(level), oldLevel);
+		setProficiency(sheet, abilityId, newLevel);
 		saveActive(player, sheet);
 		CharacterCreation.applyActiveCharacter(player);
+		// Gaining (or getting better at) an acidic power might change your blood - see AcidicBlood.
+		net.spidrotech.duality.abilities.AcidicBlood.rollOnGain(player, abilityId, owned, oldLevel, newLevel);
 		return true;
 	}
 
@@ -144,6 +150,30 @@ public final class CharacterProgress {
 		sheet.add(SHEET_PROFICIENCIES, list);
 		saveActive(player, sheet);
 		return true;
+	}
+
+	/** Takes a proficiency away. Returns false if the character didn't have it. */
+	public static boolean revokeProficiency(ServerPlayer player, String proficiency) {
+		JsonObject sheet = activeSheet(player);
+		if (sheet == null || !hasProficiency(player, proficiency))
+			return false;
+		JsonArray kept = new JsonArray();
+		for (JsonElement element : sheet.getAsJsonArray(SHEET_PROFICIENCIES)) {
+			if (!element.getAsString().equals(proficiency))
+				kept.add(element);
+		}
+		sheet.add(SHEET_PROFICIENCIES, kept);
+		saveActive(player, sheet);
+		return true;
+	}
+
+	/** Sets a named counter on the active sheet outright. */
+	public static void setProgress(ServerPlayer player, String key, double value) {
+		JsonObject sheet = activeSheet(player);
+		if (sheet == null)
+			return;
+		sheet.addProperty(key, value);
+		saveActive(player, sheet);
 	}
 
 	/** Adds to a named counter on the active sheet and returns the new total (0 with no character).

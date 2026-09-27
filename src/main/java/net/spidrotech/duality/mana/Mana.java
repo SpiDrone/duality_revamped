@@ -105,8 +105,12 @@ public final class Mana {
 		if (usesBlood(entity)) {
 			// Synced to the owner by MCreator's variable sync, which the blood bar reads.
 			DualityModVariables.PlayerVariables vars = entity.getData(DualityModVariables.PLAYER_VARIABLES);
+			double spent = vars.blood - clamped;
 			vars.blood = clamped;
 			vars.markSyncDirty();
+			// Blood a person gave (or had taken) is the first to be burned off.
+			if (spent > 0 && entity instanceof ServerPlayer player)
+				BloodDrinking.metabolize(player, spent);
 			return;
 		}
 		entity.setData(CURRENT, clamped);

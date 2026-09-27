@@ -108,6 +108,8 @@ public final class LightningStrikeAbility extends Ability {
 		LivingEntity initialTarget = findInitialTarget(caster, range);
 		if (initialTarget == null)
 			return; // TODO: visual/audio indicator for "no target found"
+		// Only now, with something to hit, does it cost anything - see AbilityCosts#CHARGED_ON_HIT.
+		net.spidrotech.duality.mana.AbilityCosts.chargeOnHit(caster, id());
 		ChainResult chain = buildChain(caster, initialTarget, range, maxJumps, maxStems);
 		Random seedSource = new Random();
 		Vec3 chestPos = caster.position().add(0, caster.getBbHeight() * CHEST_HEIGHT_FRACTION, 0);

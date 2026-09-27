@@ -400,6 +400,22 @@ public final class ClientCharacterCreation {
 		return view.nameUsable();
 	}
 
+	/** Whether the draft is a vampire lineage - when screen five offers the vampire-look preview. */
+	public static boolean isVampireDraft() {
+		return net.spidrotech.duality.charactercreation.CharacterCreation.isVampireLineage(view.race(), view.subrace());
+	}
+
+	/** Whether the vampire-look preview is on - read off the synced skin, which is what shows it. */
+	public static boolean isVampirePreviewOn() {
+		Minecraft mc = Minecraft.getInstance();
+		return mc.player != null && net.spidrotech.duality.skin.client.ClientSkinState.tempsOf(mc.player.getUUID()).stream()
+				.anyMatch(mod -> mod.key().equals(net.spidrotech.duality.charactercreation.CharacterCreation.VAMPIRE_PREVIEW_KEY));
+	}
+
+	public static void toggleVampirePreview() {
+		send(CreationAction.TOGGLE_VAMPIRE_PREVIEW, "", 0);
+	}
+
 	/** Whether screen five may offer this part - mirrors CharacterCreation#cosmeticAvailable. */
 	public static boolean isCosmeticAvailable(net.spidrotech.duality.skin.SkinPart part) {
 		return part != null && view.isCosmeticAvailable(part.id());

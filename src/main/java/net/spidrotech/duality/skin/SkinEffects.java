@@ -25,4 +25,8 @@ public final class SkinEffects {
 
 	/** Region drains to greyscale - a starting point for possession/soulless looks. */
 	public static final ResourceLocation DESATURATE = ResourceLocation.fromNamespaceAndPath("duality", "desaturate");
+
+	/** A vanquished demon burning up from inside: glowing fire cracks split across the whole skin,
+	 *  then the skin between them chars dark. Aim it at OVERLAY. See vanquish.Vanquish. */
+	public static final ResourceLocation VANQUISH = ResourceLocation.fromNamespaceAndPath("duality", "vanquish");
 }

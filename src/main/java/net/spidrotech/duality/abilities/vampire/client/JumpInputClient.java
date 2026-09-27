@@ -4,6 +4,7 @@ import net.spidrotech.duality.abilities.vampire.LeapAbility;
 import net.spidrotech.duality.abilities.vampire.JumpInputNetwork;
 import net.spidrotech.duality.abilities.vampire.DashAbility;
 import net.spidrotech.duality.abilities.AbilityToggles;
+import net.spidrotech.duality.AbilityManager;
 
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.client.event.MovementInputUpdateEvent;
@@ -67,8 +68,12 @@ public final class JumpInputClient {
 		boolean down = mc.options.keyJump.isDown();
 		groundedTicks = player.onGround() ? groundedTicks + 1 : 0;
 
-		boolean leapOn = AbilityToggles.isToggled(player, LeapAbility.ID);
-		boolean dashOn = AbilityToggles.isToggled(player, DashAbility.ID);
+		// Switched on AND actually usable right now. Toggles outlive the character that set them (they
+		// survive death and a character switch), so a leftover leap toggle alone used to hold back a
+		// non-vampire's jump to charge a leap the server then refused - with the charge bar showing.
+		// The same cast conditions the server checks (rank gates), evaluated from synced state.
+		boolean leapOn = AbilityToggles.isToggled(player, LeapAbility.ID) && AbilityManager.get().meetsCastConditions(player, LeapAbility.ID);
+		boolean dashOn = AbilityToggles.isToggled(player, DashAbility.ID) && AbilityManager.get().meetsCastConditions(player, DashAbility.ID);
 		if ((!leapOn && !dashOn) || jumpMeansSomethingElse(player)) {
 			abort();
 			wasDown = down;

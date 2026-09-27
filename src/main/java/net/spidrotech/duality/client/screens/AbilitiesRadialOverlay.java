@@ -82,6 +82,13 @@ public class AbilitiesRadialOverlay {
 						AbilitiesRadialSelectProcedure.execute(entity, radial_value);
 					}
 				}
+				case "deselect" -> {
+					if (RetDeselectProcedure.execute(entity)) {
+						String radial_value = "";
+
+						AbilitiesRadialSelectProcedure.execute(entity, radial_value);
+					}
+				}
 				default -> {
 				}
 			}
@@ -131,6 +138,9 @@ public class AbilitiesRadialOverlay {
 				if (RetShimmerProcedure.execute(entity))
 					wheel.add("shimmer", net.spidrone.uiapi.UIColorEffects.holographic(-8355712, -12566464), net.spidrone.uiapi.UIColorEffects.holographic(-65281, -16777012),
 							net.minecraft.resources.ResourceLocation.parse("duality:textures/screens/icon_ability_vampire_eye.png"), net.spidrone.uiapi.UIColorEffects.solid(0xFFFFFFFF), net.spidrone.uiapi.UIColorEffects.solid(0xFFFFFFFF));
+				if (RetDeselectProcedure.execute(entity))
+					wheel.add("deselect", net.spidrone.uiapi.UIColorEffects.holographic(-8355712, -12566464), net.spidrone.uiapi.UIColorEffects.holographic(-1, -4144960),
+							net.minecraft.resources.ResourceLocation.parse("duality:textures/screens/icon_ability_deselect.png"), net.spidrone.uiapi.UIColorEffects.solid(0xFFFFFFFF), net.spidrone.uiapi.UIColorEffects.solid(0xFFFFFFFF));
 				if (!wheel.getButtons().isEmpty()) {
 					net.spidrone.uiapi.UIRadialMenuElement.openRadialMenu(wheel, wheel.getButtons().size());
 					sua_radial_abilities_radial_wheel = wheel;

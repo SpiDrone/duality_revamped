@@ -46,6 +46,118 @@ public final class ClientSkinEffects {
 	public static void bootstrap() {
 		register(SkinEffects.VAMPIRIZE, VAMPIRIZE);
 		register(SkinEffects.DESATURATE, DESATURATE);
+		register(SkinEffects.VANQUISH, VANQUISH);
+	}
+
+	// ================================================================== VANQUISH
+	/** Matches vanquish.Vanquish's crack phase, so the cracks are finished as the sinking starts. */
+	private static final int VANQUISH_DURATION = 45;
+	/** How many cracks split the skin, and how long each one runs. */
+	private static final int VANQUISH_CRACKS = 55, VANQUISH_CRACK_LENGTH = 7;
+	/** When (as a share of the duration) the last crack starts - they don't all appear at once. */
+	private static final float VANQUISH_STAGGER = 0.5f;
+	/** How long each step of a crack takes to appear, as a share of the duration. */
+	private static final float VANQUISH_STEP_TIME = 0.05f;
+	/** From here to the end, the skin between the cracks chars towards black, up to VANQUISH_CHAR. */
+	private static final float VANQUISH_CHAR_FROM = 0.5f, VANQUISH_CHAR = 0.65f;
+	private static final int EMBER = 0xFFFF6A10, WHITE_HOT = 0xFFFFE27A;
+
+	/**
+	 * Fire breaking out through the skin. Cracks start at random painted pixels all over the
+	 * 64x64 sheet (so every face of the body gets some), each a short jagged walk that grows a
+	 * step at a time, staggered so the body splits open progressively rather than all at once.
+	 * Freshly reached crack pixels burn white-hot and settle to ember orange; their neighbours
+	 * pick up an orange glow. Past the halfway mark everything that isn't crack chars dark, so
+	 * the end state is a blackened shell with fire showing through.
+	 *
+	 * Seeded like VAMPIRIZE, so the crack pattern is identical every frame and on every client -
+	 * only how far it has spread changes.
+	 */
+	public static final SkinEffect VANQUISH = new SkinEffect() {
+		@Override
+		public int durationTicks() {
+			return VANQUISH_DURATION;
+		}
+
+		@Override
+		public void apply(NativeImage canvas, SkinPartTarget target, int color, float progress, long seed, Map<SkinPartTarget, BitSet> masks) {
+			int width = canvas.getWidth(), height = canvas.getHeight();
+			Random random = new Random(seed);
+			boolean[] crack = new boolean[width * height];
+			List<int[]> revealed = new ArrayList<>();
+			for (int n = 0; n < VANQUISH_CRACKS; n++) {
+				int[] start = randomOpaquePixel(canvas, random);
+				float startAt = random.nextFloat() * VANQUISH_STAGGER;
+				int dir = random.nextInt(DIRECTIONS.length);
+				int x = start == null ? -1 : start[0], y = start == null ? -1 : start[1];
+				for (int step = 0; step <= VANQUISH_CRACK_LENGTH; step++) {
+					if (step > 0) {
+						// Always consume the same random numbers, revealed or not, so the pattern
+						// never shifts as more of it shows.
+						if (random.nextFloat() < 0.35f)
+							dir = (dir + (random.nextBoolean() ? 1 : DIRECTIONS.length - 1)) % DIRECTIONS.length;
+						x += DIRECTIONS[dir][0];
+						y += DIRECTIONS[dir][1];
+					}
+					float revealAt = startAt + step * VANQUISH_STEP_TIME;
+					if (start == null || progress < revealAt || x < 0 || y < 0 || x >= width || y >= height)
+						continue;
+					if ((SkinCompositor.toArgb(canvas.getPixelRGBA(x, y)) >>> 24) == 0)
+						continue; // off the painted body - skip, but keep walking
+					crack[y * width + x] = true;
+					revealed.add(new int[] { x, y, Math.round(Math.min(1f, (progress - revealAt) / 0.15f) * 1000) });
+				}
+			}
+
+			// Char first, so the cracks and their glow land on the blackened skin, not under it.
+			if (progress > VANQUISH_CHAR_FROM) {
+				float charring = VANQUISH_CHAR * (progress - VANQUISH_CHAR_FROM) / (1f - VANQUISH_CHAR_FROM);
+				for (int y = 0; y < height; y++) {
+					for (int x = 0; x < width; x++) {
+						if (!crack[y * width + x])
+							darken(canvas, x, y, charring);
+					}
+				}
+			}
+			for (int[] pixel : revealed) {
+				float age = pixel[2] / 1000f;
+				for (int[] dir : DIRECTIONS) {
+					int nx = pixel[0] + dir[0], ny = pixel[1] + dir[1];
+					if (nx >= 0 && ny >= 0 && nx < width && ny < height && !crack[ny * width + nx])
+						tint(canvas, nx, ny, EMBER, 0.3f * age);
+				}
+			}
+			for (int[] pixel : revealed) {
+				float age = pixel[2] / 1000f;
+				// White-hot as it splits, cooling to ember.
+				tint(canvas, pixel[0], pixel[1], age < 1f ? WHITE_HOT : EMBER, 0.6f + 0.4f * age);
+			}
+		}
+	};
+
+	/** A random pixel the skin actually paints, or null after a few misses (a very sparse skin). */
+	@Nullable
+	private static int[] randomOpaquePixel(NativeImage canvas, Random random) {
+		for (int attempt = 0; attempt < 40; attempt++) {
+			int x = random.nextInt(canvas.getWidth()), y = random.nextInt(canvas.getHeight());
+			if ((SkinCompositor.toArgb(canvas.getPixelRGBA(x, y)) >>> 24) != 0)
+				return new int[] { x, y };
+		}
+		return null;
+	}
+
+	/** Blends one painted pixel toward {@code argb} by strength, keeping its alpha. */
+	private static void tint(NativeImage canvas, int x, int y, int argb, float strength) {
+		if (strength <= 0)
+			return;
+		int pixel = SkinCompositor.toArgb(canvas.getPixelRGBA(x, y));
+		if ((pixel >>> 24) == 0)
+			return;
+		float s = Math.min(1f, strength);
+		int r = SkinCompositor.lerp((pixel >> 16) & 0xFF, (argb >> 16) & 0xFF, s);
+		int g = SkinCompositor.lerp((pixel >> 8) & 0xFF, (argb >> 8) & 0xFF, s);
+		int b = SkinCompositor.lerp(pixel & 0xFF, argb & 0xFF, s);
+		canvas.setPixelRGBA(x, y, SkinCompositor.toNative((pixel & 0xFF000000) | (r << 16) | (g << 8) | b));
 	}
 
 	// ================================================================== VAMPIRIZE

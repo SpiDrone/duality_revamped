@@ -45,7 +45,8 @@ public final class VampireBite {
 
 	/** The vampire behind this damage if it was a bite, else null. */
 	private static ServerPlayer biter(DamageSource source) {
-		if (!(source.getEntity() instanceof ServerPlayer player) || source.getDirectEntity() != player)
+		// A feeding sip hurts its donor too, but VampireFeeding handles its own blood and kills.
+		if (VampireFeeding.isSipping() || !(source.getEntity() instanceof ServerPlayer player) || source.getDirectEntity() != player)
 			return null;
 		if (!player.getMainHandItem().isEmpty() || !VampireRank.isVampire(player) || !VampireMode.isActive(player))
 			return null;
@@ -66,7 +67,8 @@ public final class VampireBite {
 		}
 		double doses = event.getNewDamage() / DAMAGE_PER_DOSE;
 		double mana = AthameEvents.sapMana(target, doses);
-		BloodDrinking.drink(vampire, blood, doses, mana);
+		BloodDrinking.drink(vampire, blood, doses, mana, false); // a bite is never given freely
+		Vampirism.tryInfect(vampire, target, Vampirism.Via.BITE);
 		vampire.level().playSound(null, target.blockPosition(), SoundEvents.GENERIC_EAT, SoundSource.PLAYERS, 0.8f, 0.6f);
 		if (vampire.level() instanceof ServerLevel level)
 			level.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, Blocks.REDSTONE_BLOCK.defaultBlockState()), target.getX(), target.getY() + target.getBbHeight() * 0.75,
@@ -76,7 +78,7 @@ public final class VampireBite {
 	@SubscribeEvent
 	public static void onDeath(LivingDeathEvent event) {
 		ServerPlayer vampire = biter(event.getSource());
-		if (vampire != null && event.getEntity() instanceof DualityNpcEntity && CharacterProgress.grantProficiency(vampire, CharacterProgress.SOULLESS))
-			vampire.sendSystemMessage(Component.literal("You drank a life away. Something in you goes quiet for good. (Soulless)").withStyle(ChatFormatting.DARK_RED));
+		if (vampire != null && BloodDrinking.isPerson(event.getEntity()))
+			BloodDrinking.becomeSoulless(vampire, "You drank a life away. Something in you goes quiet for good. (Soulless)");
 	}
 }

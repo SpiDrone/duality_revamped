@@ -32,7 +32,10 @@ public enum CreationAction {
 	RESTART,
 	/** Sent by the client whenever the creator is off screen mid-creation (closed, or back from the
 	 *  pause menu) - puts the current step's screen back up. See CharacterCreatorNavigation#reopen. */
-	REOPEN;
+	REOPEN,
+	/** Page five's "show me as a vampire" preview, on or off. Only does anything while the draft is a
+	 *  vampire lineage; the look comes off by itself if it stops being one. */
+	TOGGLE_VAMPIRE_PREVIEW;
 
 	public static CreationAction parse(String raw) {
 		if (raw == null)

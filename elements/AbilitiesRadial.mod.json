@@ -1350,6 +1350,134 @@
                 "speed": 1.0,
                 "easing": "easeInOutSine"
               }
+            },
+            {
+              "id": "deselect",
+              "icon": "icon_ability_deselect.png",
+              "unselectedEffect": "holographic",
+              "selectedEffect": "holographic",
+              "unselectedColor1": {
+                "value": -8355712,
+                "falpha": 0.0
+              },
+              "unselectedColor2": {
+                "value": -12566464,
+                "falpha": 0.0
+              },
+              "selectedColor1": {
+                "value": -1,
+                "falpha": 0.0
+              },
+              "selectedColor2": {
+                "value": -4144960,
+                "falpha": 0.0
+              },
+              "onSelect": {
+                "name": "AbilitiesRadialSelect"
+              },
+              "radialValue": "",
+              "radialValueProcedure": {
+                "fixedValue": ""
+              },
+              "displayCondition": {
+                "name": "RetDeselect"
+              },
+              "iconTintEnabled": false,
+              "unselectedIconTint": {
+                "value": -1,
+                "falpha": 0.0
+              },
+              "selectedIconTint": {
+                "value": -1,
+                "falpha": 0.0
+              },
+              "tooltip": [],
+              "tooltipLines": [],
+              "tooltipFont": "spis_ui_api:boldpixels",
+              "tooltipBackgroundColor": {
+                "value": -267386864,
+                "falpha": 0.0
+              },
+              "tooltipBorderColor": {
+                "value": -10066262,
+                "falpha": 0.0
+              },
+              "tooltipTextColor": {
+                "value": -6710887,
+                "falpha": 0.0
+              },
+              "tooltipBackgroundTint": {
+                "value": -1,
+                "falpha": 0.0
+              },
+              "tooltipTextEffect": {
+                "type": "solid",
+                "color2": {
+                  "value": -12566464,
+                  "falpha": 0.0
+                },
+                "color3": {
+                  "value": -8355712,
+                  "falpha": 0.0
+                },
+                "color4": {
+                  "value": -4144960,
+                  "falpha": 0.0
+                },
+                "speed": 1.0,
+                "easing": "easeInOutSine"
+              },
+              "tooltipBackgroundEffect": {
+                "type": "solid",
+                "color2": {
+                  "value": -12566464,
+                  "falpha": 0.0
+                },
+                "color3": {
+                  "value": -8355712,
+                  "falpha": 0.0
+                },
+                "color4": {
+                  "value": -4144960,
+                  "falpha": 0.0
+                },
+                "speed": 1.0,
+                "easing": "easeInOutSine"
+              },
+              "tooltipBorderEffect": {
+                "type": "solid",
+                "color2": {
+                  "value": -12566464,
+                  "falpha": 0.0
+                },
+                "color3": {
+                  "value": -8355712,
+                  "falpha": 0.0
+                },
+                "color4": {
+                  "value": -4144960,
+                  "falpha": 0.0
+                },
+                "speed": 1.0,
+                "easing": "easeInOutSine"
+              },
+              "tooltipBackgroundTintEffect": {
+                "type": "solid",
+                "color2": {
+                  "value": -12566464,
+                  "falpha": 0.0
+                },
+                "color3": {
+                  "value": -8355712,
+                  "falpha": 0.0
+                },
+                "color4": {
+                  "value": -4144960,
+                  "falpha": 0.0
+                },
+                "speed": 1.0,
+                "easing": "easeInOutSine"
+              }
             }
           ],
           "width": 120,

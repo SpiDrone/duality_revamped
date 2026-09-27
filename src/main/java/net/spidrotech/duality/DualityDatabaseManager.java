@@ -29,16 +29,43 @@ public class DualityDatabaseManager {
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
 	private static File getDataDirectory(Player player) {
-		if (player.level() instanceof ServerLevel serverLevel) {
-			MinecraftServer server = serverLevel.getServer();
-			File worldDir = server.getWorldPath(LevelResource.ROOT).toFile();
-			File dualityDir = new File(worldDir, "duality_data");
-			new File(dualityDir, "players").mkdirs();
-			new File(dualityDir, "characters").mkdirs();
-			new File(dualityDir, "npcs").mkdirs();
-			return dualityDir;
-		}
+		if (player.level() instanceof ServerLevel serverLevel)
+			return getDataDirectory(serverLevel.getServer());
 		return null;
+	}
+
+	/** The world's duality_data folder. For work that has no player to hand - a daily tick, say. */
+	public static File getDataDirectory(MinecraftServer server) {
+		File worldDir = server.getWorldPath(LevelResource.ROOT).toFile();
+		File dualityDir = new File(worldDir, "duality_data");
+		new File(dualityDir, "players").mkdirs();
+		new File(dualityDir, "characters").mkdirs();
+		new File(dualityDir, "npcs").mkdirs();
+		return dualityDir;
+	}
+
+	/** A character sheet by id alone, whoever's it is and whether or not they're online. */
+	public static JsonObject getCharacterSheet(MinecraftServer server, String characterId) {
+		if (characterId == null || characterId.isEmpty())
+			return null;
+		File charFile = new File(new File(getDataDirectory(server), "characters"), characterId + ".json");
+		return charFile.exists() ? loadOrCreateJson(charFile) : null;
+	}
+
+	public static void saveCharacterSheet(MinecraftServer server, String characterId, JsonObject charJson) {
+		if (characterId == null || characterId.isEmpty() || charJson == null)
+			return;
+		saveJson(new File(new File(getDataDirectory(server), "characters"), characterId + ".json"), charJson);
+	}
+
+	/** Reads any JSON file under duality_data, or null if it isn't there. */
+	public static JsonObject readDataFile(MinecraftServer server, String name) {
+		File file = new File(getDataDirectory(server), name);
+		return file.exists() ? loadOrCreateJson(file) : null;
+	}
+
+	public static void writeDataFile(MinecraftServer server, String name, JsonObject json) {
+		saveJson(new File(getDataDirectory(server), name), json);
 	}
 
 	private static JsonObject loadOrCreateJson(File file) {

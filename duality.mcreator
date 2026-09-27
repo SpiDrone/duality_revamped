@@ -1356,6 +1356,38 @@
           "src/main/java/net/spidrotech/duality/item/AbilityItemItem.java"
         ]
       }
+    },
+    {
+      "name": "Painting0",
+      "type": "painting",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "painting_0",
+      "metadata": {
+        "files": [
+          "src/main/resources/data/duality/painting_variant/painting_0.json"
+        ]
+      }
+    },
+    {
+      "name": "RetDeselect",
+      "type": "procedure",
+      "compiles": true,
+      "locked_code": false,
+      "registry_name": "ret_deselect",
+      "metadata": {
+        "dependencies": [
+          {
+            "name": "entity",
+            "type": "entity"
+          }
+        ],
+        "return_type": "logic",
+        "files": [
+          "src/main/java/net/spidrotech/duality/procedures/RetDeselectProcedure.java"
+        ]
+      },
+      "path": "~/Radial Menu/Ability Returns"
     }
   ],
   "variable_elements": [
@@ -1456,7 +1488,9 @@
       "gui.duality.character_selector_page_5.label_human": "Human",
       "gui.duality.character_selector_page_5.label_choose_starting_race": "Choose Sub-Race",
       "item.duality.athame": "Athame",
-      "item.duality.ability_item": "Ability Item"
+      "item.duality.ability_item": "Ability Item",
+      "painting.duality.painting_0.title": "Painting 0",
+      "painting.duality.painting_0.author": "SpiDrone"
     }
   },
   "metadata": {
@@ -1465,6 +1499,7 @@
       "src/main/java/net/spidrotech/duality/init/DualityModMenus.java",
       "src/main/java/net/spidrotech/duality/network/MenuStateUpdateMessage.java",
       "src/main/java/net/spidrotech/duality/init/DualityModScreens.java",
+      "src/main/resources/data/minecraft/tags/painting_variant/placeable.json",
       "src/main/java/net/spidrotech/duality/init/DualityModParticleTypes.java",
       "src/main/java/net/spidrotech/duality/init/DualityModParticles.java",
       "src/main/java/net/spidrotech/duality/init/DualityModMobEffects.java",

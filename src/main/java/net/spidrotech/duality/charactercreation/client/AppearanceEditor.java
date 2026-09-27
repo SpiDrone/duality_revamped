@@ -279,7 +279,7 @@ public final class AppearanceEditor {
 		RenderSystem.defaultBlendFunc();
 		g.blit(selected ? BUTTON_SELECTED : hover ? BUTTON_HOVER : BUTTON, x, y, width, ROW_H, 0, 0, 163, 32, 163, 32);
 		RenderSystem.disableBlend();
-		UIGraphicsHelper.drawCustomFont(g, FONT, label, x + width / 2, y + 4, TEXT, false, UIGraphicsHelper.TextAlign.CENTER, 0.6f, 0.6f);
+		UIGraphicsHelper.drawCustomFont(g, FONT, label, x + width / 2, y + 5, TEXT, false, UIGraphicsHelper.TextAlign.CENTER, 0.6f, 0.6f);
 	}
 
 	private boolean overRow(String region, int index, int width, double mouseX, double mouseY) {
@@ -312,6 +312,32 @@ public final class AppearanceEditor {
 			if (hover)
 				g.renderTooltip(font, Component.literal(slot.label()), mouseX, mouseY);
 		}
+		renderVampireToggle(g, font, mouseX, mouseY);
+	}
+
+	// ------------------------------------------------------------------------ vampire preview
+	// Bottom-right of the preview panel, and only for a vampire lineage: shows the new character with
+	// the vampire look (off by default - the creator shows them as they'll usually walk around).
+	private static final int TOGGLE_X = 196, TOGGLE_Y = 105, TOGGLE_W = 42, TOGGLE_H = 12;
+
+	private boolean overVampireToggle(double mouseX, double mouseY) {
+		int x = left + TOGGLE_X, y = top + TOGGLE_Y;
+		return ClientCharacterCreation.isVampireDraft() && mouseX >= x && mouseX < x + TOGGLE_W && mouseY >= y && mouseY < y + TOGGLE_H;
+	}
+
+	private void renderVampireToggle(GuiGraphics g, Font font, int mouseX, int mouseY) {
+		if (!ClientCharacterCreation.isVampireDraft())
+			return;
+		boolean on = ClientCharacterCreation.isVampirePreviewOn();
+		boolean hover = !picker.isOpen() && overVampireToggle(mouseX, mouseY);
+		int x = left + TOGGLE_X, y = top + TOGGLE_Y;
+		RenderSystem.enableBlend();
+		RenderSystem.defaultBlendFunc();
+		g.blit(on ? BUTTON_SELECTED : hover ? BUTTON_HOVER : BUTTON, x, y, TOGGLE_W, TOGGLE_H, 0, 0, 163, 32, 163, 32);
+		RenderSystem.disableBlend();
+		UIGraphicsHelper.drawCustomFont(g, FONT, on ? "Vampire: On" : "Vampire: Off", x + TOGGLE_W / 2, y + 4, on ? 0xFFAA0000 : TEXT, false, UIGraphicsHelper.TextAlign.CENTER, 0.5f, 0.5f);
+		if (hover)
+			g.renderTooltip(font, Component.literal("Preview how you look with the vampire out"), mouseX, mouseY);
 	}
 
 	private int swatchX(int index) {
@@ -366,6 +392,11 @@ public final class AppearanceEditor {
 				click();
 				return true;
 			}
+		}
+		if (overVampireToggle(mouseX, mouseY)) {
+			ClientCharacterCreation.toggleVampirePreview();
+			click();
+			return true;
 		}
 		List<TintSlot> slots = tintSlots(category);
 		for (int i = 0; i < slots.size(); i++) {

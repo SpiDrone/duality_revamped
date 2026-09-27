@@ -50,6 +50,7 @@ public final class ScreechAbility {
 					if (!(caster.level() instanceof ServerLevel level))
 						return;
 					level.playSound(null, caster.getX(), caster.getY(), caster.getZ(), SoundEvents.WARDEN_SONIC_BOOM, caster.getSoundSource(), 3.0f, 1.6f);
+					screamFromMouth(level, caster);
 					AABB area = caster.getBoundingBox().inflate(RADIUS);
 					for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, area, e -> e != caster && !isDeafened(e))) {
 						target.hurt(caster.damageSources().sonicBoom(caster), DAMAGE);
@@ -59,6 +60,30 @@ public final class ScreechAbility {
 					}
 					shatterGlassBlocks(level, caster.blockPosition(), RADIUS);
 				}).build();
+	}
+
+	/**
+	 * The look of it. The caster lunges forward like a vampire's bite (BiteLean - their own client
+	 * already started it, and cancelled the arm swing, when they clicked), and the scream comes out
+	 * of their mouth: sonic booms blasting forward along where they're looking, and a shockwave ring
+	 * rolling out around them to show the reach.
+	 */
+	private static void screamFromMouth(ServerLevel level, LivingEntity caster) {
+		if (caster instanceof net.minecraft.server.level.ServerPlayer player)
+			net.neoforged.neoforge.network.PacketDistributor.sendToPlayersTrackingEntity(player,
+					new net.spidrotech.duality.abilities.vampire.BiteNetwork.BiteLeanPayload(player.getId()));
+		net.minecraft.world.phys.Vec3 look = caster.getLookAngle();
+		net.minecraft.world.phys.Vec3 mouth = caster.getEyePosition().add(0, -0.25, 0).add(look.scale(0.4));
+		for (int step = 0; step <= 5; step++) {
+			net.minecraft.world.phys.Vec3 at = mouth.add(look.scale(step * 1.3));
+			level.sendParticles(net.minecraft.core.particles.ParticleTypes.SONIC_BOOM, at.x, at.y, at.z, 1, 0, 0, 0, 0);
+		}
+		int ringPoints = 32;
+		for (int i = 0; i < ringPoints; i++) {
+			double angle = i * (Math.PI * 2 / ringPoints);
+			// count 0: the offsets are the particle's velocity, so the ring flies outward.
+			level.sendParticles(net.minecraft.core.particles.ParticleTypes.CLOUD, mouth.x, mouth.y - 0.3, mouth.z, 0, Math.cos(angle), 0, Math.sin(angle), 0.6);
+		}
 	}
 
 	/** No "deafened" concept exists yet - see class doc. */

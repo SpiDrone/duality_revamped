@@ -39,6 +39,25 @@ public final class BiteNetwork {
 				&& AthameEvents.bleeds(living);
 	}
 
+	/** Whether {@code player} using (right-clicking) {@code target} right now is feeding from them
+	 *  (VampireFeeding) - sneaking, empty handed, vampire out, and something with blood. The same test
+	 *  on both sides, so the client's held lean and the server's sips agree. */
+	public static boolean isFeed(Player player, Entity target) {
+		return target != player && player.isShiftKeyDown() && isBite(player, target);
+	}
+
+	/** "This player is still feeding" - sent with every sip, so watchers hold the lean while it lasts. */
+	public record FeedLeanPayload(int entityId) implements CustomPacketPayload {
+		public static final Type<FeedLeanPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath("duality", "feed_lean"));
+		public static final StreamCodec<FriendlyByteBuf, FeedLeanPayload> STREAM_CODEC = StreamCodec.of((FriendlyByteBuf buf, FeedLeanPayload payload) -> buf.writeVarInt(payload.entityId()),
+				(FriendlyByteBuf buf) -> new FeedLeanPayload(buf.readVarInt()));
+
+		@Override
+		public Type<FeedLeanPayload> type() {
+			return TYPE;
+		}
+	}
+
 	public record BiteLeanPayload(int entityId) implements CustomPacketPayload {
 		public static final Type<BiteLeanPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath("duality", "bite_lean"));
 		public static final StreamCodec<FriendlyByteBuf, BiteLeanPayload> STREAM_CODEC = StreamCodec.of((FriendlyByteBuf buf, BiteLeanPayload payload) -> buf.writeVarInt(payload.entityId()),
@@ -54,6 +73,7 @@ public final class BiteNetwork {
 	public static void register(RegisterPayloadHandlersEvent event) {
 		PayloadRegistrar registrar = event.registrar("duality");
 		registrar.playToClient(BiteLeanPayload.TYPE, BiteLeanPayload.STREAM_CODEC, BiteNetwork::handleLean);
+		registrar.playToClient(FeedLeanPayload.TYPE, FeedLeanPayload.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> BiteLean.holdPulse(payload.entityId())));
 	}
 
 	@SubscribeEvent

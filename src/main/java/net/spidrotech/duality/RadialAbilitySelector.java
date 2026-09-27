@@ -1,4 +1,4 @@
-package net.spidrotech.duality;
+/**package net.spidrotech.duality;
 
 import org.lwjgl.glfw.GLFW;
 
@@ -91,4 +91,4 @@ public class RadialAbilitySelector {
 		BorderEffects border = BorderEffects.of(1, UIColorEffects.solid(BORDER_BLACK), 5, UIColorEffects.solid(BORDER_DARK_RED));
 		UIRadialMenuElement.drawRadialMenu(graphics, UIRadialMenuElement.activeWheel, UIRadialMenuElement.activeMaxButtons, centerX, centerY, radius, iconSize, border);
 	}
-}
+}**/

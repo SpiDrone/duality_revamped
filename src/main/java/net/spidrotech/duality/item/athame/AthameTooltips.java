@@ -17,6 +17,10 @@ public final class AthameTooltips {
 		tooltip.add(Component.literal(kind + " of " + source).withStyle(color));
 		String strength = sample.toxic() ? "Tainted" : sample.quality() >= 35 ? "Potent" : sample.quality() >= 15 ? "Ordinary" : "Thin";
 		tooltip.add(Component.literal("  " + strength + " (" + Math.round(sample.quality()) + "), " + sample.doses() + "/" + BloodSample.MAX_DOSES + " doses").withStyle(ChatFormatting.GRAY));
+		if (sample.isVampireBlood())
+			tooltip.add(Component.literal("  Vampire's blood" + (sample.vegan() ? " (vegan)" : "")).withStyle(sample.vegan() ? ChatFormatting.GOLD : ChatFormatting.DARK_RED));
+		if (sample.willing())
+			tooltip.add(Component.literal("  Freely given").withStyle(ChatFormatting.GRAY));
 		if (sample.mana() >= 1)
 			tooltip.add(Component.literal("  Carries " + Math.round(sample.mana()) + " mana").withStyle(ChatFormatting.BLUE));
 	}

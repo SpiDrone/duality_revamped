@@ -37,6 +37,16 @@ public final class AbilityCosts {
 	private AbilityCosts() {
 	}
 
+	/** Paid only if they land: casting just checks the caster could pay, and the power itself calls
+	 *  {@link #chargeOnHit} when it strikes something - so a Lightning Hands fired at nothing is free. */
+	private static final Set<String> CHARGED_ON_HIT = Set.of("lightning_hands_normal", "lightning_hands_demonic");
+
+	/** Takes a CHARGED_ON_HIT power's cost, now that it has hit. Players only, not in creative. */
+	public static void chargeOnHit(LivingEntity caster, ResourceLocation abilityId) {
+		if (caster instanceof Player player && !player.getAbilities().instabuild)
+			Mana.drain(player, costOf(abilityId));
+	}
+
 	public static double costOf(ResourceLocation abilityId) {
 		if (!"duality".equals(abilityId.getNamespace()))
 			return DEFAULT_COST;
@@ -65,7 +75,10 @@ public final class AbilityCosts {
 			}
 		}
 		double cost = costOf(abilityId);
-		if (cost <= 0 || Mana.spend(player, cost))
+		if (cost <= 0)
+			return true;
+		boolean onHit = "duality".equals(abilityId.getNamespace()) && CHARGED_ON_HIT.contains(abilityId.getPath());
+		if (onHit ? Mana.current(player) >= cost : Mana.spend(player, cost))
 			return true;
 		if (player instanceof ServerPlayer serverPlayer) {
 			String what = VampireRank.isVampire(player) ? "blood" : "mana";

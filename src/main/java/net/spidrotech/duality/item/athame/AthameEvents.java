@@ -162,7 +162,7 @@ public final class AthameEvents {
 		if (held == null)
 			result = fresh;
 		else if (held.sameSource(fresh))
-			result = held.withDoses(held.doses() + 1);
+			result = held.withDoses(held.doses() + 1).withWilling(false); // a cut is never given freely
 		else
 			return null;
 		AthameData.setBlood(athame, result);
@@ -207,9 +207,11 @@ public final class AthameEvents {
 			JsonObject sheet = CharacterProgress.activeSheet(player);
 			if (sheet == null)
 				return new BloodSample(BloodSample.RED, BloodSample.Kind.CHARACTER, "player:" + player.getStringUUID(), player.getGameProfile().getName(), quality, 1, 0);
-			boolean acidic = "scabber_demon".equals(CharacterCreation.subspeciesIdOf(sheet));
+			boolean acidic = net.spidrotech.duality.abilities.AcidicBlood.has(player); // Scabbers, and anyone with the Acidic Blood trait
 			String name = sheet.has("name") ? sheet.get("name").getAsString() : player.getGameProfile().getName();
-			return new BloodSample(acidic ? BloodSample.GREEN : BloodSample.RED, BloodSample.Kind.CHARACTER, DualityDatabaseManager.getActiveCharacterId(player), name, quality, 1, 0);
+			BloodSample own = new BloodSample(acidic ? BloodSample.GREEN : BloodSample.RED, BloodSample.Kind.CHARACTER, DualityDatabaseManager.getActiveCharacterId(player), name, quality, 1, 0);
+			// A vampire's blood carries what they are - see BloodSample#vampireRank, Vampirism.
+			return VampireRank.isVampire(player) ? own.asVampire(VampireRank.fromAttribute(player).level(), CharacterProgress.hasProficiency(player, CharacterProgress.VEGAN)) : own;
 		}
 		boolean acidic = target.getType().is(ACIDIC_BLOOD);
 		if (target instanceof DualityNpcEntity npc) {
@@ -228,8 +230,8 @@ public final class AthameEvents {
 		LivingEntity victim = event.getEntity();
 		if (athame == null || victim.level().isClientSide() || !(event.getSource().getEntity() instanceof ServerPlayer killer))
 			return;
-		if (victim instanceof DualityNpcEntity && VampireRank.isVampire(killer) && CharacterProgress.grantProficiency(killer, CharacterProgress.SOULLESS))
-			killer.sendSystemMessage(Component.literal("You took a life to feed. Something in you goes quiet for good. (Soulless)").withStyle(ChatFormatting.DARK_RED));
+		if (net.spidrotech.duality.abilities.vampire.BloodDrinking.isPerson(victim) && VampireRank.isVampire(killer))
+			net.spidrotech.duality.abilities.vampire.BloodDrinking.becomeSoulless(killer, "You took a life to feed. Something in you goes quiet for good. (Soulless)");
 		StoredPower taken = takePower(victim);
 		if (taken == null)
 			return;
@@ -307,6 +309,14 @@ public final class AthameEvents {
 			return;
 		}
 
+		// Sneak-use looking down: cut yourself. Given freely, so it never costs a Vegan anything.
+		if (isAthame(used) && player.isShiftKeyDown() && player.getXRot() > SELF_CUT_PITCH) {
+			if (player instanceof ServerPlayer serverPlayer)
+				cutSelf(serverPlayer, used);
+			cancel(event);
+			return;
+		}
+
 		if (isAthame(used) && AthameData.power(used) != null) {
 			if (player instanceof ServerPlayer serverPlayer)
 				takeIn(serverPlayer, used);
@@ -317,6 +327,43 @@ public final class AthameEvents {
 	private static void cancel(PlayerInteractEvent.RightClickItem event) {
 		event.setCancellationResult(InteractionResult.sidedSuccess(event.getLevel().isClientSide()));
 		event.setCanceled(true);
+	}
+
+	/** How far down (degrees) a player has to look for sneak-use to cut themselves. */
+	public static final float SELF_CUT_PITCH = 60f;
+	/** What cutting yourself costs someone who isn't a vampire. */
+	public static final float SELF_CUT_DAMAGE = 2f;
+
+	/**
+	 * A dose of the holder's own blood into the hilt, given freely. It costs someone living
+	 * {@link #SELF_CUT_DAMAGE} health; it costs a vampire the blood itself, as much as the dose will
+	 * give back when drunk, so storing their own blood for later is an even trade and never a
+	 * profit. Refused if the hilt holds someone else's blood or is already full.
+	 */
+	private static void cutSelf(ServerPlayer player, ItemStack athame) {
+		BloodSample own = sampleOf(player).withWilling(true);
+		BloodSample held = AthameData.blood(athame);
+		if (held != null && !held.sameSource(own)) {
+			player.displayClientMessage(Component.literal("The hilt already holds someone else's blood.").withStyle(ChatFormatting.GRAY), true);
+			return;
+		}
+		if (held != null && held.doses() >= BloodSample.MAX_DOSES) {
+			player.displayClientMessage(Component.literal("The hilt is full.").withStyle(ChatFormatting.GRAY), true);
+			return;
+		}
+		if (VampireRank.isVampire(player)) {
+			double cost = net.spidrotech.duality.abilities.vampire.BloodDrinking.bloodPerDose(own);
+			if (Mana.current(player) < cost) {
+				player.displayClientMessage(Component.literal("You don't have the blood to spare.").withStyle(ChatFormatting.DARK_RED), true);
+				return;
+			}
+			Mana.drain(player, cost);
+		} else {
+			player.hurt(player.damageSources().generic(), SELF_CUT_DAMAGE);
+		}
+		// Given freely only while all of it was: a hilt that held a cut of theirs stays "taken".
+		AthameData.setBlood(athame, held == null ? own : held.withDoses(held.doses() + 1));
+		player.level().playSound(null, player.blockPosition(), SoundEvents.PLAYER_HURT_SWEET_BERRY_BUSH, SoundSource.PLAYERS, 0.8f, 1.2f);
 	}
 
 	/** The hilt's blood into the bottle in {@code bottleHand}, and the hilt back empty. */

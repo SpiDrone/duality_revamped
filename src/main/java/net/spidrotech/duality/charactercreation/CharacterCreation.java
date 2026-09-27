@@ -87,6 +87,13 @@ public final class CharacterCreation {
 		if (player == null)
 			return;
 		DRAFTS.put(player.getUUID(), new CharacterDraft());
+		// A clean slate: vampire mode, its toggles and every temporary skin effect (the vampire look,
+		// a vanquish's cracks) all live on the player, not the character, and would otherwise show
+		// the last character's look on the new one in the creator's preview.
+		if (net.spidrotech.duality.abilities.vampire.VampireMode.isActive(player))
+			net.spidrotech.duality.abilities.vampire.VampireMode.setActive(player, false);
+		net.spidrotech.duality.abilities.AbilityToggles.update(player, toggled -> net.spidrotech.duality.abilities.vampire.VampireMode.AUTO_ABILITIES.forEach(toggled::remove));
+		net.spidrotech.duality.skin.SkinTempModify.removeKey(player);
 		equipDefaultSkin(player);
 		CharacterCreationNetwork.sendCatalog(player);
 		// Whoever they were, they aren't any more - drop the old name off their head before they
@@ -325,6 +332,16 @@ public final class CharacterCreation {
 
 		RaceDefinition race = RaceCatalog.get(draft.raceId());
 		SubraceDefinition subrace = race == null ? null : race.subrace(draft.subraceId());
+		if (action == CreationAction.TOGGLE_VAMPIRE_PREVIEW) {
+			// Purely a look - it lives on the skin, which syncs itself, so no view re-sync.
+			if (isVampireLineage(race, subrace)) {
+				if (net.spidrotech.duality.skin.SkinTempModify.hasKey(player, VAMPIRE_PREVIEW_KEY))
+					net.spidrotech.duality.skin.SkinTempModify.removeKey(player, VAMPIRE_PREVIEW_KEY);
+				else
+					net.spidrotech.duality.abilities.vampire.VampireMode.applyLook(player, VAMPIRE_PREVIEW_KEY);
+			}
+			return new DraftResult(true, "");
+		}
 		DraftResult result = switch (action) {
 			case SELECT_RACE -> selectRace(player, draft, arg);
 			case SELECT_SUBRACE -> selectSubrace(player, draft, race, arg);
@@ -335,7 +352,7 @@ public final class CharacterCreation {
 			case GOTO_STEP -> gotoStep(draft, arg, race, subrace);
 			case GO_BACK -> goBack(draft, race);
 			case RESTART -> restart(player);
-			case REOPEN -> new DraftResult(true, ""); // handled above, without a re-sync
+			case REOPEN, TOGGLE_VAMPIRE_PREVIEW -> new DraftResult(true, ""); // handled above, without a re-sync
 			case COMMIT -> {
 				CommitResult commit = commit(player);
 				// A refused commit leaves the draft alive and un-synced, so push the reason out
@@ -345,11 +362,25 @@ public final class CharacterCreation {
 				yield new DraftResult(commit.ok(), commit.message());
 			}
 		};
+		// The vampire preview goes the moment the draft stops being a vampire (a different lineage
+		// picked, "back" undoing it) - and on commit, where the real look is vampire mode's business.
+		RaceDefinition nowRace = RaceCatalog.get(draft.raceId());
+		boolean stillVampire = !(action == CreationAction.COMMIT && result.ok()) && isVampireLineage(nowRace, nowRace == null ? null : nowRace.subrace(draft.subraceId()));
+		if (!stillVampire && net.spidrotech.duality.skin.SkinTempModify.hasKey(player, VAMPIRE_PREVIEW_KEY))
+			net.spidrotech.duality.skin.SkinTempModify.removeKey(player, VAMPIRE_PREVIEW_KEY);
 		// A successful COMMIT has already sent an inactive view and RESTART has re-synced; every
 		// other action syncs here.
 		if (action != CreationAction.COMMIT && action != CreationAction.RESTART)
 			sync(player, result.message());
 		return result;
+	}
+
+	/** Skin key for the creator's "show me as a vampire" preview (page five). */
+	public static final String VAMPIRE_PREVIEW_KEY = "vampire_preview";
+
+	/** Whether a draft on this race and lineage would be a vampire - what the preview button needs. */
+	public static boolean isVampireLineage(RaceDefinition race, SubraceDefinition subrace) {
+		return (race != null && "vampire".equals(race.equippedTag())) || (subrace != null && "vampire".equals(subrace.equippedTag()));
 	}
 
 	/**
@@ -693,6 +724,13 @@ public final class CharacterCreation {
 		}
 		player.setData(ModAttachments.UNLOCKED_ABILITIES, unlocked);
 		applyEquippedAbilities(player, race, subrace, unlocked);
+		// Toggles live on the player and survive a character change, so a vampire's leap/dash/deflect
+		// and vampire mode would otherwise carry over to whoever the player is next.
+		if (!net.spidrotech.duality.abilities.vampire.VampireRank.isVampire(player)) {
+			if (net.spidrotech.duality.abilities.vampire.VampireMode.isActive(player))
+				net.spidrotech.duality.abilities.vampire.VampireMode.setActive(player, false);
+			net.spidrotech.duality.abilities.AbilityToggles.update(player, toggled -> net.spidrotech.duality.abilities.vampire.VampireMode.AUTO_ABILITIES.forEach(toggled::remove));
+		}
 		String characterId = DualityDatabaseManager.getActiveCharacterId(player);
 		if (characterId != null && !characterId.isEmpty())
 			Factions.onRaceChanged(characterId);
@@ -720,6 +758,7 @@ public final class CharacterCreation {
 			}
 		}
 		applyToPlayer(player, race, subrace, CharacterAttributes.readSkills(sheet), abilities);
+		applyVampireRank(player, sheet);
 	}
 
 	/** The race id on a character sheet, or "" - reads the first species profile. */
@@ -779,7 +818,7 @@ public final class CharacterCreation {
 		if (bloodline == null)
 			return;
 		Factions.addPlayerMember(bloodline, player, FactionRole.MEMBER, "");
-		setVampireRank(player, VampireRank.THRALL);
+		setVampireRank(player, VampireRank.FLEDGLING); // a playable vampire - Thralls are mindless (see Vampirism)
 	}
 
 	/** A Vampiric Queen starts ranked as one immediately - the crown isn't waiting on a faction to
@@ -790,10 +829,45 @@ public final class CharacterCreation {
 				+ "ready - any vampire sired before you do won't be sired to you.").withStyle(ChatFormatting.GRAY), false);
 	}
 
+	/** A vampire character's rank (1-4), kept on their sheet. The VAMPIRE_RANK attribute lives on the
+	 *  player and would otherwise follow them to their next character - applyActiveCharacter puts
+	 *  the right one back from here. */
+	public static final String SHEET_VAMPIRE_RANK = "vampire_rank";
+
 	private static void setVampireRank(ServerPlayer player, VampireRank rank) {
 		AttributeInstance attribute = player.getAttribute(DualityModAttributes.VAMPIRE_RANK);
 		if (attribute != null)
 			attribute.setBaseValue(rank.level());
+		JsonObject sheet = CharacterProgress.activeSheet(player);
+		if (sheet != null) {
+			sheet.addProperty(SHEET_VAMPIRE_RANK, rank.level());
+			CharacterProgress.saveActive(player, sheet);
+		}
+	}
+
+	/** Puts the active character's vampire rank on the player: their saved one, or none for a
+	 *  character who isn't a vampire. A vampire from before ranks were saved keeps whatever the
+	 *  attribute already says. */
+	private static void applyVampireRank(ServerPlayer player, JsonObject sheet) {
+		AttributeInstance attribute = player.getAttribute(DualityModAttributes.VAMPIRE_RANK);
+		if (attribute == null)
+			return;
+		if (sheet != null && sheet.has(SHEET_VAMPIRE_RANK))
+			attribute.setBaseValue(sheet.get(SHEET_VAMPIRE_RANK).getAsInt());
+		else if (!VampireRank.isVampire(player))
+			attribute.setBaseValue(0);
+		// A vampire someone plays is never below a Fledgling - a Thrall is mindless, and a turned
+		// Thrall stops being played (see Vampirism). Also what keeps vampire mode (a Thrall+ power)
+		// always usable by every playable vampire.
+		if (VampireRank.isVampire(player) && attribute.getBaseValue() < VampireRank.FLEDGLING.level()) {
+			attribute.setBaseValue(VampireRank.FLEDGLING.level());
+			if (sheet != null) {
+				sheet.addProperty(SHEET_VAMPIRE_RANK, VampireRank.FLEDGLING.level());
+				CharacterProgress.saveActive(player, sheet);
+			}
+		}
+		net.spidrotech.duality.abilities.vampire.VampireMode.refreshAccess(player);
+		net.spidrotech.duality.abilities.vampire.VampireStatus.sync(player);
 	}
 
 	/** A Mundane's blood is secretly and silently rolled once, on the odd chance something in it
@@ -836,6 +910,9 @@ public final class CharacterCreation {
 			entries.add(race.equippedTag());
 		if (subrace != null && !subrace.equippedTag().isEmpty())
 			entries.add(subrace.equippedTag());
+		// Every vampire can let the vampire out and hide it again, whatever else they were given.
+		if (entries.contains("vampire"))
+			entries.add("vampire_mode");
 		setEquippedAbilities(player, String.join(",", entries));
 	}
 

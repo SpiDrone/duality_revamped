@@ -98,16 +98,50 @@ public final class VampireMode {
 		}
 	}
 
-	/** Matches the vampire skin look to the mode. Only adds it when it isn't already there, so
-	 *  re-asserting vampire mode doesn't replay the reveal animation. */
+	/** The pupil colour, kept under its own key so it can change (red/gold) without touching the eye
+	 *  cracks under SKIN_KEY - which would replay their reveal animation. */
+	public static final String EYE_COLOR_KEY = "vampire_eyes";
+	/** A Vegan vampire's eyes, once no person's blood is left in them - see eyeColor. */
+	private static final int VEGAN_PUPIL_COLOR = 0xFFE8B21E;
+
+	/** Puts the vampire look (cracked eye sockets, red pupils) on a player under the given skin key -
+	 *  the character creator's preview. Vampire mode itself uses syncSkin. */
+	public static void applyLook(ServerPlayer player, String key) {
+		SkinTempModify.add(player).part(SkinPartTarget.EYES).effect(SkinEffects.VAMPIRIZE).key(key);
+		SkinTempModify.add(player).part(SkinPartTarget.PUPIL).color(VAMPIRE_PUPIL_COLOR).key(key);
+	}
+
+	/**
+	 * Red, as vampires' eyes are - unless they're Vegan, which turns them gold. Even a Vegan's go red
+	 * while any person's blood is still in them (BloodDrinking#personBlood), until it's burned off.
+	 */
+	public static int eyeColor(ServerPlayer player) {
+		boolean vegan = net.spidrotech.duality.charactercreation.CharacterProgress.hasProficiency(player, net.spidrotech.duality.charactercreation.CharacterProgress.VEGAN);
+		return vegan && BloodDrinking.personBlood(player) <= 0 ? VEGAN_PUPIL_COLOR : VAMPIRE_PUPIL_COLOR;
+	}
+
+	/** Matches the vampire skin look to the mode. Only adds the eye cracks when they aren't already
+	 *  there, so re-asserting vampire mode doesn't replay the reveal animation. */
 	public static void syncSkin(ServerPlayer player) {
 		boolean hasLook = SkinTempModify.hasKey(player, SKIN_KEY);
-		if (isActive(player) && !hasLook) {
-			SkinTempModify.add(player).part(SkinPartTarget.EYES).effect(SkinEffects.VAMPIRIZE).key(SKIN_KEY);
-			SkinTempModify.add(player).part(SkinPartTarget.PUPIL).color(VAMPIRE_PUPIL_COLOR).key(SKIN_KEY);
-		} else if (!isActive(player) && hasLook) {
-			SkinTempModify.removeKey(player, SKIN_KEY);
+		if (isActive(player)) {
+			if (!hasLook)
+				SkinTempModify.add(player).part(SkinPartTarget.EYES).effect(SkinEffects.VAMPIRIZE).key(SKIN_KEY);
+			refreshEyes(player);
+		} else {
+			if (hasLook)
+				SkinTempModify.removeKey(player, SKIN_KEY);
+			SkinTempModify.removeKey(player, EYE_COLOR_KEY);
 		}
+	}
+
+	/** Re-colours the pupils to eyeColor, if the vampire is out. Call whenever Vegan or the person's
+	 *  blood in them changes. */
+	public static void refreshEyes(ServerPlayer player) {
+		if (!isActive(player))
+			return;
+		SkinTempModify.removeKey(player, EYE_COLOR_KEY);
+		SkinTempModify.add(player).part(SkinPartTarget.PUPIL).color(eyeColor(player)).key(EYE_COLOR_KEY);
 	}
 
 	// Vampire mode outlives relogs and death; make sure the look does too, whatever SkinManager keeps.
